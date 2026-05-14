@@ -18,7 +18,7 @@ export default defineValaxyConfig<UserThemeConfig>({
   // 2. 注册 Waline 插件并填入你的地址
   addons: [
     addonWaline({
-      serverURL: 'https://Waline.lwsnb.dpdns.org', // 已自动填入你的地址
+      serverURL: 'https://waline.lwsnb.dpdns.org/', // 已自动填入你的地址
       pageview: true, // 开启浏览量统计
     }),
   ],

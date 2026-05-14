@@ -1,11 +1,17 @@
 import { defineSiteConfig } from 'valaxy'
 
 export default defineSiteConfig({
-  url: 'www.lwsnb.dpdns.org',
+  url: 'https://www.lwsnb.dpdns.org', // 建议加上 https
   lang: 'zh-CN',
   title: 'lwsのblog',
   author: {
     name: 'lws',
+    /**
+     * Your avatar
+     * 头像链接：建议使用你在 GitHub 的头像或其他外部 URL
+     */
+    avatar: 'https://github.com/lws666.png', 
+    intro: '一个普通人，热爱开发与生活。', // 丰富了简介内容
   },
   description: '一个普通人.',
   social: [
@@ -39,13 +45,14 @@ export default defineSiteConfig({
     enable: false,
   },
 
+  // 赞赏功能配置
   sponsor: {
     enable: true,
     title: '我很可爱，请给我钱！',
     methods: [
       {
         name: '支付宝',
-        url: '',
+        url: '', // 记得在这里填入你的收款码图片链接
         color: '#00A3EE',
         icon: 'i-ri-alipay-line',
       },
@@ -62,5 +69,10 @@ export default defineSiteConfig({
         icon: 'i-ri-wechat-pay-line',
       },
     ],
+  },
+  
+  // 开启评论总开关
+  comment: {
+    enable: true
   },
 })

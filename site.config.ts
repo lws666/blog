@@ -10,7 +10,7 @@ export default defineSiteConfig({
      * Your avatar
      * 头像链接：建议使用你在 GitHub 的头像或其他外部 URL
      */
-    avatar: 'https://github.com/lws666.png', 
+    avatar: 'https://img.lwsnb.dpdns.org/file/1770349295364_IMG_20250823_144910_239.jpg', 
     intro: '一个普通人，热爱开发与生活。', // 丰富了简介内容
   },
   description: '一个普通人.',

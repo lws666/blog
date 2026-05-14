@@ -1,5 +1,7 @@
-import type { UserThemeConfig } from 'valaxy-theme-yun'
 import { defineValaxyConfig } from 'valaxy'
+import type { UserThemeConfig } from 'valaxy-theme-yun'
+// 1. 导入 Waline 插件
+import { addonWaline } from 'valaxy-addon-waline'
 
 // add icons what you will need
 const safelist = [
@@ -14,10 +16,19 @@ export default defineValaxyConfig<UserThemeConfig>({
 
   theme: 'yun',
 
+  // 2. 在 addons 中注册 Waline
+  addons: [
+    addonWaline({
+      serverURL: 'https://Waline.lwsnb.dpdns.org', // 填入你的 Waline 地址
+      pageview: true, // 开启访问量统计
+      comment: true,  // 开启评论数显示
+    }),
+  ],
+
   themeConfig: {
     banner: {
       enable: true,
-      title: '云游君的小站',
+      title: 'lwsの博客',
     },
 
     pages: [

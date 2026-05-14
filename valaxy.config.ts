@@ -1,29 +1,29 @@
 import { defineValaxyConfig } from 'valaxy'
 import type { UserThemeConfig } from 'valaxy-theme-yun'
-// 1. 导入 Waline 插件
 import { addonWaline } from 'valaxy-addon-waline'
 
-// add icons what you will need
+// 定义 UnoCSS 图标安全列表
 const safelist = [
   'i-ri-home-line',
 ]
 
-/**
- * User Config
- */
 export default defineValaxyConfig<UserThemeConfig>({
-  // site config see site.config.ts
+  // 1. 站点全局配置
+  siteConfig: {
+    comment: {
+      enable: true // 开启评论功能总开关
+    },
+  },
 
-  theme: 'yun',
-
-  // 2. 在 addons 中注册 Waline
+  // 2. 注册 Waline 插件并填入你的地址
   addons: [
     addonWaline({
-      serverURL: 'https://Waline.lwsnb.dpdns.org', // 填入你的 Waline 地址
-      pageview: true, // 开启访问量统计
-      comment: true,  // 开启评论数显示
+      serverURL: 'https://Waline.lwsnb.dpdns.org', // 已自动填入你的地址
+      pageview: true, // 开启浏览量统计
     }),
   ],
+
+  theme: 'yun',
 
   themeConfig: {
     banner: {
@@ -31,6 +31,7 @@ export default defineValaxyConfig<UserThemeConfig>({
       title: 'lwsの博客',
     },
 
+    // 保留你原本的页面配置
     pages: [
       {
         name: '我的小伙伴们',

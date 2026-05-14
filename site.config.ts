@@ -1,7 +1,7 @@
 import { defineSiteConfig } from 'valaxy'
 
 export default defineSiteConfig({
-  url: 'https://valaxy.site/',
+  url: 'https://img.lwsnb.dpdns.org/file/1770349295364_IMG_20250823_144910_239.jpg',
   lang: 'zh-CN',
   title: 'lwsのblog',
   author: {

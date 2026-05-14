@@ -1,15 +1,42 @@
 ---
-title: 关于我
+title: 关于我的数字荒原
+date: 2026-05-14
+updated: 2026-05-14
+categories: 随笔
+tags:
+  - 开发者
+  - 生活
+top: 2
 ---
 
-I am developing [Valaxy](https://github.com/YunYouJun/valaxy) - Next Generation Static Blog Framework.
+## 我是谁？
 
-If you like it, you can sponsor me in [GitHub](https://github.com/sponsors/YunYouJun) or [www.yunyoujun.cn/sponsors/](https://www.yunyoujun.cn/sponsors/).
+你好，我是一个在代码与现实之间寻找平衡的普通人。
+
+我的数字身份通常以 **lws666** 出现。如果你在 GitHub 或者 Telegram 频道（[@lwsnb](https://t.me/lwsnb)）看到这个名字，那多半就是我了。
+
+## 我的技术栈
+
+我热衷于探索高效且轻量级的技术方案。目前的兴趣点主要集中在：
+
+* **Cloudflare 生态**：深度使用 Workers、D1、KV 和 Pages 构建全栈应用。
+* **极简主义 Web 开发**：偏爱使用 Astro 和 Valaxy 这种追求极致性能的框架。
+* **移动端开发流**：我的大部分代码是在 Android 手机上通过 **Termux** 完成的。
+* **极限挑战**：研究如何在 128MB RAM 的 Alpine Linux VPS 上跑满网络协议。
+
+## 个人空间
+
+除了写代码，我也在用心经营自己的生活：
+
+* **我的小伙伴们**：我珍惜每一个志同道合的朋友。
+* **喜欢的女孩子**：在我的心里，总有一块地方留给那些温柔的瞬间。
+
+## 联系我
+
+如果你对我的项目感兴趣，或者只是想找人聊聊，可以通过以下方式找到我：
+
+* **GitHub**: [lws666](https://github.com/lws666)
+* **Bilibili**: [我的主页](https://m.bilibili.com/space/3493115176422328)
 
 ---
-
-我正在开发 [Valaxy](https://github.com/YunYouJun/valaxy) - 下一代静态博客框架。
-
-如果你喜欢它，你可以在 [GitHub](https://github.com/sponsors/YunYouJun) 或 [www.yunyoujun.cn/sponsors/](https://www.yunyoujun.cn/sponsors/) 赞助我。
-
-Check out the [Valaxy | GitHub](https://github.com/YunYouJun/valaxy) for more details.
+> “纵然身处沟壑，也要仰望星空。”

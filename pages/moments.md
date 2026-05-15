@@ -12,7 +12,7 @@ const loading = ref(true)
 onMounted(async () => {
   try {
     // 实时抓取你的 Waline 评论数据
-    const res = await fetch('https://Waline.lwsnb.dpdns.org/api/comment?path=/moments&pageSize=10')
+    const res = await fetch('https://waline.lwsnb.dpdns.org/api/comment?path=/moments&pageSize=10')
     const data = await res.json()
     moments.value = data.data || []
   } catch (err) {

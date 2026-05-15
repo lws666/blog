@@ -40,6 +40,12 @@ export default defineValaxyConfig<UserThemeConfig>({
         color: 'dodgerblue',
       },
       {
+        name: '动态',
+        url: '/essays/',
+        icon: 'i-ri-chat-smile-3-line', // 实时发布的图标
+        color: 'orange',
+      },
+      {
         name: '喜欢的女孩子',
         url: '/girls/',
         icon: 'i-ri-women-line',

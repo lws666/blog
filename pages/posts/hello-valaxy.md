@@ -1,20 +1,35 @@
 ---
-title: Hello, Valaxy!
-date: 2022-04-01
-updated: 2022-04-01
-categories: Valaxy 笔记
+title: 测试
+date: 2026-03-17
+categories:
+  - test
 tags:
   - valaxy
   - 笔记
-top: 1
+cover: https://img.lwsnb.dpdns.org/file/1770349301804_DefualtThumbnail.jpg.webp
+excerpt: 测试 cms
 ---
 
-## Valaxy
+<video width="640" height="360" controls="" poster="https://img.lwsnb.dpdns.org/file/1770349301804_DefualtThumbnail.jpg.webp">
 
-Next Generation Static Blog Framework.
+  <source src="https://img.lwsnb.dpdns.org/file/1770378575708_VID_20260206194406.mp4" type="video/mp4"/>
 
-Write your first post!
+  你的浏览器不支持 HTML5 视频。
 
-## Usage
+</video>
 
-Modify `valaxy.config.ts` to custom your blog.
+
+
+# lwsnb
+
+
+
+## lwsnb
+
+
+
+### lwsnb
+
+
+
+![1.png](https://img.lwsnb.dpdns.org/file/1778339868119_1.png)

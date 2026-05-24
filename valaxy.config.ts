@@ -45,7 +45,6 @@ export default defineValaxyConfig<UserThemeConfig>({
         icon: 'i-ri-rhythm-line',
         color: '#ff6700',
        },
-
       {
         name: '喜欢的女孩子',
         url: '/girls/',
@@ -65,4 +64,21 @@ export default defineValaxyConfig<UserThemeConfig>({
   },
 
   unocss: { safelist },
+
+  // 3. 注入外部音乐播放器脚本
+  vite: {
+    plugins: [
+      {
+        name: 'inject-music-player',
+        transformIndexHtml(html) {
+          const playerScripts = `
+            <script type="text/javascript" src="https://myhkw.cn/player/js/jquery.min.js"></script>
+            <script type="text/javascript" id="myhk" src="https://myhkw.cn/api/player/177936260120" key="177936260120" m="1"></script>
+          `
+          // 在 HTML 文件的 </body> 标签前插入播放器脚本
+          return html.replace('</body>', `${playerScripts}</body>`)
+        }
+      }
+    ]
+  }
 })

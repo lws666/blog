@@ -11,11 +11,7 @@ export default function setupDynamicRoutes(ctx: ValaxySSGContext) {
   // Defer to avoid blocking initial render
   setTimeout(async () => {
     try {
-      const apiBase = import.meta.env.VITE_API_BASE || (
-        import.meta.env.PROD
-          ? 'https://blog-worker.13318678430.workers.dev/api'
-          : '/api'
-      )
+      const apiBase = 'https://blog-worker.13318678430.workers.dev/api'
 
       const res = await fetch(`${apiBase}/posts?limit=999`)
       if (!res.ok) throw new Error(`API error: ${res.status}`)

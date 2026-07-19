@@ -10,11 +10,12 @@ export interface ApiConfig {
   baseUrl: string
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE || (
-  import.meta.env.PROD
-    ? 'https://blog-worker.13318678430.workers.dev/api'
-    : '/api'
-)
+/**
+ * API base URL.
+ * Dev: Vite proxy handles /api → Worker (see valaxy.config.ts server.proxy)
+ * Production: uses Worker URL directly.
+ */
+const API_BASE = 'https://blog-worker.13318678430.workers.dev/api'
 
 const config: ApiConfig = {
   baseUrl: API_BASE,

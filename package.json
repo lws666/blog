@@ -4,14 +4,15 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "npm run build:ssg",
-    "build:spa": "valaxy build",
+    "build": "valaxy build",
     "build:ssg": "valaxy build --ssg",
     "dev": "valaxy",
     "rss": "valaxy rss",
     "serve": "vite preview"
   },
   "dependencies": {
+    "@types/markdown-it": "^14.1.2",
+    "markdown-it": "^14.3.0",
     "valaxy": "0.28.7",
     "valaxy-addon-waline": "^0.2.1",
     "valaxy-theme-yun": "0.28.7",
@@ -20,5 +21,8 @@
   },
   "devDependencies": {
     "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "vite": "8.0.14"
   }
 }

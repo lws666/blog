@@ -1,0 +1,19 @@
+name = "blog-worker"
+main = "src/index.ts"
+compatibility_date = "2025-03-01"
+
+# ---- D1 Database ----
+[[d1_databases]]
+binding = "DB"
+database_name = "blog"
+database_id = "d894eec2-4dc8-473a-92ca-efe3c13261de"
+
+# ---- Environment Variables (set via wrangler secret) ----
+# B2_ACCESS_KEY_ID
+# B2_SECRET_ACCESS_KEY
+# UPLOAD_TOKEN
+
+[vars]
+B2_ENDPOINT = "https://s3.us-east-005.backblazeb2.com"
+B2_REGION = "us-east-005"
+B2_BUCKET = "Valaxy"

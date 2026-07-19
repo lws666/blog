@@ -1,0 +1,19 @@
+{
+  "name": "blog-worker",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute blog-db --file=schema.sql",
+    "db:remote": "wrangler d1 execute blog-db --remote --file=schema.sql"
+  },
+  "dependencies": {
+    "aws4fetch": "^1.0.20",
+    "hono": "^4.7.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260714.1",
+    "wrangler": "^4.0.0"
+  }
+}

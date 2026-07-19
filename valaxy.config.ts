@@ -59,8 +59,19 @@ export default defineValaxyConfig<UserThemeConfig>({
 
   unocss: { safelist },
 
-  // 3. 注入外部音乐播放器脚本
+  // 3. 禁用依赖预扫描（Rolldown 1.x 扫描器存在竞态 bug）
   vite: {
+    optimizeDeps: { noDiscovery: true, include: [] },
+
+    server: {
+      proxy: {
+        '/api': {
+          target: 'https://blog-worker.13318678430.workers.dev',
+          changeOrigin: true,
+        },
+      },
+    },
+
     plugins: [
       {
         name: 'inject-music-player',

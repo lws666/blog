@@ -8,7 +8,9 @@
     "build:ssg": "valaxy build --ssg",
     "dev": "valaxy",
     "rss": "valaxy rss",
-    "serve": "vite preview"
+    "serve": "vite preview",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
   "dependencies": {
     "@types/markdown-it": "^14.1.2",
@@ -20,7 +22,8 @@
     "vue-router": "^5.0.7"
   },
   "devDependencies": {
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "wrangler": "^4.112.0"
   },
   "overrides": {
     "vite": "8.0.14"

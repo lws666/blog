@@ -11,7 +11,7 @@ export interface ApiConfig {
 }
 
 const config: ApiConfig = {
-  baseUrl: '/api',
+  baseUrl: import.meta.env.VITE_API_BASE || '/api',
 }
 
 /**

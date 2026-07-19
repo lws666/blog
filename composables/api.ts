@@ -12,7 +12,7 @@ export interface ApiConfig {
 
 const API_BASE = import.meta.env.VITE_API_BASE || (
   import.meta.env.PROD
-    ? 'https://blog-worker.13318678430.workers.dev'
+    ? 'https://blog-worker.13318678430.workers.dev/api'
     : '/api'
 )
 
@@ -32,6 +32,8 @@ export function configureApi(baseUrl: string): void {
  */
 export async function apiGet<T>(path: string, params?: Record<string, string | number | undefined>): Promise<T> {
   let url = `${config.baseUrl}${path}`
+
+  console.log('[API] GET', url, { params })
 
   if (params) {
     const searchParams = new URLSearchParams()

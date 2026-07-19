@@ -13,7 +13,7 @@ export default function setupDynamicRoutes(ctx: ValaxySSGContext) {
     try {
       const apiBase = import.meta.env.VITE_API_BASE || (
         import.meta.env.PROD
-          ? 'https://blog-worker.13318678430.workers.dev'
+          ? 'https://blog-worker.13318678430.workers.dev/api'
           : '/api'
       )
 

@@ -27,6 +27,25 @@ Cloudflare D1 - Backblaze B2
 
 优先输出： - 修改文件 - 修改步骤 - 代码
 
+## 文件读取限制
+
+### 禁止访问
+- `node_modules/`
+- `dist/`
+- `.cache/`
+- `.git/`
+
+### 执行命令时
+不要扫描依赖目录。
+
+### 分析项目时
+优先读取：
+- `package.json`
+- `src/`
+- `pages/`
+- `worker/`
+- 配置文件
+
 ## 修改流程
 
 修改前：

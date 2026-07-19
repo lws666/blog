@@ -1,3 +1,5 @@
 {
-  "cleanUrls": true
+  "cleanUrls": true,
+  "buildCommand": "rm -rf dist .valaxy && valaxy build",
+  "installCommand": "npm install"
 }

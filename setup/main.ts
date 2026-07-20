@@ -39,10 +39,12 @@ export default function setupDynamicRoutes(ctx: ValaxySSGContext) {
         // Skip if route already exists
         if (ctx.router.hasRoute(path)) continue
 
+        // Only seed frontmatter data for usePageList() / site.postList
+        // WITHOUT a component, so the static route doesn't shadow
+        // the dynamic :slug param route from [slug].vue on SPA navigation.
         ctx.router.addRoute({
           name: path,
           path,
-          component: { template: '<div />' },
           meta: {
             frontmatter: {
               title: post.title,

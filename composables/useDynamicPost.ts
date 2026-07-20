@@ -17,6 +17,8 @@ export function useDynamicPost() {
   const error = ref<string | null>(null)
 
   async function fetch(slug: string): Promise<void> {
+    console.log('[useDynamicPost] fetch', { slug })
+
     if (!slug) {
       error.value = 'slug is required'
       return
@@ -27,6 +29,7 @@ export function useDynamicPost() {
 
     try {
       const data = await apiGet<ApiPostDetail>(`/posts/${encodeURIComponent(slug)}`)
+      console.log('[useDynamicPost] fetch success', { slug: data.slug, contentLen: data.content?.length })
 
       post.value = {
         path: `/posts/${data.slug}`,

@@ -35,6 +35,7 @@ export async function apiGet<T>(path: string, params?: Record<string, string | n
   let url = `${config.baseUrl}${path}`
 
   console.log('[API] GET', url, { params })
+  console.log('[API] full_url', url + (params ? '?' + new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)]))) : ''))
 
   if (params) {
     const searchParams = new URLSearchParams()

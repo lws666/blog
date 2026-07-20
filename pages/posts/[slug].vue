@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import type { MarkdownIt } from 'markdown-it'
 import { useDynamicPost } from '../../composables/useDynamicPost'
 
 const route = useRoute()
@@ -8,29 +9,28 @@ const slug = route.params.slug as string
 const { post, loading, error } = useDynamicPost(slug)
 
 const html = ref('')
-const mdLoaded = ref(false)
+const md = ref<MarkdownIt | null>(null)
 
-// Dynamically import markdown-it and render content
+// Dynamically import markdown-it on mount
 onMounted(async () => {
   const markdownit = await import('markdown-it')
-  const md = markdownit.default({
+  md.value = markdownit.default({
     html: true,
     linkify: true,
     typographer: true,
   })
-  mdLoaded.value = true
-
-  // Render whenever post content changes
-  watch(
-    () => post.value?.content,
-    (content) => {
-      if (content) {
-        html.value = md.render(content)
-      }
-    },
-    { immediate: true },
-  )
 })
+
+// Render markdown when both content and md instance are ready
+watch(
+  [() => post.value?.content, md],
+  ([content, mdInstance]) => {
+    if (content && mdInstance) {
+      html.value = mdInstance.render(content)
+    }
+  },
+  { immediate: true },
+)
 
 // Expose frontmatter to route meta for layout's useFrontmatter()
 watch(

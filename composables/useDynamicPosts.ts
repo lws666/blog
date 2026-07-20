@@ -31,6 +31,7 @@ export function useDynamicPosts(options: UseDynamicPostsOptions = {}) {
     error.value = null
 
     try {
+      console.log('[DynamicPosts] fetching /posts...', { page: opts.value.page, limit: opts.value.limit })
       const data = await apiGet<ApiPostList>('/posts', {
         page: opts.value.page,
         limit: opts.value.limit,
@@ -39,9 +40,11 @@ export function useDynamicPosts(options: UseDynamicPostsOptions = {}) {
         keyword: opts.value.keyword,
       })
 
+      console.log('[DynamicPosts] received', data.posts?.length, 'posts')
       posts.value = data.posts.map(mapPost)
       pagination.value = data.pagination
     } catch (e) {
+      console.error('[DynamicPosts] fetch failed:', (e as Error).message)
       error.value = (e as Error).message
       posts.value = []
     } finally {

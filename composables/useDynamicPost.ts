@@ -3,20 +3,21 @@
  * Returns post metadata + Markdown content.
  *
  * Usage:
+ *   const slug = computed(() => route.params.slug as string)
  *   const { post, content, loading, error } = useDynamicPost(slug)
  */
 
-import { ref, computed, type Ref } from 'vue'
+import { ref, computed, watch, type Ref } from 'vue'
 import { apiGet } from './api'
 import type { ApiPostDetail, PostDetail } from './types'
 
-export function useDynamicPost(slug: string) {
+export function useDynamicPost(slug: Ref<string>) {
   const post = ref<PostDetail | null>(null) as Ref<PostDetail | null>
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  async function fetch(): Promise<void> {
-    if (!slug) {
+  async function fetch(currentSlug: string): Promise<void> {
+    if (!currentSlug) {
       error.value = 'slug is required'
       return
     }
@@ -25,7 +26,7 @@ export function useDynamicPost(slug: string) {
     error.value = null
 
     try {
-      const data = await apiGet<ApiPostDetail>(`/posts/${encodeURIComponent(slug)}`)
+      const data = await apiGet<ApiPostDetail>(`/posts/${encodeURIComponent(currentSlug)}`)
 
       post.value = {
         path: `/posts/${data.slug}`,
@@ -51,15 +52,19 @@ export function useDynamicPost(slug: string) {
     }
   }
 
-  // Auto-fetch on mount
-  if (import.meta.client || !import.meta.env.SSR) {
-    fetch()
-  }
+  // Fetch whenever slug changes (immediate triggers on mount)
+  watch(
+    slug,
+    (newSlug) => {
+      fetch(newSlug)
+    },
+    { immediate: true },
+  )
 
   return {
     post: computed(() => post.value),
     loading: computed(() => loading.value),
     error: computed(() => error.value),
-    refresh: fetch,
+    refresh: () => fetch(slug.value),
   }
 }

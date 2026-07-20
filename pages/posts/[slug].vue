@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import type { MarkdownIt } from 'markdown-it'
 import { useDynamicPost } from '../../composables/useDynamicPost'
 
 const route = useRoute()
-const slug = route.params.slug as string
+const slug = computed(() => route.params.slug as string)
 const { post, loading, error } = useDynamicPost(slug)
 
 const html = ref('')

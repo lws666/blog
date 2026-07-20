@@ -34,19 +34,23 @@ export default function setupDynamicRoutes(ctx: ValaxySSGContext) {
       }> = body.data.posts
 
       for (const post of posts) {
-        const path = `/posts/${post.slug}`
+        // Use a non-conflicting route path so the real [slug].vue route
+        // at /posts/:slug is NOT shadowed during SPA navigation.
+        // The frontmatter's `path` field overrides the route path in
+        // usePageList(), yielding post.path = /posts/:slug for the post
+        // list, tags, categories, and prev/next navigation.
+        const routeKey = `/__pd__/${post.slug}`
+        const realPath = `/posts/${post.slug}`
 
         // Skip if route already exists
-        if (ctx.router.hasRoute(path)) continue
+        if (ctx.router.hasRoute(routeKey)) continue
 
-        // Only seed frontmatter data for usePageList() / site.postList
-        // WITHOUT a component, so the static route doesn't shadow
-        // the dynamic :slug param route from [slug].vue on SPA navigation.
         ctx.router.addRoute({
-          name: path,
-          path,
+          name: routeKey,
+          path: routeKey,
           meta: {
             frontmatter: {
+              path: realPath,
               title: post.title,
               date: post.date,
               updated: post.updated || post.date,

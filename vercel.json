@@ -1,10 +1,6 @@
 {
-  "framework": null,
-  "outputDirectory": "dist",
   "cleanUrls": true,
-  "buildCommand": "rm -rf dist .valaxy && valaxy build",
-  "installCommand": "npm install",
-  "routes": [
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

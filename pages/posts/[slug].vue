@@ -1,15 +1,23 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import type { MarkdownIt } from 'markdown-it'
 import { useDynamicPost } from '../../composables/useDynamicPost'
 
 const route = useRoute()
-const slug = computed(() => route.params.slug as string)
-const { post, loading, error } = useDynamicPost(slug)
+const { post, loading, error, refresh } = useDynamicPost()
 
 const html = ref('')
 const md = ref<MarkdownIt | null>(null)
+
+// Fetch post when slug changes (immediate triggers on mount)
+watch(
+  () => route.params.slug as string,
+  (slug) => {
+    refresh(slug)
+  },
+  { immediate: true },
+)
 
 // Dynamically import markdown-it on mount
 onMounted(async () => {

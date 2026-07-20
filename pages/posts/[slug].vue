@@ -10,52 +10,38 @@ const { post, loading, error, refresh } = useDynamicPost()
 const html = ref('')
 const md = ref<MarkdownIt | null>(null)
 
-// Log initial state
-console.log('[PostPage] setup start', {
-  slug: route.params.slug,
-  path: route.fullPath,
-  meta: route.meta,
-})
+/** Strip YAML frontmatter (--- ... ---) from markdown content */
+function removeFrontmatter(content: string): string {
+  return content.replace(/^---[\s\S]*?---\s*/, '')
+}
 
 // Fetch post when slug changes (immediate triggers on mount)
 watch(
   () => route.params.slug as string,
-  (slug, oldSlug) => {
-    console.log('[PostPage] watch slug', { from: oldSlug, to: slug })
-    refresh(slug)
-  },
+  (slug) => { refresh(slug) },
   { immediate: true },
 )
 
 // Dynamically import markdown-it on mount
 onMounted(async () => {
-  console.log('[PostPage] onMounted')
   const markdownit = await import('markdown-it')
   md.value = markdownit.default({
     html: true,
     linkify: true,
     typographer: true,
   })
-  console.log('[PostPage] md loaded')
 })
 
 // Render markdown when both content and md instance are ready
 watch(
   [() => post.value?.content, md],
   ([content, mdInstance]) => {
-    console.log('[PostPage] render watch', { hasContent: !!content, hasMd: !!mdInstance })
     if (content && mdInstance) {
-      html.value = mdInstance.render(content)
-      console.log('[PostPage] html rendered', { length: html.value.length })
+      html.value = mdInstance.render(removeFrontmatter(content))
     }
   },
   { immediate: true },
 )
-
-// Track loading/error changes
-watch(loading, (v) => console.log('[PostPage] loading', v))
-watch(error, (v) => console.log('[PostPage] error', v))
-watch(post, (p) => console.log('[PostPage] post updated', { slug: p?.slug, hasContent: !!p?.content }))
 
 // Expose frontmatter to route meta for layout's useFrontmatter()
 watch(

@@ -1,6 +1,4 @@
 {
-  "cleanUrls": true,
-  "rewrites": [
-    { "source": "/:rest*", "destination": "/index.html" }
-  ]
+  "buildCommand": "rm -rf dist .valaxy && valaxy build && mkdir -p .vercel/output/static && cp -r dist/* .vercel/output/static/ && echo '{\"version\":3,\"routes\":[{\"handle\":\"filesystem\"},{\"src\":\"/(.*)\",\"dest\":\"/index.html\"}]}' > .vercel/output/config.json",
+  "installCommand": "npm install"
 }

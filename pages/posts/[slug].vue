@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useSiteConfig } from 'valaxy'
 import type { MarkdownIt } from 'markdown-it'
 import { useDynamicPost } from '../../composables/useDynamicPost'
+import YunComment from 'valaxy-theme-yun/components/YunComment.vue'
 
 const route = useRoute()
+const siteConfig = useSiteConfig()
 const { post, loading, error, refresh } = useDynamicPost()
 
 const html = ref('')
@@ -43,6 +46,16 @@ watch(
   { immediate: true },
 )
 
+// Debug: log comment config
+watch(
+  [() => post.value?.comment, siteConfig],
+  ([comment, config]) => {
+    console.log('[slug] post.comment:', comment)
+    console.log('[slug] siteConfig.comment:', config?.comment)
+  },
+  { immediate: true },
+)
+
 // Expose frontmatter to route meta for layout's useFrontmatter()
 watch(
   post,
@@ -59,6 +72,7 @@ watch(
         hide: p.hide,
         // Let frontmatter handle empty strings gracefully
         excerpt: p.excerpt || undefined,
+        comment: p.comment,
       }
     }
   },
@@ -111,5 +125,15 @@ watch(
       class="markdown-body"
       v-html="html"
     />
+
+    <!-- Comment section -->
+    <div
+      v-if="html && siteConfig.comment?.enable && post?.comment !== false"
+      class="mt-4"
+    >
+      <ClientOnly>
+        <YunComment />
+      </ClientOnly>
+    </div>
   </article>
 </template>

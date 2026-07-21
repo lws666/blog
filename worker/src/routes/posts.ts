@@ -80,6 +80,7 @@ export function createPostsRouter() {
         type: row.type,
         top: row.top,
         hide: row.hide,
+        comment: row.comment !== 0,
         content,
         frontmatter: safeJsonParse<Record<string, unknown>>(row.frontmatter, {}),
       }

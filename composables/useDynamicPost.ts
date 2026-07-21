@@ -45,6 +45,7 @@ export function useDynamicPost() {
         top: data.top || 0,
         hide: data.hide || '',
         draft: false,
+        comment: data.comment !== undefined ? data.comment : true,
         content: data.content || '',
       }
     } catch (e) {

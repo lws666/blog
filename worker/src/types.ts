@@ -61,4 +61,6 @@ export interface PostListItem {
 export interface PostDetail extends PostListItem {
   content: string
   frontmatter: Record<string, unknown>
+  /** Enable/disable comments (true by default) */
+  comment: boolean
 }

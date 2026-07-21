@@ -29,6 +29,8 @@ export interface ApiPostItem {
 export interface ApiPostDetail extends ApiPostItem {
   content: string
   frontmatter: Record<string, unknown>
+  /** Enable/disable comments (default: true) */
+  comment?: boolean
 }
 
 export interface Pagination {
@@ -72,4 +74,6 @@ export interface Post {
 // Post detail with markdown content
 export interface PostDetail extends Post {
   content: string
+  /** Enable/disable comments (default: true) */
+  comment?: boolean
 }

@@ -3,6 +3,7 @@ import { cors } from 'hono/cors'
 import { createDb } from './db'
 import { createPostsRouter } from './routes/posts'
 import { createUploadRouter } from './routes/upload'
+import { createAdminRouter } from './routes/admin'
 import { success, error as errRes } from './utils/response'
 
 // ── Environment bindings (set via wrangler.toml + secrets) ────
@@ -41,6 +42,7 @@ app.get('/api/stats', async (c) => {
 // ── Route groups ──────────────────────────────────────────────
 app.route('/api/posts', createPostsRouter())
 app.route('/api/upload', createUploadRouter())
+app.route('/api/admin', createAdminRouter())
 
 // ── 404 fallback ──────────────────────────────────────────────
 app.notFound((c) => {

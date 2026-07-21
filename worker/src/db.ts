@@ -60,11 +60,12 @@ export function createDb(db: D1Database) {
       category?: string
       tag?: string
       keyword?: string
+      includeDrafts?: boolean
     }) {
       const { page, limit } = params
       const offset = (page - 1) * limit
 
-      const { clause, binds } = buildWhere(params)
+      const { clause, binds } = buildWhere({ ...params, includeDrafts: params.includeDrafts })
 
       // Count total
       const countRow = await db
@@ -92,6 +93,16 @@ export function createDb(db: D1Database) {
     async getPostBySlug(slug: string): Promise<PostRow | null> {
       return db
         .prepare('SELECT * FROM posts WHERE slug = ? AND draft = 0')
+        .bind(slug)
+        .first<PostRow>()
+    },
+
+    /**
+     * Get a single post by slug (including drafts, for admin).
+     */
+    async getPostBySlugAdmin(slug: string): Promise<PostRow | null> {
+      return db
+        .prepare('SELECT * FROM posts WHERE slug = ?')
         .bind(slug)
         .first<PostRow>()
     },

@@ -15,7 +15,7 @@ export interface ApiConfig {
  * Dev: Vite proxy handles /api → Worker (see valaxy.config.ts server.proxy)
  * Production: uses Worker URL directly.
  */
-const API_BASE = 'https://blog-worker.13318678430.workers.dev/api'
+const API_BASE = 'https://api.lwsnb.dpdns.org/api'
 
 const config: ApiConfig = {
   baseUrl: API_BASE,

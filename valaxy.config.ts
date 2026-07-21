@@ -66,7 +66,7 @@ export default defineValaxyConfig<UserThemeConfig>({
     server: {
       proxy: {
         '/api': {
-          target: 'https://blog-worker.13318678430.workers.dev',
+          target: 'https://api.lwsnb.dpdns.org',
           changeOrigin: true,
         },
       },

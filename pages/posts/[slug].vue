@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useSiteConfig } from 'valaxy'
+import { useHead } from '@unhead/vue'
 import type { MarkdownIt } from 'markdown-it'
 import { useDynamicPost } from '../../composables/useDynamicPost'
 import YunComment from 'valaxy-theme-yun/components/YunComment.vue'
@@ -9,6 +10,51 @@ import YunComment from 'valaxy-theme-yun/components/YunComment.vue'
 const route = useRoute()
 const siteConfig = useSiteConfig()
 const { post, loading, error, refresh } = useDynamicPost()
+
+// ── Dynamic SEO: OpenGraph + JSON-LD BlogPosting ──────────────
+const siteUrl = computed(() => (siteConfig.value.url || '').replace(/\/+$/, ''))
+useHead(() => {
+  const p = post.value
+  if (!p) return {}
+
+  const postUrl = `${siteUrl.value}/posts/${p.slug}`
+  const desc = p.excerpt || siteConfig.value.description || ''
+
+  return {
+    meta: [
+      // Override og:type to 'article' for blog posts
+      { property: 'og:type', content: 'article' },
+      { property: 'og:url', content: postUrl },
+      { property: 'article:published_time', content: p.date },
+      ...(p.updated ? [{ property: 'article:modified_time', content: p.updated }] : []),
+      ...(p.tags?.length ? p.tags.map(tag => ({ property: 'article:tag', content: tag })) : []),
+      // Twitter card
+      { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:title', content: p.title },
+      { name: 'twitter:description', content: desc },
+      ...(p.cover ? [{ name: 'twitter:image', content: p.cover }] : []),
+    ],
+    script: [
+      {
+        type: 'application/ld+json',
+        innerHTML: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'BlogPosting',
+          headline: p.title,
+          description: desc,
+          image: p.cover || undefined,
+          datePublished: p.date,
+          dateModified: p.updated || p.date,
+          author: {
+            '@type': 'Person',
+            name: siteConfig.value.author?.name || 'lws',
+          },
+          url: postUrl,
+        }),
+      },
+    ],
+  }
+})
 
 const html = ref('')
 const md = ref<MarkdownIt | null>(null)
@@ -72,6 +118,7 @@ watch(
         hide: p.hide,
         // Let frontmatter handle empty strings gracefully
         excerpt: p.excerpt || undefined,
+        description: p.excerpt || undefined,
         comment: p.comment,
       }
     }

@@ -29,7 +29,7 @@
         <!-- Sidebar -->
         <aside class="p-6 border-r border-white/10 bg-black/10 flex flex-col justify-between pc-only">
           <div>
-            <div class="font-bold text-lg mb-8 text-blue-400">MIZUKI CMS</div>
+            <div class="font-bold text-lg mb-8 text-blue-400">valaxy</div>
             <nav class="space-y-2 text-sm">
               <div
                 class="cursor-pointer p-3 hover:bg-white/10 rounded-lg transition-all"
@@ -235,8 +235,8 @@ async function unlock() {
   unlocking.value = true
   lockError.value = ''
   try {
-    // Verify token by making a lightweight API call
-    const res = await fetch(`${API_BASE}/admin/posts?page=1&limit=1`, {
+    // Verify token via dedicated endpoint
+    const res = await fetch(`${API_BASE}/admin/verify`, {
       headers: { Authorization: `Bearer ${raw}` },
     })
     if (res.status === 401) throw new Error('Token 验证失败')

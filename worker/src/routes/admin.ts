@@ -28,6 +28,12 @@ export function createAdminRouter() {
     await next()
   })
 
+  // ── GET /verify — lightweight token verification ────────────
+  router.get('/verify', (c) => {
+    // If we reach here, the auth middleware passed — token is valid
+    return success({ verified: true })
+  })
+
   // ── POST — publish / update a post ───────────────────────────
   router.post('/posts', async (c) => {
     try {

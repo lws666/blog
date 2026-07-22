@@ -38,7 +38,7 @@
         <div class="pc-layout">
             <aside class="p-6 border-r border-white/10 bg-black/10 flex flex-col justify-between pc-only">
                 <div>
-                    <div class="font-bold text-lg mb-8 text-blue-400">MIZUKI CMS</div>
+                    <div class="font-bold text-lg mb-8 text-blue-400">valaxy</div>
                     <nav class="space-y-2 text-sm">
                         <div onclick="openListModal()" class="cursor-pointer p-3 hover:bg-white/10 rounded-lg transition-all">📁 文章管理</div>
                         <div onclick="toggleDarkMode()" class="cursor-pointer p-3 hover:bg-white/10 rounded-lg transition-all">🌓 切换模式</div>
@@ -100,9 +100,7 @@
     <script src="https://cdn.jsdelivr.net/npm/vditor@3.9.6/dist/index.min.js"></script>
     <script>
     (function() {
-        // 构建时替换环境变量
-        const ADMIN_PASSWORD = "[[123456]]"; 
-
+        const API_BASE = "https://api.lwsnb.dpdns.org/api";
         let vditor, currentSha = null, currentFileName = null;
         const $ = (id) => document.getElementById(id);
 
@@ -182,7 +180,7 @@ description: "${$("fm-description").value}"
                 if (fmMatch) {
                     const yaml = fmMatch[1], body = fmMatch[2].trim();
                     const getVal = (regex) => (yaml.match(regex) || [])[1] || "";
-                    
+
                     $("fm-title").value = getVal(/title:\s*"(.*?)"/) || getVal(/title:\s*(.*)/);
                     $("fm-published").value = getVal(/published:\s*(\d{4}-\d{2}-\d{2})/);
                     $("fm-category").value = getVal(/category:\s*"(.*?)"/) || getVal(/category:\s*(.*)/);
@@ -226,20 +224,35 @@ description: "${$("fm-description").value}"
             });
         }
 
-        window.unlock = () => {
-            const inputPwd = $("access-password").value;
-            // 唯一验证逻辑
-            if(inputPwd === ADMIN_PASSWORD) {
-                localStorage.setItem("pub_auth", "1");
-                $("lock-screen").classList.add("hidden-lock"); $("main-content").classList.remove("hidden");
+        // ── Token verification via Worker API ───────────────────
+        window.unlock = async () => {
+            const token = $("access-password").value;
+            if (!token) return;
+            const btn = $("unlock-btn");
+            btn.disabled = true; btn.textContent = "验证中...";
+            try {
+                const res = await fetch(API_BASE + "/admin/verify", {
+                    headers: { Authorization: "Bearer " + token }
+                });
+                if (res.status === 401) throw new Error("Token 验证失败");
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error || "Token 验证失败");
+
+                sessionStorage.setItem("admin_token", token);
+                sessionStorage.setItem("pub_auth", "1");
+                $("lock-screen").classList.add("hidden-lock");
+                $("main-content").classList.remove("hidden");
                 init();
-            } else { alert("密钥验证失败"); }
+            } catch (e) {
+                alert("❌ " + e.message);
+                btn.disabled = false; btn.textContent = "解锁进入";
+            }
         };
 
-        window.logout = () => { localStorage.removeItem("pub_auth"); location.reload(); };
+        window.logout = () => { sessionStorage.removeItem("pub_auth"); location.reload(); };
         window.closeListModal = () => $("list-modal").classList.add("hidden");
         $("unlock-btn").onclick = window.unlock;
-        if(localStorage.getItem("pub_auth") === "1") {
+        if(sessionStorage.getItem("pub_auth") === "1") {
             $("lock-screen").classList.add("hidden-lock"); $("main-content").classList.remove("hidden");
             init();
         }

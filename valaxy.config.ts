@@ -83,12 +83,6 @@ export default defineValaxyConfig<UserThemeConfig>({
           `
           html = html.replace('</head>', `${seoHead}</head>`)
 
-          // h1 inside #app: crawlers see it; Vue replaces it on mount
-          const seoBody = `
-            <h1 class="va-seo-title">lwsの博客</h1>
-          `
-          html = html.replace('<div id="app">', `<div id="app">${seoBody}`)
-
           // ── Music player ─────────────────────────────────────────────
           const playerScripts = `
             <script type="text/javascript" src="https://myhkw.cn/player/js/jquery.min.js"></script>

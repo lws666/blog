@@ -76,11 +76,24 @@ export default defineValaxyConfig<UserThemeConfig>({
       {
         name: 'inject-music-player',
         transformIndexHtml(html) {
+          // ── Static SEO fallback (visible to crawlers before Vue hydrates) ──
+          const seoHead = `
+            <title>lwsのblog</title>
+            <meta name="description" content="一个普通人.">
+          `
+          html = html.replace('</head>', `${seoHead}</head>`)
+
+          // h1 inside #app: crawlers see it; Vue replaces it on mount
+          const seoBody = `
+            <h1 class="va-seo-title">lwsの博客</h1>
+          `
+          html = html.replace('<div id="app">', `<div id="app">${seoBody}`)
+
+          // ── Music player ─────────────────────────────────────────────
           const playerScripts = `
             <script type="text/javascript" src="https://myhkw.cn/player/js/jquery.min.js"></script>
             <script type="text/javascript" id="myhk" src="https://myhkw.cn/api/player/177936260120" key="177936260120" m="1"></script>
           `
-          // 在 HTML 文件的 </body> 标签前插入播放器脚本
           return html.replace('</body>', `${playerScripts}</body>`)
         }
       }

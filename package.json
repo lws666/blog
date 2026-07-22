@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "valaxy build",
+    "build": "valaxy build && mkdir -p dist/admin && cp dist/index.html dist/admin/index.html",
     "build:ssg": "valaxy build --ssg",
     "dev": "valaxy",
     "rss": "valaxy rss",

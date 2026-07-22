@@ -1,0 +1,19 @@
+name = "lwsnb"
+compatibility_date = "2026-07-22"
+main = "src/index.js"
+
+# Custom domain
+routes = [
+  { pattern = "www.lwsnb.dpdns.org", custom_domain = true },
+]
+
+compatibility_flags = [ "nodejs_compat" ]
+
+# Observability
+[observability]
+enabled = true
+
+# Serve static assets from dist/
+[assets]
+directory = "dist"
+binding = "ASSETS"

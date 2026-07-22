@@ -3,6 +3,7 @@ import { createDb } from '../db'
 import { createB2Client } from '../b2'
 import { createAuthMiddleware } from '../middleware/auth'
 import { success, badRequest, notFound, error as errRes } from '../utils/response'
+import { notifyIndexNow } from '../index'
 import type { Env } from '../index'
 
 /**
@@ -92,6 +93,7 @@ export function createAdminRouter() {
       await b2.upload(b2Key, fullMarkdown, 'text/markdown')
 
       // Save to D1
+      const isDraft = body.draft === true
       await db.upsertPost({
         slug,
         title: body.title,
@@ -102,7 +104,7 @@ export function createAdminRouter() {
         cover: body.cover || '',
         type: body.type || 'post',
         top: body.top || 0,
-        draft: body.draft ? 1 : 0,
+        draft: isDraft ? 1 : 0,
         hide: body.hide || '',
         comment: body.comment !== false ? 1 : 0,
         toc: body.toc !== false ? 1 : 0,
@@ -111,6 +113,11 @@ export function createAdminRouter() {
         content: fullMarkdown,
         frontmatter: '{}',
       })
+
+      // Notify IndexNow for published (non-draft) posts
+      if (!isDraft) {
+        notifyIndexNow(c.env, slug)
+      }
 
       return success({ slug, url: `/posts/${slug}` }, 201)
     } catch (e) {

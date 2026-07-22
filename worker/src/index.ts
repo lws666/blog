@@ -15,6 +15,8 @@ export interface Env {
   B2_ACCESS_KEY_ID: string
   B2_SECRET_ACCESS_KEY: string
   UPLOAD_TOKEN: string
+  /** Optional IndexNow API key (UUID). Set via `wrangler secret put INDEXNOW_KEY` */
+  INDEXNOW_KEY?: string
 }
 
 // ── App ───────────────────────────────────────────────────────
@@ -39,6 +41,15 @@ app.get('/api/stats', async (c) => {
   }
 })
 
+// ── IndexNow key file ─────────────────────────────────────────
+// Serves the key file so Bing can verify domain ownership.
+// Registered before route groups to avoid routing conflicts.
+app.get('/api/indexnow-key.txt', (c) => {
+  const key = c.env.INDEXNOW_KEY
+  if (!key) return errRes('IndexNow not configured', 404)
+  return c.newResponse(key, { headers: { 'Content-Type': 'text/plain' } })
+})
+
 // ── Route groups ──────────────────────────────────────────────
 app.route('/api/posts', createPostsRouter())
 app.route('/api/upload', createUploadRouter())
@@ -51,19 +62,35 @@ app.get('/sitemap.xml', async (c) => {
     const result = await db.listPosts({ page: 1, limit: 9999 })
     const siteUrl = 'https://www.lwsnb.dpdns.org'
 
-    const urls = result.posts.map((row) => {
-      const lastmod = row.updated || row.date
-      return `  <url>
+    // Homepage
+    const homeLastmod = result.posts.length
+      ? (result.posts[0].updated || result.posts[0].date)
+      : new Date().toISOString().slice(0, 10)
+
+    const urls = [`  <url>
+    <loc>${siteUrl}/</loc>
+    <lastmod>${homeLastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>`]
+
+    // Posts
+    for (const row of result.posts) {
+      // Use updated_at (ISO) when available, fallback to updated/date
+      const lastmod = row.updated_at
+        ? row.updated_at.slice(0, 10)
+        : (row.updated || row.date).slice(0, 10)
+      urls.push(`  <url>
     <loc>${siteUrl}/posts/${escapeXml(row.slug)}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-  </url>`
-    }).join('\n')
+  </url>`)
+    }
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls}
+${urls.join('\n')}
 </urlset>`
 
     return c.newResponse(xml, 200, { 'Content-Type': 'application/xml' })
@@ -80,6 +107,38 @@ Allow: /
 Sitemap: https://api.lwsnb.dpdns.org/sitemap.xml
 `
   return c.newResponse(txt, 200, { 'Content-Type': 'text/plain' })
+})
+
+// ── SEO: llms.txt ─────────────────────────────────────────────
+app.get('/llms.txt', async (c) => {
+  try {
+    const db = createDb(c.env.DB)
+    const result = await db.listPosts({ page: 1, limit: 9999 })
+    const siteUrl = 'https://www.lwsnb.dpdns.org'
+
+    let lines = `# lwsのblog
+> 一个普通人.
+
+## About
+- [About](${siteUrl}/about/)
+- [Site](${siteUrl}/about/site)
+
+## Pages
+- [Archives](${siteUrl}/archives/)
+- [Categories](${siteUrl}/categories/)
+- [Tags](${siteUrl}/tags/)
+- [Links](${siteUrl}/links/)
+
+## Posts
+`
+    for (const row of result.posts) {
+      lines += `- [${escapeXml(row.title)}](${siteUrl}/posts/${escapeXml(row.slug)})\n`
+    }
+
+    return c.newResponse(lines, 200, { 'Content-Type': 'text/plain' })
+  } catch (e) {
+    return errRes((e as Error).message)
+  }
 })
 
 // ── SEO: RSS feed ─────────────────────────────────────────────
@@ -121,6 +180,33 @@ ${items}
     return errRes((e as Error).message)
   }
 })
+
+/**
+ * Fire-and-forget IndexNow notification to Bing.
+ * Called after a non-draft post is published or updated.
+ */
+export async function notifyIndexNow(env: Env, slug: string): Promise<void> {
+  const key = env.INDEXNOW_KEY
+  if (!key) return
+
+  const postUrl = `https://www.lwsnb.dpdns.org/posts/${slug}`
+  const keyLocation = 'https://www.lwsnb.dpdns.org/api/indexnow-key.txt'
+
+  try {
+    await fetch('https://api.indexnow.org/indexnow', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        host: 'www.lwsnb.dpdns.org',
+        key,
+        keyLocation,
+        urlList: [postUrl],
+      }),
+    })
+  } catch {
+    // Fire-and-forget: silently ignore errors
+  }
+}
 
 /** XML-escape a string */
 function escapeXml(s: string): string {

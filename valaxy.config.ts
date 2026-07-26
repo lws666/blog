@@ -74,21 +74,14 @@ export default defineValaxyConfig<UserThemeConfig>({
 
     plugins: [
       {
-        name: 'inject-music-player',
+        name: 'inject-seo-tags',
         transformIndexHtml(html) {
           // ── Static SEO fallback (visible to crawlers before Vue hydrates) ──
           const seoHead = `
             <title>lwsのblog</title>
             <meta name="description" content="一个普通人.">
           `
-          html = html.replace('</head>', `${seoHead}</head>`)
-
-          // ── Music player ─────────────────────────────────────────────
-          const playerScripts = `
-            <script type="text/javascript" src="https://myhkw.cn/player/js/jquery.min.js"></script>
-            <script type="text/javascript" id="myhk" src="https://myhkw.cn/api/player/177936260120" key="177936260120" m="1"></script>
-          `
-          return html.replace('</body>', `${playerScripts}</body>`)
+          return html.replace('</head>', `${seoHead}</head>`)
         }
       }
     ]

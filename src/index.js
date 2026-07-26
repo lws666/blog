@@ -4,9 +4,18 @@
  * Behaviour:
  *   /sitemap.xml /robots.txt /rss.xml /llms.txt  → proxy to api.lwsnb.dpdns.org
  *   /api/*                                        → proxy to api.lwsnb.dpdns.org
+ *   /posts/* (crawler only)                       → proxy to api.lwsnb.dpdns.org (pre-render)
+ *   /posts/* (browser)                            → serve from assets (SPA fallback)
  *   everything else                               → serve from assets (SPA fallback)
  */
 const API_ORIGIN = 'https://api.lwsnb.dpdns.org'
+
+/** Bot / crawler User-Agent patterns */
+const BOT_UA = /googlebot|bingbot|baiduspider|yandexbot|duckduckbot|twitterbot|facebookexternalhit|slackbot|discordbot|whatsapp|telegrambot|applebot|semrushbot|ahrefsbot|dotbot|mj12bot|seznambot|ia_archiver|twitter|facebook|linkedinbot|slack|pinterest|skypeuripreview|wget|curl|python-requests|java|http-client/i
+
+function isBot(ua) {
+  return BOT_UA.test(ua)
+}
 
 export default {
   async fetch(request, env) {
@@ -18,6 +27,18 @@ export default {
                   path === '/rss.xml' || path === '/llms.txt'
     if (isSeo || path.startsWith('/api/')) {
       const target = API_ORIGIN + path + url.search
+      return fetch(new Request(target, request))
+    }
+
+    // ── Post pre-render: proxy crawlers to blog-worker ──────────
+    if (path.startsWith('/posts/') && isBot(request.headers.get('User-Agent') || '')) {
+      const target = API_ORIGIN + path + url.search
+      return fetch(new Request(target, request))
+    }
+
+    // ── Homepage pre-render: proxy crawlers to blog-worker ─────
+    if (path === '/' && isBot(request.headers.get('User-Agent') || '')) {
+      const target = API_ORIGIN + '/render/homepage'
       return fetch(new Request(target, request))
     }
 

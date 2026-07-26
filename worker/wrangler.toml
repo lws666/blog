@@ -1,6 +1,12 @@
 name = "blog-worker"
 main = "src/index.ts"
 compatibility_date = "2025-03-01"
+workers_dev = true
+
+# Custom domain
+routes = [
+  { pattern = "api.lwsnb.dpdns.org", custom_domain = true },
+]
 
 # ---- D1 Database ----
 [[d1_databases]]
@@ -12,8 +18,6 @@ database_id = "d894eec2-4dc8-473a-92ca-efe3c13261de"
 # B2_ACCESS_KEY_ID
 # B2_SECRET_ACCESS_KEY
 # UPLOAD_TOKEN
-
-workers_dev = true
 
 [vars]
 B2_ENDPOINT = "https://s3.us-east-005.backblazeb2.com"

@@ -11,16 +11,23 @@ const route = useRoute()
 const siteConfig = useSiteConfig()
 const { post, loading, error, refresh } = useDynamicPost()
 
-// ── Dynamic SEO: OpenGraph + JSON-LD BlogPosting ──────────────
+// ── Dynamic SEO: canonical, OG, JSON-LD ──────────────────────
 const siteUrl = computed(() => (siteConfig.value.url || '').replace(/\/+$/, ''))
 useHead(() => {
   const p = post.value
   if (!p) return {}
 
   const postUrl = `${siteUrl.value}/posts/${p.slug}`
+  const siteTitle = siteConfig.value.title || '权益のblog'
   const desc = p.excerpt || siteConfig.value.description || ''
+  const authorName = siteConfig.value.author?.name || '权益'
+  const authorUrl = siteConfig.value.author?.avatar || undefined
 
   return {
+    // Canonical URL
+    link: [
+      { rel: 'canonical', href: postUrl },
+    ],
     meta: [
       // Override og:type to 'article' for blog posts
       { property: 'og:type', content: 'article' },
@@ -39,17 +46,30 @@ useHead(() => {
         type: 'application/ld+json',
         innerHTML: JSON.stringify({
           '@context': 'https://schema.org',
-          '@type': 'BlogPosting',
-          headline: p.title,
-          description: desc,
-          image: p.cover || undefined,
-          datePublished: p.date,
-          dateModified: p.updated || p.date,
-          author: {
-            '@type': 'Person',
-            name: siteConfig.value.author?.name || 'lws',
-          },
-          url: postUrl,
+          '@graph': [
+            {
+              '@type': 'BlogPosting',
+              headline: p.title,
+              description: desc,
+              image: p.cover || undefined,
+              datePublished: p.date,
+              dateModified: p.updated || p.date,
+              author: {
+                '@type': 'Person',
+                name: authorName,
+                url: authorUrl,
+              },
+              url: postUrl,
+            },
+            {
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl.value },
+                { '@type': 'ListItem', position: 2, name: siteTitle, item: `${siteUrl.value}/` },
+                { '@type': 'ListItem', position: 3, name: p.title, item: postUrl },
+              ],
+            },
+          ],
         }),
       },
     ],

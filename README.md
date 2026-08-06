@@ -95,7 +95,7 @@ npm run preview
 npm run deploy
 ```
 
-> `blog-worker` 在 `worker/` 目录下单独管理，使用各自的 `wrangler.toml` 与 `wrangler deploy` 部署。
+> `blog-worker` 在 `worker/` 目录下单独管理，使用各自的 `wrangler.toml` 与 `wrangler deploy` 部署。完整的从零部署步骤（D1 / B2 / Secrets）见 [后端部署教程](docs/DEPLOY.md)。
 
 ### 静态部署（可选，仅博客快照）
 

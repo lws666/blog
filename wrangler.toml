@@ -2,9 +2,9 @@ name = "lwsnb"
 compatibility_date = "2026-07-22"
 main = "src/index.js"
 
-# Custom domain
+# Routes (zone_id required since custom_domain API is unavailable)
 routes = [
-  { pattern = "www.lwsnb.dpdns.org", custom_domain = true },
+  { pattern = "www.lwsnb.dpdns.org/*", zone_id = "7b56790c6ed08c291850e8ea182b2341" },
 ]
 
 compatibility_flags = [ "nodejs_compat" ]

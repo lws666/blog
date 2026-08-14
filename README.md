@@ -76,7 +76,7 @@ npm install
 npm run dev
 ```
 
-开发模式下，`/api` 请求已通过 `valaxy.config.ts` 中的 Vite 代理转发到 `https://api.lwsnb.dpdns.org`。
+开发模式下，`/api` 请求已通过 `valaxy.config.ts` 中的 Vite 代理转发到后端的 API 域名（部署教程见 `docs/DEPLOY.md`）。
 
 访问 http://localhost:4859/ 开始使用。
 
@@ -135,7 +135,7 @@ npx wrangler d1 execute blog --file=schema.sql
 
 ## 📡 API 接口
 
-基础路径：`https://api.lwsnb.dpdns.org`
+基础路径：`https://api.<你的域名>`（部署教程见 `docs/DEPLOY.md`）
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |

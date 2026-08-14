@@ -12,7 +12,7 @@
 - **后台管理**：内置 `/admin` 页面，可在线发布、编辑、删除文章
 - **评论与阅读量**：集成 Waline 评论系统，支持页面浏览量统计
 - **图片存储**：图片统一托管于 Backblaze B2
-- **多端部署**：主入口托管于 Cloudflare，同时保留 GitHub Pages / Netlify / Vercel 静态部署能力
+- **多端部署**：主入口托管于 Cloudflare，同时保留 GitHub Pages / Vercel 静态部署能力
 
 ## 🧱 技术栈
 
@@ -76,7 +76,7 @@ npm install
 npm run dev
 ```
 
-开发模式下，`/api` 请求已通过 `valaxy.config.ts` 中的 Vite 代理转发到后端的 API 域名（按你的实际地址修改）。
+开发模式下，`/api` 请求已通过 `valaxy.config.ts` 中的 Vite 代理转发到 `https://api.lwsnb.dpdns.org`。
 
 访问 http://localhost:4859/ 开始使用。
 
@@ -106,7 +106,7 @@ npm run deploy
 npm run build:ssg
 ```
 
-仓库已附带 `.github/workflows/gh-pages.yml`、`netlify.toml`、`vercel.json` 配置文件。
+仓库已附带 `.github/workflows/gh-pages.yml`、`vercel.json` 配置文件。
 
 ### Docker（可选）
 
@@ -135,7 +135,7 @@ npx wrangler d1 execute blog --file=schema.sql
 
 ## 📡 API 接口
 
-基础路径：`https://api.<你的域名>`（部署时替换为你的实际 API 域名）
+基础路径：`https://api.lwsnb.dpdns.org`
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
@@ -143,7 +143,7 @@ npx wrangler d1 execute blog --file=schema.sql
 | GET | `/api/stats` | 站点统计 |
 | GET | `/api/posts` | 文章列表 |
 | GET | `/api/posts/:slug` | 文章详情 |
-| POST | `/api/upload` | 上传 Markdown / 图片（需 Bearer Token） |
+| POST | `/api/upload` | 上传 Markdown（需 Bearer Token） |
 | POST | `/api/admin/posts` | 创建文章 |
 | GET | `/api/admin/posts` | 后台文章列表 |
 | GET | `/api/admin/posts/:slug` | 后台文章详情 |

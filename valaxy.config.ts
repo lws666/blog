@@ -1,6 +1,5 @@
 import { defineValaxyConfig } from 'valaxy'
 import type { UserThemeConfig } from 'valaxy-theme-yun'
-import { addonWaline } from 'valaxy-addon-waline'
 
 // 定义 UnoCSS 图标安全列表
 const safelist = [
@@ -15,13 +14,10 @@ export default defineValaxyConfig<UserThemeConfig>({
     },
   },
 
-  // 2. 注册 Waline 插件并填入你的地址
-  addons: [
-    addonWaline({
-      serverURL: 'https://waline.lwsnb.dpdns.org/', // 已自动填入你的地址
-      pageview: true, // 开启浏览量统计
-    }),
-  ],
+  // 2. 评论系统：giscus（GitHub Discussions）
+  //    在 components/GiscusComment.vue 中挂载，由 pages/posts/[slug].vue 引用。
+  //    原 valaxy-addon-waline 已移除：Waline 服务端出现无限 308 重定向不可用。
+  addons: [],
 
   theme: 'yun',
 

@@ -5,7 +5,7 @@ import { useSiteConfig } from 'valaxy'
 import { useHead } from '@unhead/vue'
 import type { MarkdownIt } from 'markdown-it'
 import { useDynamicPost } from '../../composables/useDynamicPost'
-import YunComment from 'valaxy-theme-yun/components/YunComment.vue'
+import GiscusComment from '../../components/GiscusComment.vue'
 
 const route = useRoute()
 const siteConfig = useSiteConfig()
@@ -207,7 +207,7 @@ watch(
       class="mt-4"
     >
       <ClientOnly>
-        <YunComment />
+        <GiscusComment />
       </ClientOnly>
     </div>
   </article>

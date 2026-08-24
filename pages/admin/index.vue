@@ -40,6 +40,10 @@
                 @click="toggleDarkMode"
               >🌓 切换模式</div>
               <div
+                class="cursor-pointer p-3 hover:bg-white/10 rounded-lg transition-all"
+                @click="openAlbumModal"
+              >🖼️ 切换相册</div>
+              <div
                 class="cursor-pointer p-3 hover:bg-white/10 rounded-lg text-red-400 transition-all"
                 @click="logout"
               >🚪 退出登录</div>
@@ -124,6 +128,26 @@
                 @click="deleteArticle(article)"
               >删除</button>
             </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- ── Album modal ─────────────────────────────────────────── -->
+    <Teleport to="body">
+      <div
+        id="album-modal"
+        class="fixed inset-0 z-[10000] bg-black/70 backdrop-blur-md"
+        :class="{ hidden: !showAlbumModal }"
+        @click.self="showAlbumModal = false"
+      >
+        <div class="glass-card w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden text-sm m-4">
+          <div class="p-4 border-b border-white/10 flex justify-between items-center">
+            <h3 class="font-bold">🖼️ 相册</h3>
+            <button class="text-2xl leading-none" @click="showAlbumModal = false">&times;</button>
+          </div>
+          <div class="overflow-y-auto p-4">
+            <AdminAlbum v-if="albumOpened" @insert="insertFromAlbum" />
           </div>
         </div>
       </div>
@@ -218,6 +242,9 @@ const publishing = ref(false)
 const publishBtnText = ref('确认并上传')
 
 const showListModal = ref(false)
+const showAlbumModal = ref(false)
+/** Lazy-mount the album so it only fetches after the first open */
+const albumOpened = ref(false)
 const listLoading = ref(false)
 const articles = ref<Array<{
   slug: string
@@ -402,8 +429,23 @@ async function deleteArticle(article: { slug: string; title: string }) {
   }
 }
 
-function toggleDarkMode() {
-  document.getElementById('body-root')?.classList.toggle('dark-mode')
+// ── Album ──────────────────────────────────────────────────────────
+function openAlbumModal() {
+  albumOpened.value = true
+  showAlbumModal.value = true
+}
+
+/** Insert a markdown image tag from the album into the editor */
+function insertFromAlbum(markdown: string) {
+  if (!vditor) {
+    alert('编辑器尚未就绪')
+    return
+  }
+  vditor.insertValue(`\n${markdown}\n`)
+  showAlbumModal.value = false
+}
+
+function toggleDarkMode() {  document.getElementById('body-root')?.classList.toggle('dark-mode')
   const isDark = document.getElementById('body-root')?.classList.contains('dark-mode')
   localStorage.setItem('mizuki_dark', String(isDark))
 }
@@ -414,6 +456,9 @@ function logout() {
   unlocked.value = false
   tokenInput.value = ''
   lockError.value = ''
+  // Drop album state so the next login re-fetches with a fresh token
+  showAlbumModal.value = false
+  albumOpened.value = false
 }
 
 // ── Bootstrap on mount ─────────────────────────────────────────────
@@ -508,4 +553,6 @@ input[type='date']::-webkit-calendar-picker-indicator { filter: invert(1); curso
 }
 #list-modal.hidden { display: none !important; }
 #list-modal { display: flex; align-items: center; justify-content: center; padding: 1rem; }
+#album-modal.hidden { display: none !important; }
+#album-modal { display: flex; align-items: center; justify-content: center; padding: 1rem; }
 </style>

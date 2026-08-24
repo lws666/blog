@@ -17,7 +17,7 @@ export default defineSiteConfig({
   social: [
     {
       name: 'RSS',
-      link: '/atom.xml',
+      link: '/rss.xml',
       icon: 'i-ri-rss-line',
       color: 'orange',
     },

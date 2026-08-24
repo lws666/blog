@@ -27,6 +27,17 @@ export interface PostRow {
   updated_at: string
 }
 
+// Upload (album) row
+export interface UploadRow {
+  id: number
+  b2_key: string
+  filename: string
+  mime_type: string
+  size: number
+  url: string
+  created_at: string
+}
+
 // API response wrapper
 export interface ApiResponse<T = unknown> {
   success: boolean

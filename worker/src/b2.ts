@@ -37,6 +37,15 @@ export function createB2Client(env: {
     },
 
     /**
+     * Fetch a raw object from B2.
+     * Returns the upstream Response so binary bodies can be streamed
+     * straight through without buffering or re-encoding.
+     */
+    async get(key: string): Promise<Response> {
+      return client.fetch(objectUrl(key))
+    },
+
+    /**
      * Read a file from B2 as text.
      */
     async getText(key: string): Promise<string> {

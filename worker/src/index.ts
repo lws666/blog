@@ -6,6 +6,7 @@ import { createB2Client } from './b2'
 import { createPostsRouter } from './routes/posts'
 import { createUploadRouter } from './routes/upload'
 import { createAdminRouter } from './routes/admin'
+import { createAlbumRouter } from './routes/album'
 import { success, error as errRes } from './utils/response'
 import { parseFrontmatter } from './utils/markdown'
 
@@ -57,6 +58,7 @@ app.get('/api/indexnow-key.txt', (c) => {
 app.route('/api/posts', createPostsRouter())
 app.route('/api/upload', createUploadRouter())
 app.route('/api/admin', createAdminRouter())
+app.route('/api/album', createAlbumRouter())
 
 // ── SEO: sitemap.xml ──────────────────────────────────────────
 app.get('/sitemap.xml', async (c) => {

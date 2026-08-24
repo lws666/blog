@@ -1,4 +1,4 @@
-import type { PostRow } from './types'
+import type { PostRow, UploadRow } from './types'
 
 /**
  * Query helpers for Cloudflare D1.
@@ -201,6 +201,69 @@ export function createDb(db: D1Database) {
      */
     async deletePost(slug: string): Promise<boolean> {
       const res = await db.prepare('DELETE FROM posts WHERE slug = ?').bind(slug).run()
+      return res.success
+    },
+
+    /**
+     * Paginated upload (album) list, newest first.
+     */
+    async listUploads(params: { page: number; limit: number }) {
+      const { page, limit } = params
+      const offset = (page - 1) * limit
+
+      const countRow = await db
+        .prepare('SELECT COUNT(*) as total FROM uploads')
+        .first<{ total: number }>()
+
+      const total = countRow?.total ?? 0
+
+      const { results: uploads } = await db
+        .prepare('SELECT * FROM uploads ORDER BY id DESC LIMIT ? OFFSET ?')
+        .bind(limit, offset)
+        .all<UploadRow>()
+
+      return {
+        uploads,
+        pagination: { page, limit, total, total_pages: Math.ceil(total / limit) },
+      }
+    },
+
+    /**
+     * Get a single upload record by id.
+     */
+    async getUploadById(id: number): Promise<UploadRow | null> {
+      return db
+        .prepare('SELECT * FROM uploads WHERE id = ?')
+        .bind(id)
+        .first<UploadRow>()
+    },
+
+    /**
+     * Insert an upload record. Returns the new row id.
+     */
+    async insertUpload(data: {
+      b2_key: string
+      filename: string
+      mime_type: string
+      size: number
+      url: string
+    }): Promise<number> {
+      const res = await db
+        .prepare(`
+          INSERT INTO uploads (b2_key, filename, mime_type, size, url)
+          VALUES (?, ?, ?, ?, ?)
+        `)
+        .bind(data.b2_key, data.filename, data.mime_type, data.size, data.url)
+        .run()
+
+      return Number(res.meta?.last_row_id ?? 0)
+    },
+
+    /**
+     * Delete an upload record by id.
+     */
+    async deleteUpload(id: number): Promise<boolean> {
+      const res = await db.prepare('DELETE FROM uploads WHERE id = ?').bind(id).run()
       return res.success
     },
 

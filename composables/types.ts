@@ -29,6 +29,8 @@ export interface ApiPostItem {
 export interface ApiPostDetail extends ApiPostItem {
   content: string
   frontmatter: Record<string, unknown>
+  /** AI-generated summary ('' when not generated) */
+  summary?: string
   /** Enable/disable comments (default: true) */
   comment?: boolean
 }
@@ -74,6 +76,8 @@ export interface Post {
 // Post detail with markdown content
 export interface PostDetail extends Post {
   content: string
+  /** AI-generated summary ('' when not generated) */
+  summary?: string
   /** Enable/disable comments (default: true) */
   comment?: boolean
 }

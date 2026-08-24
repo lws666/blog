@@ -67,6 +67,47 @@
                   <div>DESCRIPTION<textarea v-model="fmDescription" class="config-input mt-1 h-16"></textarea></div>
                 </div>
               </section>
+
+              <!-- AI summary -->
+              <section class="glass-card p-5 space-y-3 mt-4">
+                <h3 class="text-xs font-bold text-blue-400 uppercase border-b border-white/10 pb-2">
+                  AI 摘要
+                </h3>
+
+                <p v-if="!currentSlug" class="text-[10px] opacity-40 leading-relaxed">
+                  请先从「文章管理」打开一篇已发布的文章，或先上传本文，然后再生成摘要。
+                </p>
+
+                <template v-else>
+                  <textarea
+                    v-model="fmSummary"
+                    class="config-input h-24 leading-relaxed"
+                    placeholder="点击下方按钮用 Workers AI 生成，也可手动编辑"
+                  ></textarea>
+
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <button
+                      class="bg-blue-600/30 hover:bg-blue-600 px-3 py-1.5 rounded text-[10px] font-bold transition-all disabled:opacity-40"
+                      :disabled="summaryLoading"
+                      @click="generateSummary"
+                    >
+                      {{ summaryLoading ? '生成中...' : '✨ AI 生成' }}
+                    </button>
+                    <button
+                      class="bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded text-[10px] transition-all disabled:opacity-40"
+                      :disabled="summarySaving || summaryLoading"
+                      @click="saveSummary"
+                    >
+                      {{ summarySaving ? '保存中...' : '💾 保存' }}
+                    </button>
+                    <span class="text-[10px] opacity-40 ml-auto">{{ fmSummary.length }} 字</span>
+                  </div>
+
+                  <p v-if="summaryMsg" class="text-[10px]" :class="summaryErr ? 'text-red-400' : 'text-green-400'">
+                    {{ summaryMsg }}
+                  </p>
+                </template>
+              </section>
             </div>
 
             <!-- Editor -->
@@ -235,6 +276,13 @@ const fmCategory = ref('')
 const fmImage = ref('')
 const fmTags = ref('')
 const fmDescription = ref('')
+const fmSummary = ref('')
+
+// ── AI summary state ──────────────────────────────────────────────
+const summaryLoading = ref(false)
+const summarySaving = ref(false)
+const summaryMsg = ref('')
+const summaryErr = ref(false)
 
 const currentSlug = ref('')
 const saveStatus = ref('就绪')
@@ -391,6 +439,7 @@ async function loadArticle(article: { slug: string }) {
       excerpt: string
       content: string
       draft: boolean
+      summary: string
     }>(`/admin/posts/${article.slug}`)
 
     fmTitle.value = data.title || ''
@@ -399,7 +448,10 @@ async function loadArticle(article: { slug: string }) {
     fmImage.value = data.cover || ''
     fmTags.value = data.tags?.join(', ') || ''
     fmDescription.value = data.excerpt || ''
+    fmSummary.value = data.summary || ''
     currentSlug.value = data.slug
+    summaryMsg.value = ''
+    summaryErr.value = false
 
     if (vditor) {
       const body = extractMarkdownBody(data.content || '')
@@ -426,6 +478,55 @@ async function deleteArticle(article: { slug: string; title: string }) {
     alert('已删除')
   } catch (e) {
     alert('删除失败: ' + (e as Error).message)
+  }
+}
+
+// ── AI summary ─────────────────────────────────────────────────────
+/** Generate a summary via Workers AI (result is cached in D1 server-side) */
+async function generateSummary() {
+  if (!currentSlug.value) return
+
+  summaryLoading.value = true
+  summaryMsg.value = ''
+  summaryErr.value = false
+
+  try {
+    const data = await apiAdminPost<{ summary: string; model: string; neurons: number }>(
+      `/admin/posts/${currentSlug.value}/summary`,
+      {},
+    )
+    fmSummary.value = data.summary
+    summaryMsg.value = `已生成并保存（${data.model.split('/').pop()} · ${data.neurons.toFixed(1)} neurons）`
+  } catch (e) {
+    summaryErr.value = true
+    summaryMsg.value = '生成失败: ' + (e as Error).message
+  } finally {
+    summaryLoading.value = false
+  }
+}
+
+/** Save a manually edited summary */
+async function saveSummary() {
+  if (!currentSlug.value) return
+
+  summarySaving.value = true
+  summaryMsg.value = ''
+  summaryErr.value = false
+
+  try {
+    const res = await fetch(`${API_BASE}/admin/posts/${currentSlug.value}/summary`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({ summary: fmSummary.value }),
+    })
+    const data = await res.json()
+    if (!data.success) throw new Error(data.error || `API error: ${res.status}`)
+    summaryMsg.value = '已保存'
+  } catch (e) {
+    summaryErr.value = true
+    summaryMsg.value = '保存失败: ' + (e as Error).message
+  } finally {
+    summarySaving.value = false
   }
 }
 

@@ -7,7 +7,7 @@
  *   // Call refresh(slug) when slug changes
  */
 
-import { ref, computed } from 'vue'
+import { ref, computed, type Ref } from 'vue'
 import { apiGet } from './api'
 import type { ApiPostDetail, PostDetail } from './types'
 
@@ -46,6 +46,7 @@ export function useDynamicPost() {
         hide: data.hide || '',
         draft: false,
         comment: data.comment !== undefined ? data.comment : true,
+        summary: data.summary || '',
         content: data.content || '',
       }
     } catch (e) {

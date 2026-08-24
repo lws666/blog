@@ -205,6 +205,17 @@ export function createDb(db: D1Database) {
     },
 
     /**
+     * Update only the cached AI summary for a post.
+     */
+    async updateSummary(slug: string, summary: string): Promise<boolean> {
+      const res = await db
+        .prepare('UPDATE posts SET summary = ? WHERE slug = ?')
+        .bind(summary, slug)
+        .run()
+      return res.success
+    },
+
+    /**
      * Paginated upload (album) list, newest first.
      */
     async listUploads(params: { page: number; limit: number }) {

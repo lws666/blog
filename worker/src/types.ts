@@ -22,6 +22,7 @@ export interface PostRow {
   pinned: number        // 0 or 1
   b2_key: string
   content: string | null
+  summary: string       // AI 生成的摘要（'' = 未生成）
   frontmatter: string   // JSON object string
   created_at: string
   updated_at: string
@@ -71,6 +72,8 @@ export interface PostListItem {
 // Post detail API output (with content)
 export interface PostDetail extends PostListItem {
   content: string
+  /** AI-generated summary ('' when not generated) */
+  summary: string
   frontmatter: Record<string, unknown>
   /** Enable/disable comments (true by default) */
   comment: boolean

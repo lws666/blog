@@ -3,6 +3,7 @@ import { createDb } from '../db'
 import { createB2Client } from '../b2'
 import { createAuthMiddleware } from '../middleware/auth'
 import { success, badRequest, notFound, error as errRes } from '../utils/response'
+import { summarizePost } from '../ai'
 import { notifyIndexNow } from '../index'
 import type { Env } from '../index'
 
@@ -192,7 +193,78 @@ export function createAdminRouter() {
         draft: row.draft === 1,
         hide: row.hide,
         content,
+        summary: row.summary || '',
       })
+    } catch (e) {
+      return errRes((e as Error).message)
+    }
+  })
+
+  // ── POST /posts/:slug/summary — generate AI summary ─────────
+  router.post('/posts/:slug/summary', async (c) => {
+    try {
+      const db = createDb(c.env.DB)
+      const b2 = createB2Client(c.env)
+      const slug = c.req.param('slug')
+
+      if (!slug || slug.includes('/')) {
+        return badRequest('Invalid slug')
+      }
+
+      const row = await db.getPostBySlugAdmin(slug)
+      if (!row) {
+        return notFound('Post not found')
+      }
+
+      // Prefer the D1 copy, fall back to B2
+      let content = row.content ?? ''
+      if (!content && row.b2_key) {
+        content = await b2.getText(row.b2_key)
+      }
+
+      if (!content.trim()) {
+        return badRequest('Post has no content to summarise')
+      }
+
+      const result = await summarizePost(c.env.AI, { title: row.title, content })
+
+      // Cache it so readers never wait on inference
+      await db.updateSummary(slug, result.summary)
+
+      return success({
+        slug,
+        summary: result.summary,
+        model: result.model,
+        neurons: result.neurons,
+      })
+    } catch (e) {
+      return errRes((e as Error).message)
+    }
+  })
+
+  // ── PUT /posts/:slug/summary — save an edited summary ───────
+  router.put('/posts/:slug/summary', async (c) => {
+    try {
+      const db = createDb(c.env.DB)
+      const slug = c.req.param('slug')
+
+      if (!slug || slug.includes('/')) {
+        return badRequest('Invalid slug')
+      }
+
+      const body = await c.req.json<{ summary?: string }>()
+      if (typeof body.summary !== 'string') {
+        return badRequest('summary must be a string')
+      }
+
+      const row = await db.getPostBySlugAdmin(slug)
+      if (!row) {
+        return notFound('Post not found')
+      }
+
+      await db.updateSummary(slug, body.summary.trim())
+
+      return success({ slug, summary: body.summary.trim() })
     } catch (e) {
       return errRes((e as Error).message)
     }

@@ -26,6 +26,9 @@ CREATE TABLE IF NOT EXISTS posts (
   b2_key     TEXT NOT NULL DEFAULT '',       -- B2 对象键: posts/{slug}/index.md
   content    TEXT DEFAULT NULL,              -- Markdown 原文（迁移兼容，后续可移除）
 
+  -- AI
+  summary    TEXT DEFAULT '',                -- Workers AI 生成的摘要（缓存，空=未生成）
+
   -- 额外前体字段兜底
   frontmatter TEXT DEFAULT '{}',             -- JSON: 未被独立列覆盖的任意前体字段
 

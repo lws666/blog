@@ -82,6 +82,7 @@ export function createPostsRouter() {
         hide: row.hide,
         comment: row.comment !== 0,
         content,
+        summary: row.summary || '',
         frontmatter: safeJsonParse<Record<string, unknown>>(row.frontmatter, {}),
       }
 

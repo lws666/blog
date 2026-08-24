@@ -14,6 +14,10 @@ binding = "DB"
 database_name = "blog"
 database_id = "d894eec2-4dc8-473a-92ca-efe3c13261de"
 
+# ---- Workers AI (article summaries) ----
+[ai]
+binding = "AI"
+
 # ---- Environment Variables (set via wrangler secret) ----
 # B2_ACCESS_KEY_ID
 # B2_SECRET_ACCESS_KEY

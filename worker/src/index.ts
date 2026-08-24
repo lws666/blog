@@ -13,6 +13,8 @@ import { parseFrontmatter } from './utils/markdown'
 // ── Environment bindings (set via wrangler.toml + secrets) ────
 export interface Env {
   DB: D1Database
+  /** Workers AI binding (see [ai] in wrangler.toml) */
+  AI: Ai
   B2_ENDPOINT: string
   B2_REGION: string
   B2_BUCKET: string

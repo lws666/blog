@@ -3,7 +3,7 @@
     <!-- ── Lock screen ────────────────────────────────────────── -->
     <div id="lock-screen" :class="{ 'hidden-lock': unlocked }">
       <div class="glass-card p-10 text-center space-y-6 w-[85%] max-w-sm">
-        <h2 class="text-2xl font-bold text-blue-400">Mizuki Admin</h2>
+        <h2 class="text-2xl font-bold text-blue-400">valaxy admin</h2>
         <input
           v-model="tokenInput"
           type="password"

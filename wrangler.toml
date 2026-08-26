@@ -17,3 +17,8 @@ enabled = true
 [assets]
 directory = "dist"
 binding = "ASSETS"
+# By default Cloudflare's asset server answers before the Worker runs, so `/`
+# was always served as dist/index.html and the crawler pre-render branch in
+# src/index.js could never fire. Run the Worker first for the homepage only,
+# leaving every other asset on the fast static path.
+run_worker_first = [ "/" ]

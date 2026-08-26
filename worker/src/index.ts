@@ -265,6 +265,14 @@ function buildHomeHtml(posts?: Array<{ slug: string; title: string; date: string
     ul{list-style:none;padding:0}
     li{margin:.6em 0;line-height:1.6}
     small{color:#999;font-size:.85em}
+    /* Mobile: keep the crawler render compact at 412px (Googlebot smartphone) */
+    @media (max-width:640px){
+      body{padding:12px;line-height:1.7;font-size:15px}
+      h1{font-size:1.6em}
+      h2{font-size:1.2em;margin-top:1.2em}
+      .desc{font-size:1em;margin-bottom:1.2em}
+      li{margin:.4em 0}
+    }
   </style>
 </head>
 <body>
@@ -382,6 +390,20 @@ function buildPostHtml(data: {
     .content h2{border-bottom:1px solid #eee;padding-bottom:.3em}
     .content ul,.content ol{padding-left:1.5em}
     .content li{margin:.3em 0}
+    /* Mobile: the desktop spacing above (20px padding, 2em hr margins,
+       1.8 line-height) makes Googlebot's 412px-wide smartphone render a
+       needlessly tall page. Match the live site's mobile metrics instead. */
+    @media (max-width:640px){
+      body{padding:12px;line-height:1.7;font-size:15px}
+      h1{font-size:1.5em}
+      h2,h3{margin-top:1.2em}
+      hr{margin:1.2em 0}
+      pre{padding:12px;font-size:.85em}
+      blockquote{margin:.8em 0;padding:2px 12px}
+      .meta{margin-bottom:1.2em}
+      .content ul,.content ol{padding-left:1.2em}
+      th,td{padding:6px 8px}
+    }
   </style>
 </head>
 <body>

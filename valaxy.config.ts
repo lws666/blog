@@ -27,6 +27,10 @@ export default defineValaxyConfig<UserThemeConfig>({
       title: 'lwsの博客',
     },
 
+    // 文章目录收录的标题层级（Valaxy 默认 [2, 4]）
+    // 文章多用 h1 作主标题，默认值会把它们全部排除，故放宽到 h1
+    outline: [1, 3],
+
     // 音乐播放器（自建 Meting API）
     // 换歌单只需改 id：网易云歌单页 URL 里 playlist?id= 后面的数字
     music: {

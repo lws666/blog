@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, computed, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
-import { useSiteConfig } from 'valaxy'
+import { useSiteConfig, runContentUpdated } from 'valaxy'
 import { useHead } from '@unhead/vue'
 import type { MarkdownIt } from 'markdown-it'
 import { useDynamicPost } from '../../composables/useDynamicPost'
@@ -84,6 +84,30 @@ function removeFrontmatter(content: string): string {
   return content.replace(/^---[\s\S]*?---\s*/, '')
 }
 
+/**
+ * Heading -> anchor id.
+ *
+ * Copied from Valaxy's own slugify (packages/valaxy/src/slugify.ts) so that
+ * anchors on dynamic posts are identical to the ones generated for static
+ * posts at build time.
+ */
+const rControl = /[\u0000-\u001F]/g
+// eslint-disable-next-line no-useless-escape
+const rSpecial = /[\s~`!@#$%^&*()\-_+=[\]{}|\\;:"'“”‘’<>,.?/]+/g
+const rCombining = /[\u0300-\u036F]/g
+
+function slugify(str: string): string {
+  return str
+    .normalize('NFKD')
+    .replace(rCombining, '')
+    .replace(rControl, '')
+    .replace(rSpecial, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/^(\d)/, '_$1')
+    .toLowerCase()
+}
+
 // Fetch post when slug changes (immediate triggers on mount)
 watch(
   () => route.params.slug as string,
@@ -93,20 +117,42 @@ watch(
 
 // Dynamically import markdown-it on mount
 onMounted(async () => {
-  const markdownit = await import('markdown-it')
-  md.value = markdownit.default({
+  const [markdownit, anchor] = await Promise.all([
+    import('markdown-it'),
+    import('markdown-it-anchor'),
+  ])
+  const mdInstance = markdownit.default({
     html: true,
     linkify: true,
     typographer: true,
   })
+
+  // Headings need `id` attributes, otherwise the theme's TOC drops them:
+  // useOutline() filters with `el => !!el.id`. Static posts get these from
+  // Valaxy's build-time pipeline; dynamic (D1) posts are rendered here, so
+  // the anchor plugin has to be applied explicitly.
+  mdInstance.use(anchor.default, {
+    // Same algorithm Valaxy uses at build time, so anchors/links match.
+    slugify,
+    level: [1, 2, 3, 4, 5, 6],
+  })
+
+  md.value = mdInstance
 })
 
 // Render markdown when both content and md instance are ready
 watch(
   [() => post.value?.content, md],
-  ([content, mdInstance]) => {
+  async ([content, mdInstance]) => {
     if (content && mdInstance) {
       html.value = mdInstance.render(removeFrontmatter(content))
+
+      // The theme's TOC is built by useOutline(), which only recomputes on
+      // Valaxy's `onContentUpdated` hook. That hook fires for build-time
+      // content; our HTML lands asynchronously, so tell Valaxy to re-scan
+      // the DOM once the new headings are actually painted.
+      await nextTick()
+      runContentUpdated()
     }
   },
   { immediate: true },

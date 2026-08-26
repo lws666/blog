@@ -6,7 +6,7 @@
 
 项目根目录：
 
-/home/lwsnb555555/blog
+/home/lws666/blog
 
 核心技术：
 

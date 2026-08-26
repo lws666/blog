@@ -34,7 +34,7 @@ export default defineValaxyConfig<UserThemeConfig>({
       api: 'https://music.lwsnb.dpdns.org',
       server: 'netease', // netease | tencent
       type: 'playlist', // playlist | song | album | artist
-      id: '60198', // 示例歌单，替换成你自己的
+      id: '18318692237', // https://music.163.com/m/playlist?id=18318692237
       title: '音乐',
     },
 

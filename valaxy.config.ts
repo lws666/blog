@@ -27,6 +27,17 @@ export default defineValaxyConfig<UserThemeConfig>({
       title: 'lwsの博客',
     },
 
+    // 音乐播放器（自建 Meting API）
+    // 换歌单只需改 id：网易云歌单页 URL 里 playlist?id= 后面的数字
+    music: {
+      enable: true,
+      api: 'https://music.lwsnb.dpdns.org',
+      server: 'netease', // netease | tencent
+      type: 'playlist', // playlist | song | album | artist
+      id: '60198', // 示例歌单，替换成你自己的
+      title: '音乐',
+    },
+
     // 保留你原本的页面配置
     pages: [
       {

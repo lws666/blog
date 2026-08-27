@@ -50,3 +50,6 @@ worker/node_modules/
 .dev.vars*
 !.dev.vars.example
 !.env.example
+
+# DSH harness workspace (never commit)
+.dsh/

@@ -4,12 +4,25 @@ import type { ValaxySSGContext } from 'valaxy/client/setups'
  * Seed dynamic post routes into Vue Router on client startup.
  * This enables usePageList() / site.postList / useTags() / useCategories()
  * to see dynamically fetched posts without modifying any layout.
+ *
+ * IMPORTANT — why the first navigation is gated on the seeding:
+ * page-level computeds (usePageList → useTags / useCategories / nav post
+ * counts) read `router.getRoutes()`, which is NOT reactive. If such a
+ * computed evaluates before the dynamic routes below are registered, it
+ * caches an empty list FOREVER — a later addRoute() never invalidates it.
+ * Blocking the very first navigation until seeding finishes guarantees
+ * every page mounts with the routes already in place. Without this,
+ * /tags/, /categories/, /archives/ and the nav counts render empty on a
+ * hard load and only recover after an SPA re-navigation.
  */
 export default function setupDynamicRoutes(ctx: ValaxySSGContext) {
   if (!ctx.isClient) return
 
-  // Defer to avoid blocking initial render
-  setTimeout(async () => {
+  let seeded = false
+
+  // Start immediately (setup runs after app.use(router) but before the
+  // initial navigation resolves, so this races the fetch against first paint).
+  const seeding = (async () => {
     try {
       const apiBase = 'https://api.lwsnb.dpdns.org/api'
 
@@ -68,6 +81,18 @@ export default function setupDynamicRoutes(ctx: ValaxySSGContext) {
       }
     } catch (e) {
       console.warn('[dynamic-routes] seed failed:', (e as Error).message)
+    } finally {
+      seeded = true
     }
-  }, 100)
+  })()
+
+  // Gate only the first navigation; afterwards the guard is a no-op.
+  // A 3s timeout keeps the site usable if the API is unreachable —
+  // the page then renders without dynamic posts (same as the old
+  // behaviour), and SPA navigations still pick the routes up once
+  // the fetch eventually settles.
+  ctx.router.beforeEach(async () => {
+    if (seeded) return
+    await Promise.race([seeding, new Promise(r => setTimeout(r, 3000))])
+  })
 }

@@ -24,11 +24,17 @@ useHead(() => {
   const authorUrl = siteConfig.value.author?.avatar || undefined
 
   return {
+    // Document title — composed by valaxy's global titleTemplate
+    // ("{title} - {siteTitle}"). Previously only og:/twitter: were set,
+    // so the tab title stayed the generic site title.
+    title: p.title,
     // Canonical URL
     link: [
       { rel: 'canonical', href: postUrl },
     ],
     meta: [
+      // Per-post description (global head only falls back to the site one)
+      { name: 'description', content: desc },
       // Override og:type to 'article' for blog posts
       { property: 'og:type', content: 'article' },
       { property: 'og:url', content: postUrl },

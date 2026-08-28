@@ -171,13 +171,12 @@ onBeforeUnmount(() => {
 <style lang="scss">
 .yun-music {
   position: fixed;
-  left: 1rem;
-  bottom: 1rem;
-  /* Below the theme's own go-up button (z 20) so it never covers it */
+  right: 1rem;
+  bottom: 4.5rem; /* above the theme's back-to-top button (right, bottom:1rem) */
   z-index: 15;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: flex-end;
   gap: 0.5rem;
 }
 
@@ -286,8 +285,8 @@ onBeforeUnmount(() => {
 
 @media (max-width: 768px) {
   .yun-music {
-    left: 0.75rem;
-    bottom: 0.75rem;
+    right: 0.75rem;
+    bottom: 4.25rem;
   }
 }
 </style>

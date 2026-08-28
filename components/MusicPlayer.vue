@@ -12,7 +12,10 @@
  *  - Client-only: APlayer touches window/document, so it is imported
  *    dynamically after mount and the whole thing lives behind <ClientOnly>.
  */
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
 
 interface Song {
   title: string
@@ -122,12 +125,46 @@ function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape' && open.value) open.value = false
 }
 
+/**
+ * The theme renders a right-side TOC aside (.yun-aside) on article and
+ * listing pages. On long articles it reaches the viewport bottom on the
+ * right — together with the back-to-top button there is no room left for
+ * this player. When detected, the player flips to the BOTTOM-LEFT corner
+ * (its original position) instead of overlapping the TOC.
+ */
+const tocAvoid = ref(false)
+
+function updateTocAvoid() {
+  const aside = document.querySelector('.yun-aside')
+  if (!aside) {
+    tocAvoid.value = false
+    return
+  }
+  const asideBottom = aside.getBoundingClientRect().bottom
+  const vh = window.innerHeight
+  // The player's default resting row occupies the last ~112px of viewport
+  // height (button 40px + bottom offset 72px). If the aside descends into
+  // that band, the right corner is full.
+  tocAvoid.value = asideBottom > vh - 112
+}
+
+const onResize = () => updateTocAvoid()
+
 onMounted(() => {
   document.addEventListener('keydown', onKeydown)
+  window.addEventListener('resize', onResize)
+  // Wait for the page (and its aside) to render, then keep in sync on nav
+  setTimeout(updateTocAvoid, 300)
+  setTimeout(updateTocAvoid, 1200)
+  watch(() => route.path, () => {
+    setTimeout(updateTocAvoid, 300)
+    setTimeout(updateTocAvoid, 1200)
+  })
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('resize', onResize)
   // Release the audio element so navigating away cannot keep sound running
   player?.destroy?.()
   player = null
@@ -135,7 +172,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="yun-music" :class="{ 'is-open': open }">
+  <div class="yun-music" :class="{ 'is-open': open, 'toc-avoid': tocAvoid }">
     <!-- Panel -->
     <transition name="yun-music-fade">
       <section v-show="open" class="yun-music-panel" aria-label="音乐播放器">
@@ -178,6 +215,14 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: flex-end;
   gap: 0.5rem;
+
+  /* Right corner is full (long TOC aside + back-to-top): flip to bottom-left */
+  &.toc-avoid {
+    right: auto;
+    left: 1rem;
+    bottom: 1rem;
+    align-items: flex-start;
+  }
 }
 
 .yun-music-btn {

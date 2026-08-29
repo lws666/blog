@@ -20,6 +20,27 @@
         >
           {{ unlocking ? '验证中...' : '解锁进入' }}
         </button>
+
+        <!-- GitHub OAuth login (visible once the worker reports a client_id) -->
+        <template v-if="githubConfigured">
+          <div class="flex items-center gap-3 text-white/30 text-xs select-none">
+            <span class="flex-1 h-px bg-white/10" />
+            或
+            <span class="flex-1 h-px bg-white/10" />
+          </div>
+          <button
+            id="github-login-btn"
+            class="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold
+                   bg-[#24292f] hover:bg-[#32383f] transition-all disabled:opacity-50"
+            :disabled="unlocking"
+            @click="githubLogin"
+          >
+            <svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" aria-hidden="true">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
+            </svg>
+            {{ unlocking ? '登录中...' : '使用 GitHub 登录' }}
+          </button>
+        </template>
       </div>
     </div>
 
@@ -331,6 +352,81 @@ async function unlock() {
   }
 }
 
+// ── GitHub OAuth login ─────────────────────────────────────────────
+const GITHUB_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
+const ADMIN_URL = 'https://www.lwsnb.dpdns.org/admin/'
+
+const githubConfigured = ref(false)
+const githubClientId = ref('')
+
+/** Ask the worker whether a GitHub OAuth app is linked (public value) */
+async function checkGithubConfig() {
+  try {
+    const res = await fetch(`${API_BASE}/auth/github/config`)
+    const data = await res.json()
+    githubClientId.value = data?.data?.client_id || ''
+  } catch {
+    githubClientId.value = ''
+  }
+  githubConfigured.value = !!githubClientId.value
+}
+
+/** Redirect to GitHub. The OAuth app requests NO scope (public data only). */
+function githubLogin() {
+  // crypto.randomUUID needs a secure context + modern browser; fall back
+  const state = crypto.randomUUID?.() || `gh-${Date.now()}-${Math.random().toString(36).slice(2)}`
+  sessionStorage.setItem('gh_oauth_state', state)
+  const url = `${GITHUB_AUTHORIZE_URL}?client_id=${encodeURIComponent(githubClientId.value)}`
+    + `&redirect_uri=${encodeURIComponent(ADMIN_URL)}&state=${state}`
+  window.location.href = url
+}
+
+/**
+ * Handle the OAuth callback (?code=…&state=… on /admin/). Exchanges the
+ * code via the worker, which verifies the GitHub identity server-side.
+ * Returns true if a callback was present (URL is cleaned either way).
+ */
+async function handleGithubCallback(): Promise<boolean> {
+  const params = new URLSearchParams(window.location.search)
+  const code = params.get('code')
+  if (!code) return false
+
+  // Strip the query from the URL immediately (refresh-safe, no history entry)
+  window.history.replaceState({}, '', ADMIN_URL)
+
+  const state = params.get('state')
+  const saved = sessionStorage.getItem('gh_oauth_state')
+  sessionStorage.removeItem('gh_oauth_state')
+  if (!state || !saved || state !== saved) {
+    lockError.value = '登录状态校验失败，请重新点击 GitHub 登录'
+    return true
+  }
+
+  unlocking.value = true
+  lockError.value = ''
+  try {
+    const res = await fetch(`${API_BASE}/auth/github`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    })
+    const data = await res.json()
+    if (!data.success) throw new Error(data.error || 'GitHub 登录失败')
+
+    sessionStorage.setItem('admin_token', data.data.token)
+    sessionStorage.setItem('pub_auth', '1')
+    unlocked.value = true
+
+    await nextTick()
+    initVditor()
+  } catch (e) {
+    lockError.value = (e as Error).message
+  } finally {
+    unlocking.value = false
+  }
+  return true
+}
+
 // ── Vditor init (lazy, client-only) ────────────────────────────────
 async function initVditor() {
   try {
@@ -577,6 +673,10 @@ onMounted(async () => {
     unlocked.value = true
     await nextTick()
     initVditor()
+  } else {
+    // OAuth callback (?code=…&state=…) beats everything else
+    const wasCallback = await handleGithubCallback()
+    if (!wasCallback) checkGithubConfig()
   }
 
   mounted.value = true

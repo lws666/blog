@@ -7,6 +7,7 @@ import { createPostsRouter } from './routes/posts'
 import { createUploadRouter } from './routes/upload'
 import { createAdminRouter } from './routes/admin'
 import { createAlbumRouter } from './routes/album'
+import { createAuthRouter } from './routes/auth'
 import { success, error as errRes } from './utils/response'
 import { parseFrontmatter } from './utils/markdown'
 
@@ -23,6 +24,9 @@ export interface Env {
   UPLOAD_TOKEN: string
   /** Optional IndexNow API key (UUID). Set via `wrangler secret put INDEXNOW_KEY` */
   INDEXNOW_KEY?: string
+  /** GitHub OAuth app (admin "Sign in with GitHub"). Secret via `wrangler secret put GITHUB_CLIENT_SECRET` */
+  GITHUB_CLIENT_ID?: string
+  GITHUB_CLIENT_SECRET?: string
 }
 
 // ── App ───────────────────────────────────────────────────────
@@ -57,6 +61,9 @@ app.get('/api/indexnow-key.txt', (c) => {
 })
 
 // ── Route groups ──────────────────────────────────────────────
+// Auth router first: /api/auth/github does its own access control
+// (GitHub OAuth identity check) and must bypass the Bearer middleware.
+app.route('/api/auth', createAuthRouter())
 app.route('/api/posts', createPostsRouter())
 app.route('/api/upload', createUploadRouter())
 app.route('/api/admin', createAdminRouter())

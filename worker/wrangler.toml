@@ -28,6 +28,5 @@ binding = "AI"
 B2_ENDPOINT = "https://s3.us-east-005.backblazeb2.com"
 B2_REGION = "us-east-005"
 B2_BUCKET = "Valaxy"
-# GitHub OAuth app client id for admin login (public value;
-# set to "" until the OAuth app is created)
-GITHUB_CLIENT_ID = ""
+# GitHub OAuth app client id for admin login (public value)
+GITHUB_CLIENT_ID = "Ov23liXqF7L1tfiBieVr"

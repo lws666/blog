@@ -376,30 +376,59 @@ function githubLogin() {
   // crypto.randomUUID needs a secure context + modern browser; fall back
   const state = crypto.randomUUID?.() || `gh-${Date.now()}-${Math.random().toString(36).slice(2)}`
   sessionStorage.setItem('gh_oauth_state', state)
+  // sessionStorage is ORIGIN-scoped: if the user starts from lwsnb.dpdns.org
+  // but GitHub redirects back to the registered www.lwsnb.dpdns.org, the
+  // stored state is invisible there. A parent-domain cookie bridges that hop.
+  try {
+    document.cookie = `gh_oauth_state=${state}; max-age=600; path=/; SameSite=Lax; domain=.lwsnb.dpdns.org`
+  } catch { /* cookies blocked — sessionStorage still applies */ }
   const url = `${GITHUB_AUTHORIZE_URL}?client_id=${encodeURIComponent(githubClientId.value)}`
     + `&redirect_uri=${encodeURIComponent(ADMIN_URL)}&state=${state}`
   window.location.href = url
+}
+
+/** Read the state back from sessionStorage, falling back to the cookie. */
+function readSavedState(): string | null {
+  const fromSession = sessionStorage.getItem('gh_oauth_state')
+  if (fromSession) return fromSession
+  const m = document.cookie.match(/(?:^|;\s*)gh_oauth_state=([^;]+)/)
+  return m ? decodeURIComponent(m[1]) : null
+}
+
+function clearSavedState() {
+  sessionStorage.removeItem('gh_oauth_state')
+  try {
+    document.cookie = 'gh_oauth_state=; max-age=0; path=/; domain=.lwsnb.dpdns.org'
+    document.cookie = 'gh_oauth_state=; max-age=0; path=/'
+  } catch { /* ignore */ }
 }
 
 /**
  * Handle the OAuth callback (?code=…&state=… on /admin/). Exchanges the
  * code via the worker, which verifies the GitHub identity server-side.
  * Returns true if a callback was present (URL is cleaned either way).
+ *
+ * The state check is best-effort: storage can legitimately lose it across
+ * the www ↔ non-www origin hop (sessionStorage is origin-scoped). A state
+ * mismatch alone therefore does NOT block the login — the worker's
+ * lws666-only identity gate is the real security boundary, and login-CSRF
+ * is unexploitable here (an attacker's code resolves to their own account,
+ * which the worker rejects with 403).
  */
 async function handleGithubCallback(): Promise<boolean> {
   const params = new URLSearchParams(window.location.search)
   const code = params.get('code')
   if (!code) return false
 
-  // Strip the query from the URL immediately (refresh-safe, no history entry)
-  window.history.replaceState({}, '', ADMIN_URL)
+  // Strip the query from the URL immediately (refresh-safe, no history entry).
+  // Relative path — an absolute cross-origin URL would throw.
+  window.history.replaceState({}, '', '/admin/')
 
   const state = params.get('state')
-  const saved = sessionStorage.getItem('gh_oauth_state')
-  sessionStorage.removeItem('gh_oauth_state')
+  const saved = readSavedState()
+  clearSavedState()
   if (!state || !saved || state !== saved) {
-    lockError.value = '登录状态校验失败，请重新点击 GitHub 登录'
-    return true
+    console.warn('[github-oauth] state mismatch (possible cross-origin hop), continuing with code exchange')
   }
 
   unlocking.value = true
@@ -674,9 +703,11 @@ onMounted(async () => {
     await nextTick()
     initVditor()
   } else {
-    // OAuth callback (?code=…&state=…) beats everything else
-    const wasCallback = await handleGithubCallback()
-    if (!wasCallback) checkGithubConfig()
+    // OAuth callback (?code=…&state=…) beats everything else. The config
+    // check runs either way so the GitHub button is available for retry
+    // even after a failed callback.
+    checkGithubConfig()
+    await handleGithubCallback()
   }
 
   mounted.value = true

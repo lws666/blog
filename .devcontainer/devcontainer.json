@@ -3,9 +3,7 @@
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
   "features": {
     "ghcr.io/devcontainers/features/node:1": { "version": "22" },
-    "ghcr.io/devcontainers/features/github-cli:1": {},
-    // 仍需 gcloud 则保留此行, 不需要则删除以加快构建
-    "ghcr.io/devcontainers/features/google-cloud-cli:1": {}
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
   "forwardPorts": [3080, 3081, 8407],
   "portsAttributes": {

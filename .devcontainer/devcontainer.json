@@ -8,7 +8,8 @@
   "forwardPorts": [3080, 3081, 8407],
   "portsAttributes": {
     "3080": { "label": "DSH (direct)", "onAutoForward": "ignore" },
-    "3081": { "label": "DSH (rewrite proxy)", "onAutoForward": "openBrowser" },
+    // 3081 不让 GitHub 自动开浏览器 (裸地址会 401); dsh-start.sh 会用 gp preview 打开带 token 的地址
+    "3081": { "label": "DSH (rewrite proxy)", "onAutoForward": "ignore" },
     "8407": { "label": "AgentRouter egress", "onAutoForward": "ignore" }
   },
   // build-essential + python3: 首次 npx 安装 @deepseek-ai/dsh 需现场编译 node-pty

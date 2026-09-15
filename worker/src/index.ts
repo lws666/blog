@@ -514,11 +514,23 @@ app.get('/posts/:slug', async (c) => {
       const alt = token.content || row.title || ''
       return `<img src="${escapeXml(src)}" alt="${escapeXml(alt)}" loading="lazy">`
     }
-    let bodyHtml = md.render(fm.content)
 
-    // Strip the first <h1> from the rendered markdown to avoid
-    // duplicate h1 (the template already renders one via buildPostHtml).
-    bodyHtml = bodyHtml.replace(/<h1[^>]*>[\s\S]*?<\/h1>\s*/i, '')
+    // Demote every markdown heading by one level (# → h2, ## → h3, …) so
+    // the post title (rendered as h1 by the template) is the ONLY h1 on
+    // the page — search engines flag multiple h1s as an SEO issue (Bing
+    // URL Inspection reported 12). Posts here write sections with `#`,
+    // so all of them must shift down; the template styles h2/h3 already.
+    const env = {}
+    const tokens = md.parse(fm.content, env)
+    for (const t of tokens) {
+      if (t.type === 'heading_open' || t.type === 'heading_close') {
+        const level = Number(t.tag.slice(1))
+        if (level >= 1 && level <= 5) {
+          t.tag = `h${level + 1}`
+        }
+      }
+    }
+    const bodyHtml = md.renderer.render(tokens, md.options, env)
 
     // Parse tags/categories from JSON strings
     const tags = safeJsonParse<string[]>(row.tags, [])

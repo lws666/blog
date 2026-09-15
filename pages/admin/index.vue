@@ -244,7 +244,7 @@ function loadStyleSheet(href: string): void {
 }
 
 // ── API helpers ────────────────────────────────────────────────────
-const API_BASE = 'https://api.lwsnb.dpdns.org/api'
+const API_BASE = 'https://api.lwsnb.eu.cc/api'
 
 function getToken(): string {
   return sessionStorage.getItem('admin_token') || ''
@@ -354,6 +354,11 @@ async function unlock() {
 
 // ── GitHub OAuth login ─────────────────────────────────────────────
 const GITHUB_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
+// The OAuth app's registered Redirect URL is the OLD domain (OAuth apps
+// cannot be edited via API). The old host 301-redirects to the new one,
+// so the ?code= callback lands on www.lwsnb.eu.cc seamlessly. Once the
+// new URL (https://www.lwsnb.eu.cc/admin/) is added to the app settings,
+// this can point straight at the new domain.
 const ADMIN_URL = 'https://www.lwsnb.dpdns.org/admin/'
 
 const githubConfigured = ref(false)
@@ -376,11 +381,11 @@ function githubLogin() {
   // crypto.randomUUID needs a secure context + modern browser; fall back
   const state = crypto.randomUUID?.() || `gh-${Date.now()}-${Math.random().toString(36).slice(2)}`
   sessionStorage.setItem('gh_oauth_state', state)
-  // sessionStorage is ORIGIN-scoped: if the user starts from lwsnb.dpdns.org
-  // but GitHub redirects back to the registered www.lwsnb.dpdns.org, the
+  // sessionStorage is ORIGIN-scoped: if the user starts from lwsnb.eu.cc
+  // but GitHub redirects back to the registered www.lwsnb.eu.cc, the
   // stored state is invisible there. A parent-domain cookie bridges that hop.
   try {
-    document.cookie = `gh_oauth_state=${state}; max-age=600; path=/; SameSite=Lax; domain=.lwsnb.dpdns.org`
+    document.cookie = `gh_oauth_state=${state}; max-age=600; path=/; SameSite=Lax; domain=.lwsnb.eu.cc`
   } catch { /* cookies blocked — sessionStorage still applies */ }
   const url = `${GITHUB_AUTHORIZE_URL}?client_id=${encodeURIComponent(githubClientId.value)}`
     + `&redirect_uri=${encodeURIComponent(ADMIN_URL)}&state=${state}`
@@ -398,7 +403,7 @@ function readSavedState(): string | null {
 function clearSavedState() {
   sessionStorage.removeItem('gh_oauth_state')
   try {
-    document.cookie = 'gh_oauth_state=; max-age=0; path=/; domain=.lwsnb.dpdns.org'
+    document.cookie = 'gh_oauth_state=; max-age=0; path=/; domain=.lwsnb.eu.cc'
     document.cookie = 'gh_oauth_state=; max-age=0; path=/'
   } catch { /* ignore */ }
 }
@@ -491,7 +496,7 @@ async function initVditor() {
 function insertVideoTag() {
   const url = prompt('视频 URL:')
   if (!url) return
-  const poster = prompt('封面 URL:', 'https://img.lwsnb.dpdns.org/file/1770349301804_DefualtThumbnail.jpg.webp') || ''
+  const poster = prompt('封面 URL:', 'https://img.lwsnb.eu.cc/file/1770349301804_DefualtThumbnail.jpg.webp') || ''
   vditor.insertValue(`\n<video width="640" height="360" controls="" poster="${poster}">\n  <source src="${url}" type="video/mp4"/>\n  你的浏览器不支持 HTML5 视频。\n</video>\n`)
 }
 
@@ -725,7 +730,7 @@ onMounted(async () => {
   --bg-brightness: 0.3;
 }
 #body-root {
-  background-image: url('https://img.lwsnb.dpdns.org/file/1778339868119_1.png');
+  background-image: url('https://img.lwsnb.eu.cc/file/1778339868119_1.png');
   background-attachment: fixed;
   background-size: cover;
   background-position: center;

@@ -12,7 +12,7 @@
  */
 import { ref, computed, onMounted } from 'vue'
 
-const API_ORIGIN = 'https://api.lwsnb.dpdns.org'
+const API_ORIGIN = 'https://api.lwsnb.eu.cc'
 const API_BASE = `${API_ORIGIN}/api`
 
 interface AlbumImage {

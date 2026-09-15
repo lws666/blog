@@ -35,7 +35,7 @@ export default defineValaxyConfig<UserThemeConfig>({
     // 换歌单只需改 id：网易云歌单页 URL 里 playlist?id= 后面的数字
     music: {
       enable: true,
-      api: 'https://music.lwsnb.dpdns.org',
+      api: 'https://music.lwsnb.eu.cc',
       server: 'netease', // netease | tencent
       type: 'playlist', // playlist | song | album | artist
       id: '18318692237', // https://music.163.com/m/playlist?id=18318692237
@@ -77,7 +77,7 @@ export default defineValaxyConfig<UserThemeConfig>({
     server: {
       proxy: {
         '/api': {
-          target: 'https://api.lwsnb.dpdns.org',
+          target: 'https://api.lwsnb.eu.cc',
           changeOrigin: true,
         },
       },

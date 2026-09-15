@@ -41,9 +41,38 @@ const app = new Hono<{ Bindings: Env }>()
 // CORS: allow Valaxy frontend from any origin
 app.use('*', cors())
 
+// ── Domain migration: old host → new host (301) ────────────────
+// lwsnb.dpdns.org → lwsnb.eu.cc. Must run before any route so every
+// path (API, sitemap, RSS, pre-render) redirects with its query kept.
+app.use('*', async (c, next) => {
+  if (c.req.header('host') === 'api.lwsnb.dpdns.org') {
+    const url = new URL(c.req.url)
+    return c.redirect(`https://api.lwsnb.eu.cc${url.pathname}${url.search}`, 301)
+  }
+  await next()
+})
+
 // ── Health check ──────────────────────────────────────────────
 app.get('/api/health', (c) => {
   return success({ status: 'ok', timestamp: new Date().toISOString() })
+})
+
+// ── Image proxy: /file/<name> → old image host ────────────────
+// Backs img.lwsnb.eu.cc (a custom domain on this worker). The store
+// behind img.lwsnb.dpdns.org is an external image bed on the owner's
+// server (not B2 — the Valaxy bucket only holds post markdown and
+// album/ files); proxying keeps it as the origin while the public
+// URL moves to lwsnb.eu.cc. Upstream responses pass through with
+// their own cache headers and the subrequest is edge-cached.
+app.get('/file/*', async (c) => {
+  const { pathname } = new URL(c.req.url)
+  try {
+    return await fetch(`https://img.lwsnb.dpdns.org${pathname}`, {
+      cf: { cacheEverything: true, cacheTtl: 2678400 },
+    })
+  } catch {
+    return c.text('Bad Gateway', 502)
+  }
 })
 
 // ── Stats ─────────────────────────────────────────────────────
@@ -82,7 +111,7 @@ app.get('/sitemap.xml', async (c) => {
   try {
     const db = createDb(c.env.DB)
     const result = await db.listPosts({ page: 1, limit: 9999 })
-    const siteUrl = 'https://www.lwsnb.dpdns.org'
+    const siteUrl = 'https://www.lwsnb.eu.cc'
 
     // Homepage
     const homeLastmod = result.posts.length
@@ -126,7 +155,7 @@ app.get('/robots.txt', (c) => {
   const txt = `User-agent: *
 Allow: /
 
-Sitemap: https://api.lwsnb.dpdns.org/sitemap.xml
+Sitemap: https://api.lwsnb.eu.cc/sitemap.xml
 `
   return c.newResponse(txt, 200, { 'Content-Type': 'text/plain' })
 })
@@ -136,7 +165,7 @@ app.get('/llms.txt', async (c) => {
   try {
     const db = createDb(c.env.DB)
     const result = await db.listPosts({ page: 1, limit: 9999 })
-    const siteUrl = 'https://www.lwsnb.dpdns.org'
+    const siteUrl = 'https://www.lwsnb.eu.cc'
 
     let lines = `# 权益のblog
 > 一个普通人.
@@ -168,7 +197,7 @@ app.get('/rss.xml', async (c) => {
   try {
     const db = createDb(c.env.DB)
     const result = await db.listPosts({ page: 1, limit: 50 })
-    const siteUrl = 'https://www.lwsnb.dpdns.org'
+    const siteUrl = 'https://www.lwsnb.eu.cc'
     const siteTitle = '权益のblog - 一个普通人的技术博客'
     const siteDesc = '一个普通人的技术博客，分享 Cloudflare、Valaxy、Vue、前端开发、AI 等领域的实践与思考。'
 
@@ -223,7 +252,7 @@ let spaHtml: string | null = null
  */
 async function getSpaHtml(): Promise<string> {
   if (spaHtml) return spaHtml
-  const res = await fetch('https://www.lwsnb.dpdns.org/')
+  const res = await fetch('https://www.lwsnb.eu.cc/')
   if (!res.ok) throw new Error(`SPA fetch failed: ${res.status}`)
   spaHtml = await res.text()
   return spaHtml
@@ -231,7 +260,7 @@ async function getSpaHtml(): Promise<string> {
 
 /** Build a pre-rendered HTML page for the homepage */
 function buildHomeHtml(posts?: Array<{ slug: string; title: string; date: string }>): string {
-  const siteUrl = 'https://www.lwsnb.dpdns.org'
+  const siteUrl = 'https://www.lwsnb.eu.cc'
   const siteName = '权益のblog - 一个普通人的技术博客'
 
   const postList = (posts || [])
@@ -334,7 +363,7 @@ function buildPostHtml(data: {
   cover: string
   bodyHtml: string
 }): string {
-  const siteUrl = 'https://www.lwsnb.dpdns.org'
+  const siteUrl = 'https://www.lwsnb.eu.cc'
   const siteName = '权益のblog | 一个普通人的技术博客'
   const absUrl = `${siteUrl}/posts/${data.slug}`
   const tagsJson = JSON.stringify(data.tags)
@@ -542,15 +571,15 @@ export async function notifyIndexNow(env: Env, slug: string): Promise<void> {
   const key = env.INDEXNOW_KEY
   if (!key) return
 
-  const postUrl = `https://www.lwsnb.dpdns.org/posts/${slug}`
-  const keyLocation = 'https://www.lwsnb.dpdns.org/api/indexnow-key.txt'
+  const postUrl = `https://www.lwsnb.eu.cc/posts/${slug}`
+  const keyLocation = 'https://www.lwsnb.eu.cc/api/indexnow-key.txt'
 
   try {
     await fetch('https://api.indexnow.org/indexnow', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        host: 'www.lwsnb.dpdns.org',
+        host: 'www.lwsnb.eu.cc',
         key,
         keyLocation,
         urlList: [postUrl],

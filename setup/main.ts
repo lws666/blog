@@ -24,7 +24,7 @@ export default function setupDynamicRoutes(ctx: ValaxySSGContext) {
   // initial navigation resolves, so this races the fetch against first paint).
   const seeding = (async () => {
     try {
-      const apiBase = 'https://api.lwsnb.dpdns.org/api'
+      const apiBase = 'https://api.lwsnb.eu.cc/api'
 
       const res = await fetch(`${apiBase}/posts?limit=999`)
       if (!res.ok) throw new Error(`API error: ${res.status}`)

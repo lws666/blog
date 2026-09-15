@@ -2,13 +2,16 @@
  * lwsnb Worker — serves static assets + proxies SEO/API to blog-worker.
  *
  * Behaviour:
- *   /sitemap.xml /robots.txt /rss.xml /llms.txt  → proxy to api.lwsnb.dpdns.org
- *   /api/*                                        → proxy to api.lwsnb.dpdns.org
- *   /posts/* (crawler only)                       → proxy to api.lwsnb.dpdns.org (pre-render)
+ *   www.lwsnb.dpdns.org (old host)               → 301 to www.lwsnb.eu.cc
+ *   /sitemap.xml /robots.txt /rss.xml /llms.txt  → proxy to api.lwsnb.eu.cc
+ *   /api/*                                        → proxy to api.lwsnb.eu.cc
+ *   /posts/* (crawler only)                       → proxy to api.lwsnb.eu.cc (pre-render)
  *   /posts/* (browser)                            → serve from assets (SPA fallback)
  *   everything else                               → serve from assets (SPA fallback)
  */
-const API_ORIGIN = 'https://api.lwsnb.dpdns.org'
+const API_ORIGIN = 'https://api.lwsnb.eu.cc'
+const OLD_HOST = 'www.lwsnb.dpdns.org'
+const NEW_HOST = 'www.lwsnb.eu.cc'
 
 /** Bot / crawler User-Agent patterns */
 const BOT_UA = /googlebot|bingbot|baiduspider|yandexbot|duckduckbot|twitterbot|facebookexternalhit|slackbot|discordbot|whatsapp|telegrambot|applebot|semrushbot|ahrefsbot|dotbot|mj12bot|seznambot|ia_archiver|twitter|facebook|linkedinbot|slack|pinterest|skypeuripreview|wget|curl|python-requests|java|http-client/i
@@ -21,6 +24,11 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url)
     const path = url.pathname
+
+    // ── Domain migration: old host → new host (301) ────────────
+    if (url.hostname === OLD_HOST) {
+      return Response.redirect(`https://${NEW_HOST}${path}${url.search}`, 301)
+    }
 
     // ── SEO + API: proxy to blog-worker ─────────────────────────
     const isSeo = path === '/sitemap.xml' || path === '/robots.txt' ||

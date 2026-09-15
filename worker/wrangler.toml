@@ -3,9 +3,12 @@ main = "src/index.ts"
 compatibility_date = "2025-03-01"
 workers_dev = true
 
-# Custom domain
+# Custom domains (must be declared here: `wrangler deploy` syncs custom
+# domains to this list and would otherwise detach API-attached ones)
 routes = [
   { pattern = "api.lwsnb.dpdns.org", custom_domain = true },
+  { pattern = "api.lwsnb.eu.cc", custom_domain = true },
+  { pattern = "img.lwsnb.eu.cc", custom_domain = true },
 ]
 
 # ---- D1 Database ----

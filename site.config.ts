@@ -1,7 +1,7 @@
 import { defineSiteConfig } from 'valaxy'
 
 export default defineSiteConfig({
-  url: 'https://www.lwsnb.dpdns.org', // 建议加上 https
+  url: 'https://www.lwsnb.eu.cc', // 建议加上 https
   lang: 'zh-CN',
   title: '权益のblog - 一个普通人的技术博客',
   author: {
@@ -10,7 +10,7 @@ export default defineSiteConfig({
      * Your avatar
      * 头像链接：建议使用你在 GitHub 的头像或其他外部 URL
      */
-    avatar: 'https://img.lwsnb.dpdns.org/file/1770349295364_IMG_20250823_144910_239.jpg',
+    avatar: 'https://img.lwsnb.eu.cc/file/1770349295364_IMG_20250823_144910_239.jpg',
     intro: '一个普通人，热爱开发与生活。', // 丰富了简介内容
   },
   description: '一个普通人的技术博客，分享 Cloudflare、Valaxy、Vue、前端开发、AI 等领域的实践与思考。',

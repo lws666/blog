@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * MusicPlayer — floating mini music player backed by the self-hosted
- * Meting API (https://music.lwsnb.dpdns.org).
+ * Meting API (https://music.lwsnb.eu.cc).
  *
  * Design constraints:
  *  - Collapsed by default; expands only on click (never auto-expands).
@@ -26,7 +26,7 @@ interface Song {
 }
 
 const props = withDefaults(defineProps<{
-  /** Meting API base, e.g. https://music.lwsnb.dpdns.org */
+  /** Meting API base, e.g. https://music.lwsnb.eu.cc */
   api?: string
   /** netease | tencent */
   server?: string
@@ -37,7 +37,7 @@ const props = withDefaults(defineProps<{
   /** Panel title */
   title?: string
 }>(), {
-  api: 'https://music.lwsnb.dpdns.org',
+  api: 'https://music.lwsnb.eu.cc',
   server: 'netease',
   type: 'playlist',
   id: '60198',

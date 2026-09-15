@@ -91,6 +91,13 @@ export default defineValaxyConfig<UserThemeConfig>({
           const seoHead = `
             <title>lwsのblog</title>
             <meta name="description" content="一个普通人.">
+            <!-- Avatar speed: the sidebar avatar is only discovered ~2.3s in,
+                 after the SPA mounts. Preconnecting + preloading it here lets
+                 the browser fetch it in parallel with the JS bundles, so it
+                 renders from cache the moment Vue mounts. Keep this URL in
+                 sync with site.config.ts author.avatar. -->
+            <link rel="preconnect" href="https://img.lwsnb.eu.cc">
+            <link rel="preload" as="image" fetchpriority="high" href="https://img.lwsnb.eu.cc/file/1770349295364_IMG_20250823_144910_239.jpg">
           `
           return html.replace('</head>', `${seoHead}</head>`)
         }

@@ -3,6 +3,7 @@ import { createDb } from '../db'
 import { createB2Client } from '../b2'
 import { createAuthMiddleware } from '../middleware/auth'
 import { parseFrontmatter } from '../utils/markdown'
+import { generateCoverImage, withCoverFrontmatter } from './cover'
 import { success, badRequest, error as errRes } from '../utils/response'
 import type { Env } from '../index'
 
@@ -45,6 +46,8 @@ export function createUploadRouter() {
         slug?: string
         markdown: string
         cover?: string
+        /** set false to skip the automatic Agnes AI cover */
+        autoCover?: boolean
       }>()
 
       if (!body.markdown) {
@@ -59,9 +62,31 @@ export function createUploadRouter() {
         return badRequest('slug is required (provide in body or frontmatter)')
       }
 
+      // ── Cover: explicit > frontmatter > auto-generate (Agnes AI) ──
+      let cover = body.cover || String(fm.cover || '')
+      let markdown = body.markdown
+
+      if (!cover && !fm.cover && c.env.AGNES_API_KEY && body.autoCover !== false) {
+        try {
+          const gen = await generateCoverImage(c.env, {
+            title: String(fm.title || slug),
+            tags: fm.tags as string | string[] | undefined,
+            excerpt: String(fm.excerpt || ''),
+            slug,
+          })
+          cover = gen.url
+          // Persist in the frontmatter too, otherwise a later republish
+          // (which overwrites the D1 cover from frontmatter) loses it.
+          markdown = withCoverFrontmatter(markdown, gen.url)
+        } catch (e) {
+          // A cover failure must never block publishing.
+          console.warn('auto cover failed:', (e as Error).message)
+        }
+      }
+
       // ── Upload to B2 ──
       const b2Key = `posts/${slug}/index.md`
-      await b2.upload(b2Key, body.markdown, 'text/markdown')
+      await b2.upload(b2Key, markdown, 'text/markdown')
 
       // ── Prepare D1 data ──
       const tags = Array.isArray(fm.tags)
@@ -98,7 +123,7 @@ export function createUploadRouter() {
         tags,
         categories,
         excerpt: String(fm.excerpt || ''),
-        cover: body.cover || String(fm.cover || ''),
+        cover: cover,
         type: String(fm.type || 'post'),
         top: Number(fm.top || 0),
         draft: fm.draft ? 1 : 0,
@@ -109,7 +134,7 @@ export function createUploadRouter() {
         toc: fm.toc !== false ? 1 : 0,
         nav: fm.nav !== false ? 1 : 0,
         b2_key: b2Key,
-        content: body.markdown,
+        content: markdown,
         frontmatter: JSON.stringify(extraFm),
       })
 

@@ -83,7 +83,38 @@
                   <div>TITLE<input v-model="fmTitle" type="text" class="config-input mt-1" /></div>
                   <div>PUBLISHED (DATE)<input v-model="fmDate" type="date" class="config-input mt-1" /></div>
                   <div>CATEGORY<input v-model="fmCategory" type="text" class="config-input mt-1" /></div>
-                  <div>IMAGE<input v-model="fmImage" type="text" class="config-input mt-1" /></div>
+                  <div>
+                    IMAGE
+                    <div class="flex gap-2 mt-1">
+                      <input v-model="fmImage" type="text" class="config-input" />
+                      <button
+                        class="bg-blue-600/30 hover:bg-blue-600 px-3 py-1.5 rounded text-[10px] font-bold transition-all disabled:opacity-40 whitespace-nowrap"
+                        :disabled="coverLoading"
+                        @click="generateCover"
+                      >
+                        {{ coverLoading ? '生成中...' : '✨ AI 生成封面' }}
+                      </button>
+                    </div>
+                    <input
+                      v-model="coverStyle"
+                      type="text"
+                      class="config-input mt-1"
+                      placeholder="风格提示（可选，如：赛博朋克夜景 / 水彩风格）"
+                    />
+                    <img
+                      v-if="fmImage"
+                      :src="fmImage"
+                      alt="封面预览"
+                      class="mt-2 rounded max-h-28 w-auto border border-white/10"
+                    />
+                    <p
+                      v-if="coverMsg"
+                      class="text-[10px] mt-1"
+                      :class="coverErr ? 'text-red-400' : 'text-green-400'"
+                    >
+                      {{ coverMsg }}
+                    </p>
+                  </div>
                   <div>TAGS<input v-model="fmTags" type="text" class="config-input mt-1" placeholder="[tag1, tag2]" /></div>
                   <div>DESCRIPTION<textarea v-model="fmDescription" class="config-input mt-1 h-16"></textarea></div>
                 </div>
@@ -304,6 +335,39 @@ const summaryLoading = ref(false)
 const summarySaving = ref(false)
 const summaryMsg = ref('')
 const summaryErr = ref(false)
+
+// ── AI cover state (Agnes AI) ─────────────────────────────────────
+const coverLoading = ref(false)
+const coverMsg = ref('')
+const coverErr = ref(false)
+const coverStyle = ref('')
+
+/**
+ * Generate a cover from the current title/tags via the worker, which
+ * stores it in B2 and returns a permanent img.lwsnb.eu.cc/cover/… URL.
+ */
+async function generateCover() {
+  if (coverLoading.value) return
+  coverLoading.value = true
+  coverMsg.value = ''
+  coverErr.value = false
+  try {
+    const data = await apiAdminPost<{ url: string }>('/cover', {
+      title: fmTitle.value,
+      tags: fmTags.value,
+      excerpt: fmDescription.value,
+      slug: currentSlug.value || fmTitle.value,
+      style: coverStyle.value.trim() || undefined,
+    })
+    fmImage.value = data.url
+    coverMsg.value = '封面已生成，保存文章后生效'
+  } catch (e) {
+    coverErr.value = true
+    coverMsg.value = (e as Error).message
+  } finally {
+    coverLoading.value = false
+  }
+}
 
 const currentSlug = ref('')
 const saveStatus = ref('就绪')

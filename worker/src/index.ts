@@ -9,6 +9,7 @@ import { createAdminRouter } from './routes/admin'
 import { createAlbumRouter } from './routes/album'
 import { createAuthRouter } from './routes/auth'
 import { createTelegramRouter } from './routes/telegram'
+import { createCoverRouter } from './routes/cover'
 import { success, error as errRes } from './utils/response'
 import { parseFrontmatter } from './utils/markdown'
 
@@ -33,6 +34,11 @@ export interface Env {
   TELEGRAM_CHAT_ID?: string
   /** HMAC secret used to verify the GitHub webhook signature */
   TG_WEBHOOK_SECRET?: string
+  /**
+   * Agnes AI image API key (free tier) — powers article cover generation.
+   * Set via `wrangler secret put AGNES_API_KEY`.
+   */
+  AGNES_API_KEY?: string
 }
 
 // ── App ───────────────────────────────────────────────────────
@@ -75,6 +81,30 @@ app.get('/file/*', async (c) => {
   }
 })
 
+// ── Generated covers: /cover/<name> → B2 covers/ ──────────────
+// Agnes AI generated covers are written to B2 by /api/cover and served
+// here (publicly, immutably) on img.lwsnb.eu.cc. Object names are
+// timestamped, so a URL's content never changes.
+app.get('/cover/*', async (c) => {
+  const name = decodeURIComponent(new URL(c.req.url).pathname.replace(/^\/cover\//, ''))
+  if (!name || name.includes('..')) {
+    return c.text('Not Found', 404)
+  }
+  try {
+    const b2 = createB2Client(c.env)
+    const res = await b2.get(`covers/${name}`)
+    if (!res.ok || !res.body) {
+      return c.text('Not Found', 404)
+    }
+    return c.newResponse(res.body, 200, {
+      'Content-Type': res.headers.get('content-type') || 'image/png',
+      'Cache-Control': 'public, max-age=31536000, immutable',
+    })
+  } catch {
+    return c.text('Bad Gateway', 502)
+  }
+})
+
 // ── Stats ─────────────────────────────────────────────────────
 app.get('/api/stats', async (c) => {
   try {
@@ -105,6 +135,7 @@ app.route('/api/posts', createPostsRouter())
 app.route('/api/upload', createUploadRouter())
 app.route('/api/admin', createAdminRouter())
 app.route('/api/album', createAlbumRouter())
+app.route('/api/cover', createCoverRouter())
 
 // ── SEO: sitemap.xml ──────────────────────────────────────────
 app.get('/sitemap.xml', async (c) => {

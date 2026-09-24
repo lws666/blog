@@ -3,7 +3,7 @@ import { createDb } from '../db'
 import { createB2Client } from '../b2'
 import { createAuthMiddleware } from '../middleware/auth'
 import { parseFrontmatter } from '../utils/markdown'
-import { generateCoverImage, withCoverFrontmatter } from './cover'
+import { createSvgCover, withCoverFrontmatter } from './cover'
 import { success, badRequest, error as errRes } from '../utils/response'
 import type { Env } from '../index'
 
@@ -62,16 +62,18 @@ export function createUploadRouter() {
         return badRequest('slug is required (provide in body or frontmatter)')
       }
 
-      // ── Cover: explicit > frontmatter > auto-generate (Agnes AI) ──
+      // ── Cover: explicit > frontmatter > auto-generate ──
       let cover = body.cover || String(fm.cover || '')
       let markdown = body.markdown
 
-      if (!cover && !fm.cover && c.env.AGNES_API_KEY && body.autoCover !== false) {
+      // Deterministic SVG cover — no AI quota and no third-party throttling,
+      // so it succeeds where the old Agnes path frequently failed. The admin
+      // panel rasterises it to PNG afterwards (social crawlers reject SVG).
+      if (!cover && !fm.cover && body.autoCover !== false) {
         try {
-          const gen = await generateCoverImage(c.env, {
-            title: String(fm.title || slug),
+          const gen = await createSvgCover(c.env, {
+            text: String(fm.excerpt || fm.title || slug),
             tags: fm.tags as string | string[] | undefined,
-            excerpt: String(fm.excerpt || ''),
             slug,
           })
           cover = gen.url

@@ -90,16 +90,30 @@
                       <button
                         class="bg-blue-600/30 hover:bg-blue-600 px-3 py-1.5 rounded text-[10px] font-bold transition-all disabled:opacity-40 whitespace-nowrap"
                         :disabled="coverLoading"
-                        @click="generateCover"
+                        @click="generateCover('svg')"
                       >
-                        {{ coverLoading ? '生成中...' : '✨ AI 生成封面' }}
+                        {{ coverLoading ? '生成中...' : '🎨 生成封面' }}
+                      </button>
+                      <button
+                        class="bg-white/5 hover:bg-white/15 px-2 py-1.5 rounded text-[10px] transition-all disabled:opacity-40 whitespace-nowrap"
+                        :disabled="coverLoading"
+                        title="AI 生图（消耗 Workers AI 免费额度）"
+                        @click="generateCover('ai')"
+                      >
+                        ✨
                       </button>
                     </div>
+                    <input
+                      v-model="coverText"
+                      type="text"
+                      class="config-input mt-1"
+                      placeholder="封面大字：这篇文章干了什么（留空用 DESCRIPTION）"
+                    />
                     <input
                       v-model="coverStyle"
                       type="text"
                       class="config-input mt-1"
-                      placeholder="风格提示（可选，如：赛博朋克夜景 / 水彩风格）"
+                      placeholder="仅 AI 生图用：风格提示（可选）"
                     />
                     <img
                       v-if="fmImage"
@@ -336,31 +350,84 @@ const summarySaving = ref(false)
 const summaryMsg = ref('')
 const summaryErr = ref(false)
 
-// ── AI cover state (Agnes AI) ─────────────────────────────────────
+// ── Cover state ───────────────────────────────────────────────────
 const coverLoading = ref(false)
 const coverMsg = ref('')
 const coverErr = ref(false)
+/** Headline printed in big black type on a deterministic cover */
+const coverText = ref('')
+/** Style hint, AI engine only */
 const coverStyle = ref('')
 
 /**
- * Generate a cover from the current title/tags via the worker, which
- * stores it in B2 and returns a permanent img.lwsnb.eu.cc/cover/… URL.
+ * Draw the SVG cover onto a canvas and return a PNG data URL.
+ *
+ * Two reasons this happens in the browser rather than the worker:
+ * social crawlers reject SVG for og:image, and this is the only runtime
+ * that has the CJK fonts the edge lacks. The SVG is served with CORS *,
+ * so the canvas stays untainted and toDataURL() is allowed.
  */
-async function generateCover() {
+function rasterizeSvg(url: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = 1200
+      canvas.height = 630
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        reject(new Error('无法创建画布上下文'))
+        return
+      }
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      resolve(canvas.toDataURL('image/png'))
+    }
+    img.onerror = () => reject(new Error('封面栅格化失败：SVG 加载失败'))
+    img.src = `${url}?t=${Date.now()}`
+  })
+}
+
+/**
+ * Generate a cover via the worker and store it in B2.
+ *
+ * 'svg' (default) builds the white/black/tech-logo design deterministically
+ * — no AI quota — then rasterises it here and stores the PNG alongside, so
+ * og:image and every social crawler get a usable bitmap.
+ * 'ai' asks Agnes/Workers AI for a painted cover instead.
+ */
+async function generateCover(engine: 'svg' | 'ai' = 'svg') {
   if (coverLoading.value) return
   coverLoading.value = true
   coverMsg.value = ''
   coverErr.value = false
   try {
+    const headline = coverText.value.trim() || fmDescription.value || fmTitle.value
     const data = await apiAdminPost<{ url: string }>('/cover', {
+      engine,
       title: fmTitle.value,
       tags: fmTags.value,
       excerpt: fmDescription.value,
+      text: headline,
       slug: currentSlug.value || fmTitle.value,
-      style: coverStyle.value.trim() || undefined,
+      style: engine === 'ai' ? (coverStyle.value.trim() || undefined) : undefined,
     })
-    fmImage.value = data.url
-    coverMsg.value = '封面已生成，保存文章后生效'
+
+    if (engine === 'svg') {
+      coverMsg.value = '正在栅格化…'
+      const png = await rasterizeSvg(data.url)
+      const stored = await apiAdminPost<{ url: string }>('/cover/raster', {
+        svg: data.url,
+        png,
+      })
+      fmImage.value = stored.url
+      coverMsg.value = '封面已生成（SVG + PNG），保存文章后生效'
+    } else {
+      fmImage.value = data.url
+      coverMsg.value = '封面已生成，保存文章后生效'
+    }
   } catch (e) {
     coverErr.value = true
     coverMsg.value = (e as Error).message

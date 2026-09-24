@@ -1,26 +1,29 @@
 import { Hono } from 'hono'
 import { createB2Client } from '../b2'
 import { createAuthMiddleware } from '../middleware/auth'
-import { success, error as errRes } from '../utils/response'
+import { success, badRequest, error as errRes } from '../utils/response'
+import { buildCoverSvg } from '../cover-svg'
 import type { Env } from '../index'
 
 /**
- * Agnes AI article-cover generation (free image API).
+ * Article covers.
  *
- *   POST /api/cover   — generate a cover, store it in B2, return its URL
+ *   POST /api/cover        — build a cover, store it in B2, return its URL
+ *                            (deterministic SVG by default, AI on request)
+ *   POST /api/cover/raster — store the PNG the admin rasterised from that SVG
  *
  * Requires Bearer token (same UPLOAD_TOKEN as the rest of the admin API).
  *
  * Body (JSON):
- *   title   - post title, drives the prompt
- *   tags    - string[] or "[a, b]" string (optional)
- *   excerpt - short description (optional)
- *   slug    - used for the B2 object name (optional)
- *   prompt  - full custom prompt, overrides the generated one (optional)
- *   size    - "1024x768" (default) | "1024x1024"
+ *   title   - post title (fallback headline / AI prompt)
+ *   tags    - string[] or "[a, b]" string (icon row + label)
+ *   excerpt - short description (fallback headline)
+ *   text    - the one-liner headline on a deterministic cover
+ *   slug    - used for the B2 object name
+ *   engine  - 'svg' (default) | 'ai'
+ *   prompt / style / size - AI engine only
  *
- * Flow: build prompt → Agnes AI → download image → B2 `covers/…`
- * → public URL served by GET /cover/* on this worker (img.lwsnb.eu.cc).
+ * Public URL served by GET /cover/* on this worker (img.lwsnb.eu.cc).
  */
 
 const AGNES_ENDPOINT = 'https://apihub.agnes-ai.com/v1/images/generations'
@@ -43,6 +46,17 @@ export interface CoverOptions {
   /** Extra style/content hint, replaces the default style line */
   style?: string
   size?: string
+  /**
+   * Headline of a deterministic SVG cover.
+   * Falls back to excerpt, then title.
+   */
+  text?: string
+  /**
+   * 'svg' (default) — white background, black type, real tech logos.
+   *                   Deterministic, instant, zero AI quota.
+   * 'ai'            — Agnes AI, falling back to Workers AI.
+   */
+  engine?: 'svg' | 'ai'
 }
 
 export interface CoverResult {
@@ -51,7 +65,7 @@ export interface CoverResult {
   prompt: string
   model: string
   /** Which engine actually produced the image */
-  engine: 'agnes' | 'workers-ai'
+  engine: 'agnes' | 'workers-ai' | 'svg'
 }
 
 interface ImageBytes {
@@ -72,12 +86,22 @@ function fromBase64(b64: string): ArrayBuffer {
 /** Accept tags as an array, a JSON array string, or "a, b" */
 function normalizeTags(tags?: string | string[]): string[] {
   if (!tags) return []
-  if (Array.isArray(tags)) return tags.filter(Boolean).map(String)
+  const clean = (t: string) => t.trim().replace(/^["']|["']$/g, '').trim()
+  if (Array.isArray(tags)) {
+    return tags
+      .filter(Boolean)
+      .map(String)
+      // A single element may still hold "a ，b ，c" (full-width commas are
+      // common in CJK tags), so split those too.
+      .flatMap(t => clean(t).split(/[,，、;；]+/))
+      .map(clean)
+      .filter(Boolean)
+  }
   const raw = String(tags).trim().replace(/^\[|\]$/g, '')
   if (!raw) return []
   return raw
-    .split(',')
-    .map(t => t.trim().replace(/^["']|["']$/g, ''))
+    .split(/[,，、;；]+/)
+    .map(clean)
     .filter(Boolean)
 }
 
@@ -262,6 +286,39 @@ export async function generateCoverImage(env: Env, o: CoverOptions): Promise<Cov
 }
 
 /**
+ * Build and store a deterministic SVG cover.
+ *
+ * Shared by the admin endpoint and the auto-cover-on-publish path.
+ * Consumes no AI quota and cannot be throttled by a third party, which is
+ * why it replaced the AI path as the default.
+ *
+ * Note: SVG is right for every in-page use, but social crawlers reject it
+ * for og:image — the admin panel rasterises it to PNG for that reason.
+ */
+export async function createSvgCover(
+  env: Env,
+  opts: { text: string, tags?: string | string[], slug?: string },
+): Promise<CoverResult> {
+  const tags = normalizeTags(opts.tags)
+  const svg = await buildCoverSvg({
+    text: opts.text,
+    tags: tags.length ? tags : [opts.text],
+    site: 'lwsnb.eu.cc',
+  })
+  const key = `${COVER_PREFIX}${safeName(opts.slug || opts.text)}-${Date.now()}.svg`
+  const b2 = createB2Client(env)
+  await b2.upload(key, svg, 'image/svg+xml')
+
+  return {
+    url: `${IMAGE_HOST}/cover/${key.slice(COVER_PREFIX.length)}`,
+    key,
+    prompt: opts.text,
+    model: 'deterministic-svg',
+    engine: 'svg',
+  }
+}
+
+/**
  * Write a generated cover into the markdown frontmatter.
  * Keeps the cover in the post source (B2) so a later republish does not
  * lose it — upload.ts would otherwise overwrite the D1 cover with ''.
@@ -295,8 +352,53 @@ export function createCoverRouter() {
   router.post('/', async (c) => {
     try {
       const body = await c.req.json<CoverOptions>()
+
+      // Deterministic SVG (default): no AI, no quota, instant.
+      if ((body.engine ?? 'svg') === 'svg') {
+        const text = (body.text || body.excerpt || body.title || '').trim()
+        if (!text) {
+          return badRequest('缺少封面文案（text / excerpt / title 至少提供一个）')
+        }
+        const result = await createSvgCover(c.env, {
+          text,
+          tags: body.tags,
+          slug: body.slug || body.title,
+        })
+        return success(result, 201)
+      }
+
       const result = await generateCoverImage(c.env, body)
       return success(result, 201)
+    } catch (e) {
+      return errRes((e as Error).message)
+    }
+  })
+
+  // ── Store the rasterised PNG ────────────────────────────────
+  // The admin draws the SVG onto a canvas and posts the PNG back: browsers
+  // have the CJK fonts this edge runtime lacks, and PNG is what social
+  // crawlers (og:image) accept — they cannot render SVG.
+  router.post('/raster', async (c) => {
+    try {
+      const body = await c.req.json<{ svg?: string, png?: string }>()
+      if (!body.svg || !body.png) {
+        return badRequest('svg 与 png 均为必填')
+      }
+      // covers/foo-123.svg → covers/foo-123.png (same base name)
+      const name = body.svg.split('/').pop()?.replace(/\.svg$/i, '') || ''
+      if (!name || name.includes('..') || !/^[a-z0-9-]+$/i.test(name)) {
+        return badRequest('svg 文件名不合法')
+      }
+      const base64 = body.png.replace(/^data:image\/png;base64,/, '')
+      const bytes = fromBase64(base64)
+      const key = `${COVER_PREFIX}${name}.png`
+      const b2 = createB2Client(c.env)
+      await b2.upload(key, bytes, 'image/png')
+      return success({
+        url: `${IMAGE_HOST}/cover/${name}.png`,
+        key,
+        engine: 'svg',
+      }, 201)
     } catch (e) {
       return errRes((e as Error).message)
     }

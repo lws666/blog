@@ -77,7 +77,11 @@ function mountGiscus() {
   script.setAttribute('data-input-position', props.inputPosition)
   script.setAttribute('data-theme', currentTheme())
   script.setAttribute('data-lang', props.lang)
-  script.setAttribute('data-loading', 'lazy')
+  // Deliberately NOT data-loading="lazy": with lazy loading giscus only
+  // creates its iframe once the comment area scrolls into view, so on a long
+  // article the section sat empty (and readers concluded comments were
+  // broken). Eager loading costs one iframe on post pages only.
+  script.setAttribute('data-loading', 'eager')
 
   el.appendChild(script)
 }

@@ -121,12 +121,30 @@ watch(
   { immediate: true },
 )
 
-// Dynamically import markdown-it on mount
+/**
+ * Manual retry for the error state.
+ * apiGet already retries transient failures; this covers the case where
+ * every attempt failed (offline, edge hiccup) and the reader wants to try
+ * again without a full page reload.
+ */
+function retry() {
+  refresh(route.params.slug as string)
+}
+
+/**
+ * Markdown renderer, requested as soon as this page's module is evaluated.
+ * Starting the dynamic import at module scope rather than inside onMounted
+ * lets the chunk download overlap the post request instead of queueing
+ * behind it — the page cannot render until both are in hand.
+ */
+const markdownModules = Promise.all([
+  import('markdown-it'),
+  import('markdown-it-anchor'),
+])
+
+// Wire up the renderer once the chunk lands
 onMounted(async () => {
-  const [markdownit, anchor] = await Promise.all([
-    import('markdown-it'),
-    import('markdown-it-anchor'),
-  ])
+  const [markdownit, anchor] = await markdownModules
   const mdInstance = markdownit.default({
     html: true,
     linkify: true,
@@ -210,6 +228,12 @@ watch(
     <div class="text-center">
       <p class="text-lg font-medium text-red-400">{{ error }}</p>
       <p class="mt-2 text-sm opacity-50">文章可能不存在或已被删除</p>
+      <button
+        class="mt-4 px-4 py-1.5 rounded text-sm bg-blue-600/30 hover:bg-blue-600 transition-all"
+        @click="retry"
+      >
+        重新加载
+      </button>
     </div>
   </div>
 

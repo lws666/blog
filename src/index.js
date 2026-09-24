@@ -30,10 +30,18 @@ export default {
       return Response.redirect(`https://${NEW_HOST}${path}${url.search}`, 301)
     }
 
+    // ── API: same-origin for the browser ────────────────────────
+    // Invoked through the API service binding, so the request never leaves
+    // this isolate's account: no public round trip, no second DNS/TLS
+    // handshake in the browser, and no dependency on api.* being reachable.
+    if (path.startsWith('/api/')) {
+      return env.API.fetch(request)
+    }
+
     // ── SEO + API: proxy to blog-worker ─────────────────────────
     const isSeo = path === '/sitemap.xml' || path === '/robots.txt' ||
                   path === '/rss.xml' || path === '/llms.txt'
-    if (isSeo || path.startsWith('/api/')) {
+    if (isSeo) {
       const target = API_ORIGIN + path + url.search
       return fetch(new Request(target, request))
     }

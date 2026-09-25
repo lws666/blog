@@ -3,7 +3,7 @@ import { defineSiteConfig } from 'valaxy'
 export default defineSiteConfig({
   url: 'https://www.lwsnb.eu.cc', // 建议加上 https
   lang: 'zh-CN',
-  title: '权益のblog - 一个普通人的技术博客',
+  title: '谢谢の博客 - 一个普通人的技术博客',
   author: {
     name: '权益',
     /**

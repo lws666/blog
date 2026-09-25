@@ -198,7 +198,7 @@ app.get('/llms.txt', async (c) => {
     const result = await db.listPosts({ page: 1, limit: 9999 })
     const siteUrl = 'https://www.lwsnb.eu.cc'
 
-    let lines = `# 权益のblog
+    let lines = `# 谢谢の博客
 > 一个普通人.
 
 ## About
@@ -229,7 +229,7 @@ app.get('/rss.xml', async (c) => {
     const db = createDb(c.env.DB)
     const result = await db.listPosts({ page: 1, limit: 50 })
     const siteUrl = 'https://www.lwsnb.eu.cc'
-    const siteTitle = '权益のblog - 一个普通人的技术博客'
+    const siteTitle = '谢谢の博客 - 一个普通人的技术博客'
     const siteDesc = '一个普通人的技术博客，分享 Cloudflare、Valaxy、Vue、前端开发、AI 等领域的实践与思考。'
 
     const items = result.posts.map((row) => {
@@ -292,7 +292,7 @@ async function getSpaHtml(): Promise<string> {
 /** Build a pre-rendered HTML page for the homepage */
 function buildHomeHtml(posts?: Array<{ slug: string; title: string; date: string }>): string {
   const siteUrl = 'https://www.lwsnb.eu.cc'
-  const siteName = '权益のblog - 一个普通人的技术博客'
+  const siteName = '谢谢の博客 - 一个普通人的技术博客'
 
   const postList = (posts || [])
     .map(p => `    <li><a href="${siteUrl}/posts/${escapeXml(p.slug)}">${escapeXml(p.title)}</a> <small>${escapeXml(p.date)}</small></li>`)
@@ -324,7 +324,7 @@ function buildHomeHtml(posts?: Array<{ slug: string; title: string; date: string
 {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  "name": "权益のblog",
+  "name": "谢谢の博客",
   "url": "${siteUrl}",
   "description": "一个普通人的技术博客，分享 Cloudflare、Valaxy、Vue、前端开发、AI 等领域的实践与思考。"
 }
@@ -351,7 +351,7 @@ function buildHomeHtml(posts?: Array<{ slug: string; title: string; date: string
   </style>
 </head>
 <body>
-  <h1>权益のblog</h1>
+  <h1>谢谢の博客</h1>
   <p class="desc">一个普通人的技术博客，分享 Cloudflare、Valaxy、Vue、前端开发、AI 等领域的实践与思考。</p>
 
   <h2>最新文章</h2>
@@ -395,7 +395,7 @@ function buildPostHtml(data: {
   bodyHtml: string
 }): string {
   const siteUrl = 'https://www.lwsnb.eu.cc'
-  const siteName = '权益のblog | 一个普通人的技术博客'
+  const siteName = '谢谢の博客 | 一个普通人的技术博客'
   const absUrl = `${siteUrl}/posts/${data.slug}`
   const tagsJson = JSON.stringify(data.tags)
   const catsJson = JSON.stringify(data.categories)

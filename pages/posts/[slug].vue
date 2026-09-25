@@ -18,7 +18,7 @@ useHead(() => {
   if (!p) return {}
 
   const postUrl = `${siteUrl.value}/posts/${p.slug}`
-  const siteTitle = siteConfig.value.title || '权益のblog'
+  const siteTitle = siteConfig.value.title || '谢谢の博客'
   const desc = p.excerpt || siteConfig.value.description || ''
   const authorName = siteConfig.value.author?.name || '权益'
   const authorUrl = siteConfig.value.author?.avatar || undefined

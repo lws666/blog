@@ -72,8 +72,9 @@ export function createUploadRouter() {
       if (!cover && !fm.cover && body.autoCover !== false) {
         try {
           const gen = await createSvgCover(c.env, {
-            text: String(fm.excerpt || fm.title || slug),
             tags: fm.tags as string | string[] | undefined,
+            excerpt: fm.excerpt ? String(fm.excerpt) : undefined,
+            title: fm.title ? String(fm.title) : undefined,
             slug,
           })
           cover = gen.url

@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { createB2Client } from '../b2'
 import { createAuthMiddleware } from '../middleware/auth'
 import { success, badRequest, error as errRes } from '../utils/response'
-import { buildCoverSvg } from '../cover-svg'
+import { buildCoverSvg, headlineFrom } from '../cover-svg'
 import type { Env } from '../index'
 
 /**
@@ -297,12 +297,17 @@ export async function generateCoverImage(env: Env, o: CoverOptions): Promise<Cov
  */
 export async function createSvgCover(
   env: Env,
-  opts: { text: string, tags?: string | string[], slug?: string },
+  opts: { text?: string, tags?: string | string[], excerpt?: string, title?: string, slug?: string },
 ): Promise<CoverResult> {
   const tags = normalizeTags(opts.tags)
+  // An explicit headline wins; otherwise the description carries it when it
+  // reads like prose, and the title does when the description is just a
+  // comma-separated list of technologies.
+  const text = (opts.text || '').trim() || headlineFrom(opts.excerpt, opts.title)
   const svg = await buildCoverSvg({
-    text: opts.text,
-    tags: tags.length ? tags : [opts.text],
+    text,
+    tags: tags.length ? tags : [text],
+    excerpt: opts.excerpt,
     site: 'lwsnb.eu.cc',
   })
   const key = `${COVER_PREFIX}${safeName(opts.slug || opts.text)}-${Date.now()}.svg`
@@ -312,7 +317,7 @@ export async function createSvgCover(
   return {
     url: `${IMAGE_HOST}/cover/${key.slice(COVER_PREFIX.length)}`,
     key,
-    prompt: opts.text,
+    prompt: text,
     model: 'deterministic-svg',
     engine: 'svg',
   }
@@ -355,13 +360,15 @@ export function createCoverRouter() {
 
       // Deterministic SVG (default): no AI, no quota, instant.
       if ((body.engine ?? 'svg') === 'svg') {
-        const text = (body.text || body.excerpt || body.title || '').trim()
-        if (!text) {
+        const text = (body.text || '').trim()
+        if (!text && !body.excerpt && !body.title) {
           return badRequest('缺少封面文案（text / excerpt / title 至少提供一个）')
         }
         const result = await createSvgCover(c.env, {
           text,
           tags: body.tags,
+          excerpt: body.excerpt,
+          title: body.title,
           slug: body.slug || body.title,
         })
         return success(result, 201)

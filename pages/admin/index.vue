@@ -404,13 +404,16 @@ async function generateCover(engine: 'svg' | 'ai' = 'svg') {
   coverMsg.value = ''
   coverErr.value = false
   try {
-    const headline = coverText.value.trim() || fmDescription.value || fmTitle.value
+    // Only the manual override is sent as text — the worker picks between
+    // description and title itself, and always searches the description for
+    // tech keywords when building the icon row.
+    const headline = coverText.value.trim()
     const data = await apiAdminPost<{ url: string }>('/cover', {
       engine,
       title: fmTitle.value,
       tags: fmTags.value,
       excerpt: fmDescription.value,
-      text: headline,
+      text: headline || undefined,
       slug: currentSlug.value || fmTitle.value,
       style: engine === 'ai' ? (coverStyle.value.trim() || undefined) : undefined,
     })

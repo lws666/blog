@@ -488,15 +488,28 @@ async function unlock() {
 
 // ── GitHub OAuth login ─────────────────────────────────────────────
 const GITHUB_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
-// The OAuth app's registered Redirect URL is the OLD domain (OAuth apps
-// cannot be edited via API). The old host 301-redirects to the new one,
-// so the ?code= callback lands on www.lwsnb.eu.cc seamlessly. Once the
-// new URL (https://www.lwsnb.eu.cc/admin/) is added to the app settings,
-// this can point straight at the new domain.
-const ADMIN_URL = 'https://www.lwsnb.dpdns.org/admin/'
 
 const githubConfigured = ref(false)
 const githubClientId = ref('')
+
+/**
+ * Where GitHub sends the ?code= back to.
+ *
+ * GitHub requires this to match a Redirect URL registered on the OAuth app,
+ * so the current origin is used instead of a hardcoded host: browsing the
+ * admin on https://www.lwsnb.eu.cc/admin/ (the canonical domain, and a
+ * registered URL) now completes the whole flow on that domain, with no hop
+ * through the retired www.lwsnb.dpdns.org host.
+ *
+ * NOTE: any other origin used to reach the admin (a preview deployment, the
+ * apex domain) must also be registered, otherwise GitHub refuses the login
+ * after the user authenticates. Add new hosts to the OAuth/GitHub App
+ * settings before using them.
+ */
+function adminRedirectUrl(): string {
+  const origin = typeof window === 'undefined' ? 'https://www.lwsnb.eu.cc' : window.location.origin
+  return `${origin}/admin/`
+}
 
 /** Ask the worker whether a GitHub OAuth app is linked (public value) */
 async function checkGithubConfig() {
@@ -522,7 +535,7 @@ function githubLogin() {
     document.cookie = `gh_oauth_state=${state}; max-age=600; path=/; SameSite=Lax; domain=.lwsnb.eu.cc`
   } catch { /* cookies blocked — sessionStorage still applies */ }
   const url = `${GITHUB_AUTHORIZE_URL}?client_id=${encodeURIComponent(githubClientId.value)}`
-    + `&redirect_uri=${encodeURIComponent(ADMIN_URL)}&state=${state}`
+    + `&redirect_uri=${encodeURIComponent(adminRedirectUrl())}&state=${state}`
   window.location.href = url
 }
 

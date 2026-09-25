@@ -26,7 +26,12 @@ binding = "ASSETS"
 # every fetch crossed to api.lwsnb.eu.cc (extra DNS + TLS handshake, plus
 # another host that can be slow or blocked). The Worker now forwards those
 # requests to blog-worker in-process via the service binding below.
-run_worker_first = [ "/", "/api/*" ]
+#
+# /llms.txt and /robots.txt are included because stale copies also sit in
+# public/ (dist/), and the asset server was winning: the live llms.txt still
+# named the retired www.lwsnb.dpdns.org and listed no articles, while the
+# Worker's generated version stays in sync with the site and the post list.
+run_worker_first = [ "/", "/api/*", "/llms.txt", "/robots.txt" ]
 
 # In-process call into the API Worker — no public network round trip.
 [[services]]

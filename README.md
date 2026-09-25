@@ -2,7 +2,7 @@
 
 一个基于 **Valaxy** 构建的**动态博客**系统。发布文章无需重新构建，新文章即刻上线。
 
-> 在线访问：[www.lwsnb.dpdns.org](https://www.lwsnb.dpdns.org)
+> 在线访问：[www.lwsnb.eu.cc](https://www.lwsnb.eu.cc)
 
 ## ✨ 特性
 

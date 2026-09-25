@@ -183,10 +183,13 @@ ${urls.join('\n')}
 
 // ── SEO: robots.txt ───────────────────────────────────────────
 app.get('/robots.txt', (c) => {
+  // Point at the canonical host, not the API host: a sitemap served from a
+  // different domain than the site needs separate verification and raises
+  // "sitemap is on a different domain" warnings in Search Console.
   const txt = `User-agent: *
 Allow: /
 
-Sitemap: https://api.lwsnb.eu.cc/sitemap.xml
+Sitemap: https://www.lwsnb.eu.cc/sitemap.xml
 `
   return c.newResponse(txt, 200, { 'Content-Type': 'text/plain' })
 })

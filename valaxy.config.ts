@@ -24,7 +24,7 @@ export default defineValaxyConfig<UserThemeConfig>({
   themeConfig: {
     banner: {
       enable: true,
-      title: 'lwsの博客',
+      title: '谢谢の博客',
     },
 
     // 文章目录收录的标题层级（Valaxy 默认 [2, 4]）
@@ -89,7 +89,7 @@ export default defineValaxyConfig<UserThemeConfig>({
         transformIndexHtml(html) {
           // ── Static SEO fallback (visible to crawlers before Vue hydrates) ──
           const seoHead = `
-            <title>lwsのblog</title>
+            <title>谢谢の博客</title>
             <meta name="description" content="一个普通人.">
             <!-- Avatar speed: the sidebar avatar is only discovered ~2.3s in,
                  after the SPA mounts. Preconnecting + preloading it here lets

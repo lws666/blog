@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://api.lwsnb.dpdns.org/sitemap.xml
+Sitemap: https://www.lwsnb.eu.cc/sitemap.xml

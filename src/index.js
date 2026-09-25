@@ -2,12 +2,19 @@
  * lwsnb Worker — serves static assets + proxies SEO/API to blog-worker.
  *
  * Behaviour:
- *   www.lwsnb.dpdns.org (old host)               → 301 to www.lwsnb.eu.cc
- *   /sitemap.xml /robots.txt /rss.xml /llms.txt  → proxy to api.lwsnb.eu.cc
- *   /api/*                                        → proxy to api.lwsnb.eu.cc
- *   /posts/* (crawler only)                       → proxy to api.lwsnb.eu.cc (pre-render)
- *   /posts/* (browser)                            → serve from assets (SPA fallback)
- *   everything else                               → serve from assets (SPA fallback)
+ *   www.lwsnb.dpdns.org (old host)                → 301 to www.lwsnb.eu.cc
+ *   /sitemap.xml /robots.txt /rss.xml /llms.txt   → proxy to api.lwsnb.eu.cc
+ *   /api/*                                        → same-origin service binding
+ *   crawler requests                              → real page + injected <head>
+ *   everything else                               → serve from assets
+ *
+ * Crawlers used to receive a completely different document: a bare
+ * pre-rendered HTML page with no theme, no navigation and no JavaScript
+ * (Search Console's mobile test showed exactly that page, which is why it
+ * looked nothing like the real site). They now get the same SPA document
+ * everyone else gets, with the per-page SEO tags already in the <head> so
+ * that crawlers and JavaScript-less unfurl bots (Telegram, Discord, WeChat)
+ * still see the article title and cover without running Vue.
  */
 const API_ORIGIN = 'https://api.lwsnb.eu.cc'
 const OLD_HOST = 'www.lwsnb.dpdns.org'
@@ -18,6 +25,59 @@ const BOT_UA = /googlebot|bingbot|baiduspider|yandexbot|duckduckbot|twitterbot|f
 
 function isBot(ua) {
   return BOT_UA.test(ua)
+}
+
+/**
+ * Extract the reusable SEO tags from a blog-worker pre-render page.
+ *
+ * Keeps <title>, <meta>, <link rel="canonical"> and the JSON-LD block; drops
+ * the pre-render's own boilerplate (charset / viewport duplicates the shell
+ * already has) and its inline <style>, which only styled the old bare page.
+ */
+function seoHeadFrom(html) {
+  const head = html.match(/<head[^>]*>([\s\S]*?)<\/head>/i)
+  if (!head) return ''
+  return head[1]
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<meta\s+charset[^>]*>/gi, '')
+    .replace(/<meta\s+name="viewport"[^>]*>/gi, '')
+    .trim()
+}
+
+/**
+ * Serve the real SPA shell with the per-page SEO head injected.
+ *
+ * The shell's own static <title>/<meta description> are replaced, and the
+ * pre-render's tags are appended last so they win over anything the theme
+ * injected earlier in <head>. The body is untouched: same document, same
+ * theme, same JavaScript as a normal visit.
+ */
+async function withSeoHead(env, request, url, apiPath) {
+  const [shellRes, seoRes] = await Promise.all([
+    env.ASSETS.fetch(new Request(url.origin + '/index.html')),
+    fetch(new Request(API_ORIGIN + apiPath, request)),
+  ])
+
+  // No pre-rendered tags available (unknown slug, API hiccup): fall through to
+  // the plain shell rather than failing the request.
+  if (!shellRes.ok || !seoRes.ok) return shellRes
+
+  const [shell, seo] = await Promise.all([shellRes.text(), seoRes.text()])
+  const head = seoHeadFrom(seo)
+  if (!head) return new Response(shell, shellRes)
+
+  const html = shell
+    .replace(/<title>[\s\S]*?<\/title>/i, '')
+    .replace(/<meta\s+name="description"[^>]*>/i, '')
+    .replace('</head>', `${head}\n</head>`)
+
+  return new Response(request.method === 'HEAD' ? null : html, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': shellRes.headers.get('Cache-Control') || 'no-cache',
+    },
+  })
 }
 
 export default {
@@ -38,7 +98,7 @@ export default {
       return env.API.fetch(request)
     }
 
-    // ── SEO + API: proxy to blog-worker ─────────────────────────
+    // ── SEO endpoints: proxy to blog-worker ─────────────────────
     const isSeo = path === '/sitemap.xml' || path === '/robots.txt' ||
                   path === '/rss.xml' || path === '/llms.txt'
     if (isSeo) {
@@ -46,16 +106,14 @@ export default {
       return fetch(new Request(target, request))
     }
 
-    // ── Post pre-render: proxy crawlers to blog-worker ──────────
-    if (path.startsWith('/posts/') && isBot(request.headers.get('User-Agent') || '')) {
-      const target = API_ORIGIN + path + url.search
-      return fetch(new Request(target, request))
-    }
-
-    // ── Homepage pre-render: proxy crawlers to blog-worker ─────
-    if (path === '/' && isBot(request.headers.get('User-Agent') || '')) {
-      const target = API_ORIGIN + '/render/homepage'
-      return fetch(new Request(target, request))
+    // ── Crawlers: real page, SEO head pre-filled ────────────────
+    if (isBot(request.headers.get('User-Agent') || '')) {
+      if (path === '/') {
+        return withSeoHead(env, request, url, '/render/homepage')
+      }
+      if (path.startsWith('/posts/')) {
+        return withSeoHead(env, request, url, path + url.search)
+      }
     }
 
     // ── Static assets via ASSETS binding ────────────────────────

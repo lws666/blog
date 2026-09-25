@@ -19,7 +19,10 @@ useHead(() => {
 
   const postUrl = `${siteUrl.value}/posts/${p.slug}`
   const siteTitle = siteConfig.value.title || '谢谢の博客'
-  const desc = p.excerpt || siteConfig.value.description || ''
+  // Fall back to the post title, then the site description — the same order
+  // the Worker uses when it pre-renders the head, so both agree for posts
+  // published without a description.
+  const desc = p.excerpt || p.title || siteConfig.value.description || ''
   const authorName = siteConfig.value.author?.name || '权益'
   const authorUrl = siteConfig.value.author?.avatar || undefined
 
@@ -38,6 +41,14 @@ useHead(() => {
       // Override og:type to 'article' for blog posts
       { property: 'og:type', content: 'article' },
       { property: 'og:url', content: postUrl },
+      // og:title / og:image / og:description were never set here, so the
+      // theme fell back to the site title and the favicon: sharing a post
+      // produced a card with the site name and no cover. The crawler
+      // pre-render hid it, because unfurl bots read that page's tags instead.
+      { property: 'og:title', content: p.title },
+      { property: 'og:description', content: desc },
+      { property: 'og:site_name', content: siteTitle },
+      ...(p.cover ? [{ property: 'og:image', content: p.cover }] : []),
       { property: 'article:published_time', content: p.date },
       ...(p.updated ? [{ property: 'article:modified_time', content: p.updated }] : []),
       ...(p.tags?.length ? p.tags.map(tag => ({ property: 'article:tag', content: tag })) : []),

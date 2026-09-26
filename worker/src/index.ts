@@ -90,16 +90,35 @@ app.get('/cover/*', async (c) => {
   if (!name || name.includes('..')) {
     return c.text('Not Found', 404)
   }
+
+  // Immutable URLs → cache at the edge. Without this every cover request paid
+  // a Worker invocation plus a B2 round trip: the response was streamed fresh
+  // each time (no cf-cache-status, ~1s TTFB from far colos) even though the
+  // browser-side cache-control already said "immutable".
+  const cache = caches.default
+  const cacheKey = new Request(c.req.url, { method: 'GET' })
+  const cached = await cache.match(cacheKey)
+  if (cached) {
+    return cached
+  }
+
   try {
     const b2 = createB2Client(c.env)
     const res = await b2.get(`covers/${name}`)
     if (!res.ok || !res.body) {
       return c.text('Not Found', 404)
     }
-    return c.newResponse(res.body, 200, {
-      'Content-Type': res.headers.get('content-type') || 'image/png',
-      'Cache-Control': 'public, max-age=31536000, immutable',
+    const out = new Response(res.body, {
+      status: 200,
+      headers: {
+        'Content-Type': res.headers.get('content-type') || 'image/png',
+        'Cache-Control': 'public, max-age=31536000, immutable',
+      },
     })
+    // Per-colo cache: the first visitor of each PoP still reaches B2, the
+    // rest are served from the edge until the object is evicted.
+    c.executionCtx.waitUntil(cache.put(cacheKey, out.clone()))
+    return out
   } catch {
     return c.text('Bad Gateway', 502)
   }

@@ -45,6 +45,21 @@ function seoHeadFrom(html) {
 }
 
 /**
+ * Extract the pre-render's body content.
+ *
+ * Scripts and inline styles are dropped — the shell ships its own bundle and
+ * stylesheet. What remains is exactly the content Vue mounts into #app.
+ */
+function seoBodyFrom(html) {
+  const body = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
+  if (!body) return ''
+  return body[1]
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .trim()
+}
+
+/**
  * Serve the real SPA shell with the per-page SEO head injected.
  *
  * The shell's own static <title>/<meta description> are replaced, and the
@@ -64,12 +79,26 @@ async function withSeoHead(env, request, url, apiPath) {
 
   const [shell, seo] = await Promise.all([shellRes.text(), seoRes.text()])
   const head = seoHeadFrom(seo)
-  if (!head) return new Response(shell, shellRes)
+  const body = seoBodyFrom(seo)
+  if (!head && !body) return new Response(shell, shellRes)
 
-  const html = shell
-    .replace(/<title>[\s\S]*?<\/title>/i, '')
-    .replace(/<meta\s+name="description"[^>]*>/i, '')
-    .replace('</head>', `${head}\n</head>`)
+  let html = shell
+  if (head) {
+    html = html
+      .replace(/<title>[\s\S]*?<\/title>/i, '')
+      .replace(/<meta\s+name="description"[^>]*>/i, '')
+      .replace('</head>', `${head}\n</head>`)
+  }
+
+  // Hand non-JS consumers the content as well. Bing's renderer is far less
+  // reliable than Google's, and its SEO analyzer reads the raw HTML — where an
+  // empty SPA shell has no <h1> at all ("H1 tag missing" in Webmaster Tools).
+  // The pre-rendered body is exactly what Vue mounts into #app, so after
+  // hydration the DOM is the same document users see; nothing is hidden from
+  // or shown differently to anyone.
+  if (body) {
+    html = html.replace(/(<div id="app">)[\s\S]*?(<\/div>)/i, `$1${body}$2`)
+  }
 
   return new Response(request.method === 'HEAD' ? null : html, {
     status: 200,

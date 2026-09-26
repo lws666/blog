@@ -1,6 +1,10 @@
 # 谢谢の博客
 > 一个普通人.
 
+当前权威站点名称为「谢谢の博客」，权威地址为 https://www.lwsnb.eu.cc/。
+历史文章中出现的 www.lwsnb.dpdns.org、api.lwsnb.dpdns.org 等域名属于历史语境，
+现已 301 重定向到本站，不代表当前的 canonical 品牌或站点地址。
+
 ## About
 - [About](https://www.lwsnb.eu.cc/about/)
 - [Site](https://www.lwsnb.eu.cc/about/site)

@@ -23,8 +23,10 @@ useHead(() => {
   // the Worker uses when it pre-renders the head, so both agree for posts
   // published without a description.
   const desc = p.excerpt || p.title || siteConfig.value.description || ''
-  const authorName = siteConfig.value.author?.name || '权益'
-  const authorUrl = siteConfig.value.author?.avatar || undefined
+  // article:author wants a profile URL. This used to be the avatar image URL,
+  // which is not what the property means; site.config.ts author.link is the
+  // same value the theme feeds into the schema Person node.
+  const authorUrl = siteConfig.value.author?.link || siteUrl.value
 
   return {
     // Document title — composed by valaxy's global titleTemplate
@@ -49,14 +51,17 @@ useHead(() => {
       { property: 'og:description', content: desc },
       { property: 'og:site_name', content: siteTitle },
       ...(p.cover ? [{ property: 'og:image', content: p.cover }] : []),
+      ...(p.cover ? [{ property: 'og:image:alt', content: p.title }] : []),
       { property: 'article:published_time', content: p.date },
       ...(p.updated ? [{ property: 'article:modified_time', content: p.updated }] : []),
+      ...(authorUrl ? [{ property: 'article:author', content: authorUrl }] : []),
       ...(p.tags?.length ? p.tags.map(tag => ({ property: 'article:tag', content: tag })) : []),
       // Twitter card
       { name: 'twitter:card', content: 'summary_large_image' },
       { name: 'twitter:title', content: p.title },
       { name: 'twitter:description', content: desc },
       ...(p.cover ? [{ name: 'twitter:image', content: p.cover }] : []),
+      ...(p.cover ? [{ name: 'twitter:image:alt', content: p.title }] : []),
     ],
     script: [
       {
@@ -66,24 +71,32 @@ useHead(() => {
           '@graph': [
             {
               '@type': 'BlogPosting',
+              // Entity identity. The Worker's crawler head emits the same @id,
+              // so the raw-HTML copy and this one merge into a single article
+              // instead of competing (two BlogPostings on one page is what
+              // makes a rich result get dropped).
+              '@id': `${postUrl}#article`,
+              url: postUrl,
               headline: p.title,
               description: desc,
-              image: p.cover || undefined,
+              ...(p.cover ? { image: p.cover } : {}),
               datePublished: p.date,
-              dateModified: p.updated || p.date,
-              author: {
-                '@type': 'Person',
-                name: authorName,
-                url: authorUrl,
-              },
-              url: postUrl,
+              ...(p.updated ? { dateModified: p.updated } : {}),
+              inLanguage: 'zh-CN',
+              ...(p.tags?.length ? { keywords: p.tags.join(', '), articleSection: p.tags } : {}),
+              // Reference the Person / WebSite nodes Valaxy already emits
+              // app-wide rather than redefining them: this page used to ship a
+              // second Person and a second BlogPosting (3 Person nodes total).
+              author: { '@id': `${siteUrl.value}/#identity` },
+              publisher: { '@id': `${siteUrl.value}/#website` },
+              isPartOf: { '@id': `${siteUrl.value}/#website` },
+              mainEntityOfPage: { '@id': postUrl },
             },
             {
               '@type': 'BreadcrumbList',
               itemListElement: [
-                { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl.value },
-                { '@type': 'ListItem', position: 2, name: siteTitle, item: `${siteUrl.value}/` },
-                { '@type': 'ListItem', position: 3, name: p.title, item: postUrl },
+                { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl.value}/` },
+                { '@type': 'ListItem', position: 2, name: p.title, item: postUrl },
               ],
             },
           ],
@@ -170,6 +183,22 @@ onMounted(async () => {
     // Same algorithm Valaxy uses at build time, so anchors/links match.
     slugify,
     level: [1, 2, 3, 4, 5, 6],
+  })
+
+  // ── Heading levels ────────────────────────────────────────────
+  // The post title rendered above the article is the page's one and only <h1>.
+  // Articles here write their sections with `#`, so without this the page ended
+  // up with 14 h1s (12 of them from the body) and search engines had no clear
+  // topic to latch onto. Demote every body heading one level, h1→h2 … h5→h6,
+  // which also matches themeConfig.outline in valaxy.config.ts ([2, 4]).
+  mdInstance.core.ruler.push('demote-article-headings', (state) => {
+    for (const token of state.tokens) {
+      if (token.type !== 'heading_open' && token.type !== 'heading_close')
+        continue
+      const level = Number(token.tag.slice(1))
+      if (level >= 1 && level <= 5)
+        token.tag = `h${level + 1}`
+    }
   })
 
   md.value = mdInstance

@@ -11,6 +11,13 @@ export default defineSiteConfig({
      * 头像链接：建议使用你在 GitHub 的头像或其他外部 URL
      */
     avatar: 'https://img.lwsnb.eu.cc/file/1770349295364_IMG_20250823_144910_239.jpg',
+    /**
+     * 作者主页链接。theme 的 layouts/post.vue 用它填结构化数据里的
+     * Person.url；不填时 @unhead/schema-org 会落回框架默认值
+     * https://valaxy.site，等于在结构化数据里声明作者主页是别人的站。
+     * 与下方 social 里的 GitHub 保持一致。
+     */
+    link: 'https://github.com/lws666',
     intro: '一个普通人，热爱开发与生活。', // 丰富了简介内容
   },
   description: '一个普通人的技术博客，分享 Cloudflare、Valaxy、Vue、前端开发、AI 等领域的实践与思考。',

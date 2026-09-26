@@ -170,9 +170,26 @@ app.get('/sitemap.xml', async (c) => {
   </url>`)
     }
 
+    // Static pages. All of these answered 200 but were missing from the
+    // sitemap, so they were only discoverable through in-page links.
+    const staticPages = [
+      { path: '/about/', changefreq: 'monthly', priority: '0.6' },
+      { path: '/archives/', changefreq: 'weekly', priority: '0.5' },
+      { path: '/categories/', changefreq: 'weekly', priority: '0.4' },
+      { path: '/tags/', changefreq: 'weekly', priority: '0.4' },
+      { path: '/links/', changefreq: 'monthly', priority: '0.3' },
+    ]
+    const staticUrls = staticPages.map(page => `  <url>
+    <loc>${siteUrl}${page.path}</loc>
+    <lastmod>${homeLastmod}</lastmod>
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
+  </url>`)
+
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.join('\n')}
+${staticUrls.join('\n')}
 </urlset>`
 
     return c.newResponse(xml, 200, { 'Content-Type': 'application/xml' })
@@ -188,6 +205,8 @@ app.get('/robots.txt', (c) => {
   // "sitemap is on a different domain" warnings in Search Console.
   const txt = `User-agent: *
 Allow: /
+# 后台登录页，无需抓取
+Disallow: /admin/
 
 Sitemap: https://www.lwsnb.eu.cc/sitemap.xml
 `
@@ -203,6 +222,10 @@ app.get('/llms.txt', async (c) => {
 
     let lines = `# 谢谢の博客
 > 一个普通人.
+
+当前权威站点名称为「谢谢の博客」，权威地址为 ${siteUrl}/。
+历史文章中出现的 www.lwsnb.dpdns.org、api.lwsnb.dpdns.org 等域名属于历史语境，
+现已 301 重定向到本站，不代表当前的 canonical 品牌或站点地址。
 
 ## About
 - [About](${siteUrl}/about/)
@@ -312,6 +335,7 @@ function buildHomeHtml(posts?: Array<{ slug: string; title: string; date: string
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
   <meta property="og:title" content="${escapeXml(siteName)}">
   <meta property="og:description" content="一个普通人的技术博客，分享 Cloudflare、Valaxy、Vue、前端开发、AI 等领域的实践与思考。">
   <meta property="og:url" content="${siteUrl}/">
@@ -322,13 +346,17 @@ function buildHomeHtml(posts?: Array<{ slug: string; title: string; date: string
   <meta name="twitter:title" content="${escapeXml(siteName)}">
   <meta name="twitter:description" content="一个普通人的技术博客，分享 Cloudflare、Valaxy、Vue、前端开发、AI 等领域的实践与思考。">
 
-  <!-- JSON-LD WebSite -->
+  <!-- JSON-LD WebSite. @id matches the node @unhead/schema-org emits app-wide
+       (${siteUrl}/#website), so the raw-HTML copy and the rendered one are the
+       same entity instead of two competing WebSites. -->
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "WebSite",
+  "@id": "${siteUrl}/#website",
   "name": "谢谢の博客",
   "url": "${siteUrl}",
+  "inLanguage": "zh-CN",
   "description": "一个普通人的技术博客，分享 Cloudflare、Valaxy、Vue、前端开发、AI 等领域的实践与思考。"
 }
   <\/script>
@@ -414,35 +442,73 @@ function buildPostHtml(data: {
 
   <!-- Open Graph -->
   <meta property="og:type" content="article">
+  <meta property="og:locale" content="zh_CN">
   <meta property="og:title" content="${escapeXml(data.title)}">
   <meta property="og:description" content="${escapeXml(data.description || data.title)}">
   <meta property="og:url" content="${absUrl}">
   <meta property="og:site_name" content="${siteName}">
   ${data.cover ? `<meta property="og:image" content="${escapeXml(data.cover)}">` : ''}
+  ${data.cover ? `<meta property="og:image:alt" content="${escapeXml(data.title)}">` : ''}
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${escapeXml(data.title)}">
   <meta name="twitter:description" content="${escapeXml(data.description || data.title)}">
   ${data.cover ? `<meta name="twitter:image" content="${escapeXml(data.cover)}">` : ''}
+  ${data.cover ? `<meta name="twitter:image:alt" content="${escapeXml(data.title)}">` : ''}
 
-  <!-- JSON-LD (BlogPosting) -->
+  <!-- Article metadata -->
+  <meta name="author" content="权益">
+  <meta property="article:author" content="https://github.com/lws666">
+  <meta property="article:published_time" content="${data.date}">
+  <meta property="article:modified_time" content="${data.updated || data.date}">
+${data.tags.map(tag => `  <meta property="article:tag" content="${escapeXml(tag)}">`).join('\n')}
+
+  <!-- JSON-LD. @id values match the entities @unhead/schema-org emits app-wide
+       (…/#identity, …/#website) and the BlogPosting emitted by
+       pages/posts/[slug].vue, so the graph merges into one article instead of
+       shipping a second, competing BlogPosting. -->
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "BlogPosting",
-  "headline": ${JSON.stringify(data.title)},
-  "description": ${JSON.stringify(data.description || data.title)},
-  "url": "${absUrl}",
-  "datePublished": "${data.date}",
-  "dateModified": "${data.updated || data.date}",
-  "author": {
-    "@type": "Person",
-    "name": "权益"
-  },
-  "keywords": ${tagsJson},
-  "articleSection": ${catsJson}
-  ${data.cover ? `,\n  "image": "${escapeXml(data.cover)}"` : ''}
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "${siteUrl}/#identity",
+      "name": "权益",
+      "url": "${siteUrl}/",
+      "sameAs": [
+        "https://github.com/lws666",
+        "https://m.bilibili.com/space/3493115176422328",
+        "https://t.me/lwsnb"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "${siteUrl}/#website",
+      "name": "谢谢の博客",
+      "url": "${siteUrl}/",
+      "inLanguage": "zh-CN",
+      "publisher": { "@id": "${siteUrl}/#identity" }
+    },
+    {
+      "@type": "BlogPosting",
+      "@id": "${absUrl}#article",
+      "url": "${absUrl}",
+      "mainEntityOfPage": { "@id": "${absUrl}" },
+      "headline": ${JSON.stringify(data.title)},
+      "description": ${JSON.stringify(data.description || data.title)},
+      "datePublished": "${data.date}",
+      "dateModified": "${data.updated || data.date}",
+      "inLanguage": "zh-CN",
+      "author": { "@id": "${siteUrl}/#identity" },
+      "publisher": { "@id": "${siteUrl}/#website" },
+      "isPartOf": { "@id": "${siteUrl}/#website" },
+      "keywords": ${tagsJson},
+      "articleSection": ${catsJson}
+      ${data.cover ? `,\n      "image": "${escapeXml(data.cover)}"` : ''}
+    }
+  ]
 }
   <\/script>
 

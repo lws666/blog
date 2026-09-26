@@ -1,14 +1,27 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useSiteConfig, useValaxyI18n } from 'valaxy'
 
+const route = useRoute()
 const siteConfig = useSiteConfig()
 const { $t } = useValaxyI18n()
+
+/**
+ * Exactly one <h1> per page.
+ *
+ * On the homepage the site name *is* the page heading. On every other page the
+ * page supplies its own h1 (the post title, 归档, 标签, 关于…), so the sidebar
+ * name must not compete with it — previously every page shipped a second, and
+ * on post pages a third, h1 at the top of the document.
+ */
+const tag = computed(() => (route.path === '/' ? 'h1' : 'div'))
 </script>
 
 <template>
-  <h1 class="site-name text-lg leading-loose">
+  <component :is="tag" class="site-name text-lg leading-loose">
     {{ $t(siteConfig.title) }}
-  </h1>
+  </component>
 </template>
 
 <style>

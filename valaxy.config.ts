@@ -25,6 +25,8 @@ export default defineValaxyConfig<UserThemeConfig>({
     banner: {
       enable: true,
       title: '谢谢の博客',
+      // Butterfly 风格首页 Hero 的全屏背景图（走 img.lwsnb.eu.cc 代理与边缘缓存）
+      url: 'https://img.lwsnb.eu.cc/file/1770349301804_DefualtThumbnail.jpg.webp',
     },
 
     // 文章目录收录的标题层级（Valaxy 默认 [2, 4]）

@@ -1,1 +1,345 @@
-// you can custom css here
+/**
+ * Butterfly 风格设计令牌与全局样式（浅色系）
+ *
+ * 参考 jerryc127/hexo-theme-butterfly 的视觉体系：
+ * - 浅灰蓝页面底色 + 白色圆角卡片 + 柔和阴影
+ * - #49b1f5 主色（Butterfly 默认主题色）
+ * - 顶部固定导航（首页 banner 上透明，滚动后毛玻璃）
+ * - 内容列 + 右侧栏双栏布局（桌面 ≥1024px）
+ *
+ * 颜色尽量引用 Valaxy 的语义变量（--va-c-*），暗色模式自动跟随；
+ * 仅在 :root:not(.dark) 下覆盖亮色值，暗色保持 Valaxy 默认。
+ */
+
+:root {
+  --bf-primary: #49b1f5;
+  --bf-container: 1200px;
+  --bf-sidebar-w: 300px;
+  --bf-nav-h: 60px;
+  --bf-radius: 8px;
+  --bf-shadow: 0 0 4px rgba(0, 0, 0, 0.12);
+  --bf-shadow-hover: 0 6px 16px -4px rgba(0, 0, 0, 0.2);
+  --bf-font-sans: 'Helvetica Neue', Arial, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', sans-serif;
+}
+
+:root:not(.dark) {
+  --bf-bg: #f7f9fe;
+  --bf-card-bg: #fff;
+  --bf-text: #4c4948;
+  --bf-text-secondary: #8c8c8c;
+  --bf-nav-solid-bg: rgba(255, 255, 255, 0.85);
+  --bf-nav-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+
+  // 让既有 Yun 组件跟随 Butterfly 配色
+  --va-c-primary: var(--bf-primary);
+  --va-c-bg: var(--bf-bg);
+}
+
+html.dark {
+  --bf-card-bg: rgba(255, 255, 255, 0.95);
+  --bf-nav-solid-bg: rgba(37, 37, 40, 0.85);
+  --bf-nav-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+  --va-c-primary: var(--bf-primary);
+}
+
+/* ---------- 布局骨架 ---------- */
+
+.bf-shell {
+  background: var(--va-c-bg);
+}
+
+.bf-container {
+  width: 100%;
+  max-width: var(--bf-container);
+  // 只设左右 margin：写 margin 简写会以级联顺序覆盖掉
+  // 布局上叠加 banner 用的 -mt-14 等工具类
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.bf-font-sans {
+  font-family: var(--bf-font-sans);
+}
+
+/* Butterfly 卡片：白底、圆角、柔和阴影、hover 上浮 */
+.bf-card {
+  background: var(--bf-card-bg, var(--va-c-bg-light, #fff));
+  border-radius: var(--bf-radius);
+  box-shadow: var(--bf-shadow);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+a.bf-card:hover {
+  box-shadow: var(--bf-shadow-hover);
+}
+
+/* 卡片小标题（公告/最新文章/网站资讯…） */
+.bf-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--bf-font-sans);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--bf-text, var(--va-c-text));
+  margin-bottom: 0.75rem;
+
+  &::before {
+    content: '';
+    width: 3px;
+    height: 0.95em;
+    border-radius: 2px;
+    background: var(--bf-primary);
+  }
+}
+
+/* ---------- 顶部导航 ---------- */
+
+.bf-navbar {
+  height: var(--bf-nav-h);
+  transition: background 0.3s ease, box-shadow 0.3s ease, color 0.3s ease;
+}
+
+.bf-navbar--solid {
+  background: var(--bf-nav-solid-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--bf-nav-shadow);
+  color: var(--bf-text, var(--va-c-text));
+}
+
+.bf-navbar--clear {
+  background: transparent;
+  color: #fff;
+}
+
+.bf-navbar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-family: var(--bf-font-sans);
+  font-size: 0.92rem;
+  opacity: 0.9;
+  transition: color 0.2s ease, background 0.2s ease;
+
+  &:hover {
+    color: var(--bf-primary);
+    opacity: 1;
+  }
+
+  &.router-link-active {
+    color: var(--bf-primary);
+    opacity: 1;
+  }
+}
+
+.bf-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  font-size: 1.15rem;
+  transition: color 0.2s ease, background 0.2s ease;
+
+  &:hover {
+    color: var(--bf-primary);
+    background: rgba(73, 177, 245, 0.12);
+  }
+}
+
+/* ---------- 首页 Hero ---------- */
+
+.bf-hero {
+  height: 100vh;
+  height: 100svh;
+}
+
+.bf-hero-title {
+  font-family: var(--bf-font-sans);
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.45);
+  letter-spacing: 0.06em;
+}
+
+.bf-hero-subtitle {
+  font-family: var(--bf-font-sans);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.bf-hero-arrow {
+  animation: bf-bounce 2s infinite;
+}
+
+@keyframes bf-bounce {
+  0%,
+  100% {
+    transform: translate(-50%, 0);
+  }
+  50% {
+    transform: translate(-50%, 8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bf-hero-arrow {
+    animation: none;
+  }
+}
+
+/* ---------- 文章卡片流（首页） ---------- */
+
+.bf-post-card {
+  display: flex;
+  overflow: hidden;
+  cursor: pointer;
+
+  /* Butterfly：封面左右交替（偶数张封面在右） */
+  &:nth-child(even) {
+    flex-direction: row-reverse;
+  }
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--bf-shadow-hover);
+
+    .bf-post-card-title {
+      color: var(--bf-primary);
+    }
+  }
+}
+
+.bf-post-card-cover {
+  width: 45%;
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.bf-post-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.25rem 1.5rem;
+}
+
+.bf-post-card-title {
+  font-family: var(--bf-font-sans);
+  font-weight: 700;
+  font-size: 1.3rem;
+  line-height: 1.4;
+  color: var(--bf-text, var(--va-c-text));
+  transition: color 0.2s ease;
+}
+
+.bf-post-card-excerpt {
+  font-size: 0.9rem;
+  line-height: 1.7;
+  opacity: 0.8;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .bf-post-card,
+  .bf-post-card:nth-child(even) {
+    flex-direction: column;
+  }
+
+  .bf-post-card-cover {
+    width: 100%;
+    height: 180px;
+  }
+
+  .bf-post-card-body {
+    padding: 1rem;
+  }
+}
+
+/* 最新文章条目 */
+.bf-recent-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: rgba(73, 177, 245, 0.08);
+
+    .bf-recent-title {
+      color: var(--bf-primary);
+    }
+  }
+}
+
+.bf-recent-title {
+  transition: color 0.2s ease;
+}
+
+/* ---------- 文章页 banner ---------- */
+
+.bf-post-banner {
+  height: 42vh;
+  min-height: 300px;
+}
+
+.bf-post-banner-title {
+  font-family: var(--bf-font-sans);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* ---------- 右侧栏 ---------- */
+
+.bf-aside {
+  width: var(--bf-sidebar-w);
+  flex-shrink: 0;
+  position: sticky;
+  top: calc(var(--bf-nav-h) + 1rem);
+  max-height: calc(100vh - var(--bf-nav-h) - 2rem);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* 音乐播放器（卡片形态）：项目组件的浮动定位在侧栏内改为文档流 */
+.yun-music--card {
+  position: static !important;
+  right: auto !important;
+  bottom: auto !important;
+  z-index: auto !important;
+  width: 100%;
+
+  .yun-music-panel {
+    position: static !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    margin-top: 0.5rem;
+  }
+
+  .yun-music-btn {
+    width: 100%;
+    justify-content: flex-start;
+    border-radius: 6px;
+  }
+}
+
+/* 桌面端隐藏全局浮动播放器（侧栏卡片版接管），移动端反之 */
+@media (min-width: 1024px) {
+  .yun-music:not(.yun-music--card) {
+    display: none;
+  }
+}

@@ -15,6 +15,11 @@ const posts = computed(() => dynamicPosts.value)
 
 <template>
   <YunLayoutWrapper>
-    <YunPostList :posts="posts" />
+    <div class="bf-container flex items-start gap-6 px-4 pt-24 pb-10">
+      <main class="flex-1 min-w-0">
+        <YunPostList :posts="posts" />
+      </main>
+      <BfSidebar />
+    </div>
   </YunLayoutWrapper>
 </template>

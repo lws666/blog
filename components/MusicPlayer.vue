@@ -36,12 +36,15 @@ const props = withDefaults(defineProps<{
   id?: string
   /** Panel title */
   title?: string
+  /** 卡片形态：跟随文档流嵌入右栏卡片，不浮动（默认浮动） */
+  card?: boolean
 }>(), {
   api: 'https://music.lwsnb.eu.cc',
   server: 'netease',
   type: 'playlist',
   id: '60198',
   title: '音乐',
+  card: false,
 })
 
 const open = ref(false)
@@ -172,7 +175,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="yun-music" :class="{ 'is-open': open, 'toc-avoid': tocAvoid }">
+  <div
+    class="yun-music"
+    :class="{ 'is-open': open, 'toc-avoid': tocAvoid, 'yun-music--card': card }"
+  >
     <!-- Panel -->
     <transition name="yun-music-fade">
       <section v-show="open" class="yun-music-panel" aria-label="音乐播放器">

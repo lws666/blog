@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, computed, nextTick } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useSiteConfig, runContentUpdated } from 'valaxy'
 import { useHead } from '@unhead/vue'
 import type { MarkdownIt } from 'markdown-it'
 import { useDynamicPost } from '../../composables/useDynamicPost'
+import { currentPost } from '../../composables/useCurrentPost'
 import GiscusComment from '../../components/GiscusComment.vue'
 
 const route = useRoute()
@@ -251,10 +252,19 @@ watch(
         description: p.excerpt || undefined,
         comment: p.comment,
       }
+      // route.meta 突变不具响应性，banner 用这个单例读取（见 useCurrentPost.ts）
+      currentPost.value = p
+    }
+    else {
+      currentPost.value = null
     }
   },
   { immediate: true },
 )
+
+onUnmounted(() => {
+  currentPost.value = null
+})
 </script>
 
 <template>
@@ -283,25 +293,9 @@ watch(
   </div>
 
   <!-- Post content -->
+  <!-- 标题与元信息（日期/标签）由 layouts/post.vue 的 Butterfly banner 呈现，
+       这里不再重复渲染，保证每页只有一个 h1。 -->
   <article v-else>
-    <!-- Post title -->
-    <div class="yun-post-title prose mx-auto">
-      <h1 class="text-center">{{ post.title }}</h1>
-    </div>
-
-    <!-- Post meta -->
-    <div class="flex justify-center gap-4 text-sm opacity-60 my-4 flex-wrap">
-      <time :datetime="post.date">{{ post.date }}</time>
-      <template v-if="post.tags?.length">
-        <span v-for="tag in post.tags" :key="tag" class="yun-tag">
-          #{{ tag }}
-        </span>
-      </template>
-      <span v-if="post.updated && post.updated !== post.date">
-        更新于 {{ post.updated }}
-      </span>
-    </div>
-
     <!-- AI summary card -->
     <aside v-if="post.summary" class="ai-summary">
       <div class="ai-summary-head">

@@ -234,6 +234,15 @@ onUnmounted(() => {
   if (timer)
     clearTimeout(timer)
 })
+
+/** 下滑箭头：平滑滚到正文容器（#bf-main 有 scroll-margin-top 让开导航） */
+function scrollToMain() {
+  const el = document.getElementById('bf-main')
+  if (!el)
+    return
+  const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+}
 </script>
 
 <template>
@@ -273,27 +282,49 @@ onUnmounted(() => {
       </p>
     </div>
 
+    <!-- 下滑箭头：z-5 保证浮在波浪之上（波浪是 z-1，且 DOM 在其后） -->
     <a
       href="#bf-main"
-      class="bf-hero-arrow absolute bottom-14 left-1/2 z-1 text-white opacity-90 hover:opacity-100"
+      class="bf-hero-arrow absolute bottom-20 md:bottom-24 left-1/2 z-5 text-white"
       aria-label="向下滚动查看文章"
+      @click.prevent="scrollToMain"
     >
       <div class="i-ri-arrow-down-s-line size-10" />
     </a>
 
-    <!-- 底部波浪：颜色跟随页面底色变量，暗色模式自动适配 -->
+    <!--
+      底部波浪：每层 SVG 宽 300%（3 个周期，viewBox 4320 = 3×1440），
+      路径是同一周期重复 3 份、首尾控制点相同，因此整体左移 1/3
+      （= 恰好一个周期 = 一个 hero 宽度）时首尾无缝。
+      用百分比平移而不是 px：preserveAspectRatio="none" 下用户单位
+      与 CSS 像素不等价，写死 px 在非 1440px 宽屏会跳。
+      两层相位相反、速度不同形成视差；颜色跟随页面底色变量。
+    -->
     <svg
-      class="absolute bottom-0 left-0 w-full h-[70px] md:h-[100px] z-1"
-      viewBox="0 0 1440 120"
+      class="bf-hero-wave bf-wave--back absolute bottom-0 left-0 h-[70px] md:h-[100px] z-1"
+      viewBox="0 0 4320 120"
       preserveAspectRatio="none"
       aria-hidden="true"
     >
       <path
-        d="M0,64 C240,110 480,20 720,48 C960,76 1200,28 1440,64 L1440,120 L0,120 Z"
+        d="M0,72 C240,32 480,32 720,72 C960,112 1200,112 1440,72
+           C1680,32 1920,32 2160,72 C2400,112 2640,112 2880,72
+           C3120,32 3360,32 3600,72 C3840,112 4080,112 4320,72
+           L4320,120 L0,120 Z"
         style="fill: var(--va-c-bg); opacity: 0.45"
       />
+    </svg>
+    <svg
+      class="bf-hero-wave bf-wave--front absolute bottom-0 left-0 h-[70px] md:h-[100px] z-1"
+      viewBox="0 0 4320 120"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
       <path
-        d="M0,80 C260,40 520,100 780,76 C1040,52 1240,88 1440,72 L1440,120 L0,120 Z"
+        d="M0,80 C240,116 480,116 720,80 C960,44 1200,44 1440,80
+           C1680,116 1920,116 2160,80 C2400,44 2640,44 2880,80
+           C3120,116 3360,116 3600,80 C3840,44 4080,44 4320,80
+           L4320,120 L0,120 Z"
         style="fill: var(--va-c-bg)"
       />
     </svg>

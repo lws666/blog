@@ -182,6 +182,15 @@ a.bf-card:hover {
   height: 100svh;
 }
 
+/* Hero 下滑箭头跳到正文容器：留出固定导航的高度，滚动平滑 */
+html {
+  scroll-behavior: smooth;
+}
+
+#bf-main {
+  scroll-margin-top: 4.5rem;
+}
+
 .bf-hero-title {
   font-family: var(--bf-font-sans);
   text-shadow: 0 3px 12px rgba(0, 0, 0, 0.45);
@@ -245,6 +254,47 @@ a.bf-card:hover {
 
 .bf-hero-arrow {
   animation: bf-bounce 2s infinite;
+  // 可点区域比图标大一圈，避免"看着点不中"
+  padding: 0.35rem;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+/**
+ * 波浪：SVG 宽 300%（3 个周期），整体左移 1/3 宽度 = 恰好一个周期，
+ * 用百分比而不是 px —— preserveAspectRatio="none" 下用户单位与 CSS
+ * 像素不等价，写死 px 在非 1440px 宽屏上循环点会跳。
+ * 两层速度不同做视差；back 层在 DOM 里靠前，因此视觉上在后。
+ */
+.bf-hero-wave {
+  width: 300%;
+  will-change: transform;
+}
+
+.bf-wave--back {
+  animation: bf-wave-move 26s linear infinite;
+}
+
+.bf-wave--front {
+  animation: bf-wave-move 16s linear infinite;
+}
+
+@keyframes bf-wave-move {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    // 300% 宽的 1/3 = 一个周期
+    transform: translateX(-33.3333%);
+  }
+}
+
+/* 尊重"减少动效"偏好：波浪与箭头都不动 */
+@media (prefers-reduced-motion: reduce) {
+  .bf-hero-wave,
+  .bf-hero-arrow {
+    animation: none;
+  }
 }
 
 @keyframes bf-bounce {

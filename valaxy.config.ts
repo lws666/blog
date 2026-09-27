@@ -62,7 +62,8 @@ export default defineValaxyConfig<UserThemeConfig>({
     ],
 
     footer: {
-      since: 2016,
+      // 建站日期：右栏"创建于"与"运行天数"都用它（支持 YYYY-MM-DD）
+      since: '2025-12-22',
       beian: {
         enable: false,
         icp: '苏ICP备17038157号',

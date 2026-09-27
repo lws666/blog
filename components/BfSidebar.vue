@@ -26,7 +26,8 @@ const siteConfig = useSiteConfig()
 const themeConfig = useThemeConfig<{
   music?: MusicConfig
   notice?: { enable?: boolean, content?: string }
-  footer?: { since?: number }
+  // 建站日期："2025-12-22" 完整日期，或旧的纯年份（如 2016）
+  footer?: { since?: string | number }
 }>()
 
 const music = computed(() => themeConfig.value.music)
@@ -38,10 +39,31 @@ const postCount = computed(() => posts.value.length)
 
 // 运行天数在客户端计算，避免 SSG 构建时间与访问时间不同导致的水合不一致
 const runningDays = ref<number | null>(null)
+
+/**
+ * 解析建站日期：支持 "2025-12-22"（推荐）与旧的纯年份 2016。
+ * 纯年份按该年 1 月 1 日算，保持与旧配置的兼容。
+ */
+function parseSince(since?: string | number): { date: Date, label: string } | null {
+  if (since === undefined || since === null || since === '')
+    return null
+  const s = String(since).trim()
+  if (/^\d{4}$/.test(s))
+    return { date: new Date(`${s}-01-01T00:00:00Z`), label: `${s} 年` }
+  const d = new Date(s)
+  if (Number.isNaN(d.getTime()))
+    return null
+  // 展示成 2025/12/22
+  const [y, m, day] = s.slice(0, 10).split('-')
+  return { date: d, label: `${y}/${m}/${day}` }
+}
+
+const sinceInfo = computed(() => parseSince(themeConfig.value.footer?.since))
+
 onMounted(() => {
-  const since = themeConfig.value.footer?.since
-  if (since)
-    runningDays.value = Math.max(0, Math.floor((Date.now() - new Date(`${since}-01-01T00:00:00Z`).getTime()) / 86400000))
+  const info = sinceInfo.value
+  if (info)
+    runningDays.value = Math.max(0, Math.floor((Date.now() - info.date.getTime()) / 86400000))
 })
 
 function fmtDate(d?: string | number) {
@@ -144,9 +166,9 @@ function fmtDate(d?: string | number) {
           <dt class="opacity-60">文章数目</dt>
           <dd>{{ postCount }} 篇</dd>
         </div>
-        <div v-if="themeConfig.footer?.since" class="flex justify-between">
+        <div v-if="sinceInfo" class="flex justify-between">
           <dt class="opacity-60">创建于</dt>
-          <dd>{{ themeConfig.footer.since }} 年</dd>
+          <dd>{{ sinceInfo.label }}</dd>
         </div>
       </dl>
     </div>

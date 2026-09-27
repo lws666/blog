@@ -23,126 +23,216 @@ const bg = computed(
 )
 const title = computed(() => themeConfig.value.banner?.title || siteConfig.title)
 
-/* ---------------- 每日一言 + 打字机 ---------------- */
+/* ---------------- 每日一言 + 打字机（循环） ---------------- */
 
+/**
+ * 流程：打字 → 停留 → 逐字删除 → 打下一句 → 循环。
+ * 为了"出来快"：光标挂载即闪烁，文案不等接口——先按缓存/兜底句子
+ * 立刻开始打字，接口返回的多条一言在后台补齐后接上。
+ */
 const HITOKOTO_API = 'https://v1.hitokoto.cn/?encode=json&charset=utf-8'
-const CACHE_KEY = 'bf-hitokoto' // { date, text, from }
-const TYPE_INTERVAL = 90 // 每个字的间隔（ms）
+const CACHE_KEY = 'bf-hitokoto-list' // { date, items: [{ text, from }], last }
+const QUOTE_COUNT = 3 // 每天缓存几条用于轮播
+const MAX_ATTEMPTS = 6 // 去重后仍不足时最多请求几次
+// 分类轮换（d 文学 / i 诗词 / k 哲学 / f 网络 / a 动画 / h 影视），
+// 同时用随机参数击穿 CDN 缓存——否则同一 URL 会被缓存成同一句
+const CATEGORIES = ['d', 'i', 'k', 'f', 'a', 'h']
+const FETCH_TIMEOUT = 2500
+const TYPE_TARGET_MS = 1800 // 整句打字的目标总时长
+const TYPE_MS_MIN = 40
+const TYPE_MS_MAX = 80
+const DELETE_MS = 28
+const HOLD_MS = 2600 // 打完停留
+
+interface Quote { text: string, from: string, placeholder?: boolean }
 
 const typed = ref('')
 const source = ref('')
-const done = ref(false)
-const started = ref(false)
+const started = ref(true) // 光标从挂载起就闪，避免"反应慢"的观感
 
-let typeTimer: ReturnType<typeof setInterval> | undefined
-let sourceTimer: ReturnType<typeof setTimeout> | undefined
+let items: Quote[] = []
+let idx = 0
+let mode: 'typing' | 'holding' | 'deleting' = 'typing'
+let timer: ReturnType<typeof setTimeout> | undefined
 
 function today() {
   return new Date().toLocaleDateString('sv') // YYYY-MM-DD
 }
 
-/** 逐字打出 text；开始前先清掉上一次的文案与定时器 */
-function typeText(text: string, from = '') {
-  if (typeTimer)
-    clearInterval(typeTimer)
-  if (sourceTimer)
-    clearTimeout(sourceTimer)
-  typed.value = ''
-  source.value = ''
-  done.value = false
-  started.value = true
+function typeInterval(len: number) {
+  return Math.max(TYPE_MS_MIN, Math.min(TYPE_MS_MAX, Math.round(TYPE_TARGET_MS / Math.max(len, 1))))
+}
 
-  // 用户偏好减少动效：直接显示全文
-  const reduceMotion
-    = typeof window !== 'undefined'
-      && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-  if (reduceMotion) {
-    typed.value = text
-    source.value = from
-    done.value = true
+function scheduleNext(delay: number) {
+  if (timer)
+    clearTimeout(timer)
+  timer = setTimeout(step, delay)
+}
+
+/** 一天的状态机：打字 → 停留 → 删除 → 下一句 */
+function step() {
+  const q = items[idx % items.length]
+  if (!q)
+    return
+
+  if (mode === 'typing') {
+    if (typed.value.length < q.text.length) {
+      typed.value = q.text.slice(0, typed.value.length + 1)
+      scheduleNext(typeInterval(q.text.length))
+    }
+    else {
+      mode = 'holding'
+      source.value = q.from
+      scheduleNext(HOLD_MS)
+    }
     return
   }
 
-  let i = 0
-  typeTimer = setInterval(() => {
-    i += 1
-    typed.value = text.slice(0, i)
-    if (i >= text.length) {
-      if (typeTimer)
-        clearInterval(typeTimer)
-      typeTimer = undefined
-      // 打完再淡入出处，避免打字过程中抖动
-      sourceTimer = setTimeout(() => {
-        source.value = from
-        done.value = true
-      }, 220)
+  if (mode === 'holding') {
+    mode = 'deleting'
+    source.value = ''
+    scheduleNext(80)
+    return
+  }
+
+  // deleting
+  if (typed.value.length > 0) {
+    typed.value = typed.value.slice(0, -1)
+    scheduleNext(DELETE_MS)
+  }
+  else {
+    idx = (idx + 1) % items.length
+    mode = 'typing'
+    scheduleNext(160)
+  }
+}
+
+/** 用接口返回的一言替换占位句：先删掉占位文字再打第一句 */
+function replacePlaceholder(fresh: Quote[]) {
+  if (!fresh.length)
+    return
+  if (items.some(i => i.placeholder)) {
+    items = fresh
+    idx = 0
+    if (typed.value.length > 0) {
+      mode = 'deleting'
+      source.value = ''
+      scheduleNext(DELETE_MS)
     }
-  }, TYPE_INTERVAL)
-}
-
-function readCache(): { date?: string, text?: string, from?: string } | null {
-  try {
-    return JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')
-  }
-  catch {
-    return null
+    else {
+      mode = 'typing'
+      scheduleNext(160)
+    }
   }
 }
 
-function writeCache(text: string, from: string) {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ date: today(), text, from }))
-  }
-  catch {
-    // 隐私模式等场景写不了缓存，忽略即可
-  }
-}
-
-/** 兜底文案：站点描述 → 内置句子 */
-function fallback(): { text: string, from: string } {
+function fallbackQuote(): Quote {
   return {
     text: siteConfig.description || '保持热爱，奔赴山海。',
     from: '',
+    placeholder: true,
   }
 }
 
-async function loadQuote() {
-  const cached = readCache()
-  if (cached?.date === today() && cached.text) {
-    typeText(cached.text, cached.from || '')
+function readCache(): { todayItems: Quote[], last: Quote | null } {
+  try {
+    const raw = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')
+    const todayItems: Quote[]
+      = raw?.date === today() && Array.isArray(raw.items) ? raw.items : []
+    const last: Quote | null = raw?.last?.text ? raw.last : (todayItems[0] || null)
+    return { todayItems, last }
+  }
+  catch {
+    return { todayItems: [], last: null }
+  }
+}
+
+function writeCache(list: Quote[]) {
+  try {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({
+        date: today(),
+        items: list.map(({ text, from }) => ({ text, from })),
+        // 留着给下一天"零等待开局"用：明天先打这句，接口回来再换成新的
+        last: list[0] ? { text: list[0].text, from: list[0].from } : null,
+      }),
+    )
+  }
+  catch {
+    // 隐私模式写不了缓存，忽略
+  }
+}
+
+async function fetchQuotes(): Promise<Quote[]> {
+  const out: Quote[] = []
+  const seen = new Set<string>()
+  // 串行请求，对开放接口友好；凑够 QUOTE_COUNT 条互不相同的一言为止
+  for (let i = 0; i < MAX_ATTEMPTS && out.length < QUOTE_COUNT; i++) {
+    const cat = CATEGORIES[i % CATEGORIES.length]
+    const url = `${HITOKOTO_API}&c=${cat}&_=${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`
+    try {
+      const controller = new AbortController()
+      const t = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+      const res = await fetch(url, { signal: controller.signal })
+      clearTimeout(t)
+      if (!res.ok)
+        continue
+      const data = await res.json()
+      const text: string = data?.hitokoto || ''
+      if (!text || seen.has(text))
+        continue
+      seen.add(text)
+      out.push({ text, from: data?.from_who || data?.from || '' })
+    }
+    catch {
+      // 单条失败不影响其它
+    }
+  }
+  return out
+}
+
+async function loadQuotes() {
+  const { todayItems, last } = readCache()
+  if (todayItems.length) {
+    items = todayItems
+    idx = 0
+    mode = 'typing'
+    step()
     return
   }
 
-  try {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 3000)
-    const res = await fetch(HITOKOTO_API, { signal: controller.signal })
-    clearTimeout(timer)
-    if (!res.ok)
-      throw new Error(`HTTP ${res.status}`)
-    const data = await res.json()
-    const text: string = data?.hitokoto || ''
-    const from: string = data?.from_who || data?.from || ''
-    if (!text)
-      throw new Error('empty hitokoto')
-    writeCache(text, from)
-    typeText(text, from)
-  }
-  catch {
-    const fb = fallback()
-    typeText(fb.text, fb.from)
+  // 当天没有缓存：立刻开打（优先用"昨天那句"——真句不尴尬，其次兜底句），
+  // 接口结果稍后接上，做到零等待
+  items = [last ? { ...last, placeholder: true } : fallbackQuote()]
+  idx = 0
+  mode = 'typing'
+  step()
+
+  const fresh = await fetchQuotes()
+  if (fresh.length) {
+    writeCache(fresh)
+    replacePlaceholder(fresh)
   }
 }
 
 onMounted(() => {
-  loadQuote()
+  // 用户偏好减少动效：不打字不循环，直接展示一句
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  if (reduceMotion) {
+    const { todayItems, last } = readCache()
+    const q = todayItems[0] || last || fallbackQuote()
+    items = [q]
+    typed.value = q.text
+    source.value = q.from
+    return
+  }
+  loadQuotes()
 })
 
 onUnmounted(() => {
-  if (typeTimer)
-    clearInterval(typeTimer)
-  if (sourceTimer)
-    clearTimeout(sourceTimer)
+  if (timer)
+    clearTimeout(timer)
 })
 </script>
 
@@ -163,10 +253,9 @@ onUnmounted(() => {
         {{ title }}
       </h1>
 
-      <!-- 每日一言：打字机效果，光标长亮 -->
+      <!-- 每日一言：打字机循环（打字 → 停留 → 删除 → 下一句） -->
       <p
         class="bf-hero-quote mt-4 text-base md:text-xl min-h-[3.5rem] md:min-h-[4rem] flex items-start justify-center"
-        aria-live="polite"
       >
         <span class="bf-hero-quote-text">{{ typed }}</span>
         <span

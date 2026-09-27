@@ -30,6 +30,9 @@
   --bf-text-secondary: #8c8c8c;
   --bf-nav-solid-bg: rgba(255, 255, 255, 0.85);
   --bf-nav-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+  // 右下角悬浮球（Butterfly rightside 风格：半透明毛玻璃）
+  --bf-float-bg: rgba(255, 255, 255, 0.82);
+  --bf-float-shadow: 0 1px 8px rgba(0, 0, 0, 0.12);
 
   // 让既有 Yun 组件跟随 Butterfly 配色
   --va-c-primary: var(--bf-primary);
@@ -42,6 +45,8 @@ html.dark {
   // 底上浅色文字（卡片内"字体看不清"）的问题
   --bf-nav-solid-bg: rgba(37, 37, 40, 0.85);
   --bf-nav-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+  --bf-float-bg: rgba(37, 37, 40, 0.82);
+  --bf-float-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
   --va-c-primary: var(--bf-primary);
 }
 
@@ -151,6 +156,22 @@ a.bf-card:hover {
   &:hover {
     color: var(--bf-primary);
     background: rgba(73, 177, 245, 0.12);
+  }
+}
+
+/**
+ * 汉堡按钮只在移动端出现。
+ * 不能只靠 UnoCSS 的 md:hidden：本文件在 uno.css 之后加载，
+ * 上面 .bf-icon-btn 的 display:inline-flex 会把它盖掉，
+ * 导致桌面端右上角也留一个菜单按钮。
+ */
+.bf-hamburger {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .bf-hamburger {
+    display: inline-flex;
   }
 }
 
@@ -446,6 +467,58 @@ a.bf-card:hover {
 }
 
 /* 移动端目录抽屉用主题自带的 z(33)，已高于导航栏的 z-18 */
+
+/**
+ * 右下角悬浮球（Butterfly rightside 风格）
+ * 音乐按钮与回到顶部统一成同一列：同尺寸、同半透明毛玻璃、
+ * 右边缘对齐 1.25rem，回到顶部在下、音乐在上。
+ */
+.yun-music:not(.yun-music--card) {
+  right: 1.25rem !important;
+  bottom: 4.4rem !important;
+
+  // 旧版会在目录占用右下角时翻到左下角；移动端不再左右跳，保持在右侧
+  &.toc-avoid {
+    right: 1.25rem !important;
+    left: auto !important;
+    bottom: 4.4rem !important;
+    align-items: flex-end;
+  }
+}
+
+.yun-music-btn,
+.toc-btn,
+.bf-gotop {
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  border: none !important;
+  border-radius: 50% !important;
+  color: var(--va-c-text-2, #666) !important;
+  background: var(--bf-float-bg, rgba(255, 255, 255, 0.82)) !important;
+  box-shadow: var(--bf-float-shadow, 0 1px 8px rgba(0, 0, 0, 0.12)) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  // opacity 必须保留：回到顶部球靠它做显示/隐藏过渡
+  transition: color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease, opacity 0.3s ease;
+
+  &:hover {
+    color: var(--bf-primary, #49b1f5) !important;
+    transform: translateY(-3px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16) !important;
+  }
+}
+
+/* 目录按钮：叠在音乐球之上，避免两者重合（移动端一列三球） */
+.toc-btn {
+  right: 1.25rem !important;
+  bottom: 7.75rem !important;
+}
+
+.bf-gotop {
+  right: 1.25rem;
+  bottom: 1.25rem;
+  color: var(--bf-primary, #49b1f5) !important;
+}
 
 /* 音乐播放器（卡片形态）：嵌入右栏，始终展开，无浮动按钮 */
 .yun-music--card {

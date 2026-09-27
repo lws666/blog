@@ -128,14 +128,15 @@ const bannerTags = computed(() =>
       </BfSidebar>
     </div>
 
-    <!-- 移动端目录：悬浮按钮 + 抽屉（xl 及以上隐藏，桌面走右栏卡片） -->
+    <!-- 移动端目录：悬浮按钮 + 抽屉（xl 及以上隐藏，桌面走右栏卡片）
+         按钮位置与音乐球、回到顶部排成一列（见 styles/index.scss） -->
     <div class="xl:hidden">
       <button
         v-if="fm.toc !== false"
         class="toc-btn shadow-md fixed yun-icon-btn z-20 bg-$va-c-bg-soft"
         opacity="75"
-        right="4"
-        bottom="19"
+        right="5"
+        bottom="31"
         aria-label="打开目录"
         @click="yun.rightSidebar.toggle()"
       >

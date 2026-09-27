@@ -139,6 +139,11 @@ function onKeydown(e: KeyboardEvent) {
 const tocAvoid = ref(false)
 
 function updateTocAvoid() {
+  // 移动端右下角只有悬浮球（目录是抽屉），不需要左右躲避
+  if (window.innerWidth < 1024) {
+    tocAvoid.value = false
+    return
+  }
   const aside = document.querySelector('.yun-aside')
   if (!aside) {
     tocAvoid.value = false

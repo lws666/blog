@@ -62,7 +62,7 @@ const menus = [
     <div class="ml-auto md:ml-2 flex items-center gap-1">
       <YunToggleDark class="bf-icon-btn" />
       <button
-        class="bf-icon-btn md:hidden"
+        class="bf-icon-btn bf-hamburger"
         aria-label="打开菜单"
         @click="yun.fullscreenMenu.toggle()"
       >

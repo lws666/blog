@@ -193,6 +193,56 @@ a.bf-card:hover {
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
+/* 每日一言（打字机） */
+.bf-hero-quote {
+  font-family: var(--bf-font-sans);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  line-height: 1.7;
+}
+
+.bf-hero-quote-text {
+  white-space: pre-wrap;
+}
+
+/* 光标：打字中与打完后都保持闪烁（Butterfly banner 同款） */
+.bf-hero-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  margin-left: 4px;
+  background: currentColor;
+  animation: bf-caret 1s steps(1) infinite;
+}
+
+@keyframes bf-caret {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.bf-hero-source {
+  font-family: var(--bf-font-sans);
+  opacity: 0.75;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  animation: bf-fade-in 0.5s ease both;
+}
+
+@keyframes bf-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 0.75;
+    transform: translateY(0);
+  }
+}
+
 .bf-hero-arrow {
   animation: bf-bounce 2s infinite;
 }

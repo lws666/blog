@@ -25,13 +25,17 @@ interface MusicConfig {
 const siteConfig = useSiteConfig()
 const themeConfig = useThemeConfig<{
   music?: MusicConfig
-  notice?: { enable?: boolean, content?: string }
+  // 公告：Butterfly 用 content，部分版本用 text，两者都认
+  notice?: { enable?: boolean, content?: string, text?: string }
   // 建站日期："2025-12-22" 完整日期，或旧的纯年份（如 2016）
   footer?: { since?: string | number }
 }>()
 
 const music = computed(() => themeConfig.value.music)
 const notice = computed(() => themeConfig.value.notice)
+const noticeText = computed(
+  () => (notice.value?.content || notice.value?.text || '').trim(),
+)
 
 const { posts } = useDynamicPosts({ limit: 50 })
 const recent = computed(() => posts.value.slice(0, 6))
@@ -89,9 +93,9 @@ function fmtDate(d?: string | number) {
       <YunSocialLinks />
     </div>
 
-    <!-- 公告 -->
+    <!-- 公告（未配置内容时整张卡不渲染） -->
     <div
-      v-if="notice?.enable !== false && notice?.content"
+      v-if="notice?.enable !== false && noticeText"
       class="bf-card p-4"
     >
       <div class="bf-card-title">
@@ -99,7 +103,7 @@ function fmtDate(d?: string | number) {
         公告
       </div>
       <p class="text-sm opacity-80 leading-relaxed">
-        {{ notice.content }}
+        {{ noticeText }}
       </p>
     </div>
 

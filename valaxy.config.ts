@@ -61,6 +61,12 @@ export default defineValaxyConfig<UserThemeConfig>({
       },
     ],
 
+    // 右栏公告卡（Butterfly 的 notice）：不配 content 时整张卡不显示
+    notice: {
+      enable: true,
+      content: '欢迎来到谢谢の博客，这里记录折腾代码与生活的日常。',
+    },
+
     footer: {
       // 建站日期：右栏"创建于"与"运行天数"都用它（支持 YYYY-MM-DD）
       since: '2025-12-22',

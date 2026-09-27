@@ -119,6 +119,9 @@ export default defineValaxyConfig<UserThemeConfig>({
                  sync with site.config.ts author.avatar. -->
             <link rel="preconnect" href="https://img.lwsnb.eu.cc">
             <link rel="preload" as="image" fetchpriority="high" href="https://img.lwsnb.eu.cc/file/1770349295364_IMG_20250823_144910_239.jpg">
+            <!-- Hero 背景图（首页 LCP 元素）的预加载放在 worker 里按路径注入：
+                 这个 transformIndexHtml 会作用于所有页面的 SPA 外壳，放在这里
+                 会让文章页也白下载 337KB。见 src/index.js 的 HERO_PRELOAD。 -->
           `
           return langFixed.replace('</head>', `${seoHead}</head>`)
         }

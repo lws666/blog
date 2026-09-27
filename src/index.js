@@ -45,6 +45,57 @@ function seoHeadFrom(html) {
 }
 
 /**
+ * Homepage hero background preload.
+ *
+ * The hero image is rendered by Vue after mount, so the browser only discovers
+ * it around ~835ms — long after the JS bundles started. Preloading it in the
+ * <head> starts the download immediately, in parallel with the bundles.
+ *
+ * Must stay in sync with themeConfig.banner.url (valaxy.config.ts). The image
+ * is served from img.lwsnb.eu.cc, which is a Worker-backed origin with edge
+ * caching (cf-cache-status: HIT, 30-day TTL), so this is a CDN URL already.
+ *
+ * No crossorigin attribute on purpose: the <img> in BfHero.vue does not set
+ * one either, so both fetches are no-cors and share one cache entry. Adding
+ * crossorigin here (CORS mode) made the browser download the 337KB twice.
+ */
+const HERO_PRELOAD
+  = '<link rel="preload" as="image" fetchpriority="high"'
+    + ' href="https://img.lwsnb.eu.cc/file/1770349301804_DefualtThumbnail.jpg.webp">'
+
+/**
+ * Inject the homepage hero preload into a shell HTML document.
+ *
+ * Only for "/" — the shell is shared by every route, so preloading a 337KB
+ * image on article pages would be pure waste. Applied to both the human shell
+ * (static index.html) and the crawler shell, since they are the same document
+ * served through two paths.
+ */
+function withHeroPreload(html, pathname) {
+  if (pathname !== '/' || html.includes(HERO_PRELOAD)) return html
+  return html.replace('</head>', `${HERO_PRELOAD}\n</head>`)
+}
+
+/**
+ * Rebuild a response around a body we re-wrote as plain text.
+ *
+ * Reading an asset with .text() decodes it (ASSETS serves index.html brotli-
+ * compressed when the client sends Accept-Encoding), so the original
+ * Content-Encoding / Content-Length headers no longer describe the body we
+ * return. Keeping them makes the browser try to decode plain HTML a second
+ * time — a blank page. Drop them; the runtime re-compresses on the way out.
+ */
+function plainTextResponse(request, html, res) {
+  const headers = new Headers(res.headers)
+  headers.delete('Content-Encoding')
+  headers.delete('Content-Length')
+  return new Response(request.method === 'HEAD' ? null : html, {
+    status: res.status,
+    headers,
+  })
+}
+
+/**
  * Extract the pre-render's body content.
  *
  * Scripts and inline styles are dropped — the shell ships its own bundle and
@@ -100,6 +151,11 @@ async function withSeoHead(env, request, url, apiPath) {
     html = html.replace(/(<div id="app">)[\s\S]*?(<\/div>)/i, `$1${body}$2`)
   }
 
+  // Homepage LCP: the hero background image is only rendered once Vue mounts
+  // (~835ms in), so the browser discovers it far too late. Preloading it in
+  // the head lets it download in parallel with the JS bundles.
+  html = withHeroPreload(html, url.pathname)
+
   return new Response(request.method === 'HEAD' ? null : html, {
     status: 200,
     headers: {
@@ -146,16 +202,28 @@ export default {
     }
 
     // ── Static assets via ASSETS binding ────────────────────────
+    // The homepage is served from here (index.html is a real asset), so the
+    // hero preload has to be applied on this path as well — not only in the
+    // crawler branch above.
     try {
       const res = await env.ASSETS.fetch(request)
-      if (res.status !== 404) return res
+      if (res.status !== 404) {
+        if (path !== '/' || !(res.headers.get('Content-Type') || '').includes('text/html')) {
+          return res
+        }
+        return plainTextResponse(request, withHeroPreload(await res.text(), path), res)
+      }
     } catch {
       // ASSETS unavailable or threw — try index.html fallback below
     }
 
     // ── SPA fallback (admin, client-side routes) ────────────────
     try {
-      return await env.ASSETS.fetch(new Request(url.origin + '/index.html'))
+      const res = await env.ASSETS.fetch(new Request(url.origin + '/index.html'))
+      if (path !== '/' || !(res.headers.get('Content-Type') || '').includes('text/html')) {
+        return res
+      }
+      return plainTextResponse(request, withHeroPreload(await res.text(), path), res)
     } catch {
       return new Response('Not Found', { status: 404 })
     }

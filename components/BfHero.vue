@@ -249,10 +249,15 @@ function scrollToMain() {
   <header
     class="bf-hero relative w-full flex items-center justify-center overflow-hidden"
   >
+    <!-- Hero 背景图：首页 LCP 元素。worker 在首页 <head> 里预加载了同一
+         URL（两边都不带 crossorigin，保持同一 no-cors 缓存条目，
+         否则浏览器会下载两份） -->
     <img
       :src="bg"
       alt=""
       aria-hidden="true"
+      fetchpriority="high"
+      decoding="async"
       class="absolute inset-0 size-full object-cover"
     >
     <div class="absolute inset-0 bg-black/35" aria-hidden="true" />

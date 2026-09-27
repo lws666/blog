@@ -296,14 +296,6 @@ onUnmounted(() => {
   <!-- 标题与元信息（日期/标签）由 layouts/post.vue 的 Butterfly banner 呈现，
        这里不再重复渲染，保证每页只有一个 h1。 -->
   <article v-else>
-    <!-- AI summary card -->
-    <aside v-if="post.summary" class="ai-summary">
-      <div class="ai-summary-head">
-        <span class="ai-summary-badge">✨ AI 摘要</span>
-      </div>
-      <p class="ai-summary-body">{{ post.summary }}</p>
-    </aside>
-
     <!-- Rendered markdown content -->
     <div
       v-if="html"
@@ -323,38 +315,3 @@ onUnmounted(() => {
   </article>
 </template>
 
-<style scoped lang="scss">
-/**
- * AI summary card.
- * Uses Valaxy theme CSS variables so it follows light/dark mode.
- */
-.ai-summary {
-  max-width: 780px;
-  margin: 1.5rem auto 2rem;
-  padding: 1rem 1.25rem;
-  border-radius: 0.75rem;
-  border: 1px solid var(--va-c-divider, rgba(125, 125, 125, 0.2));
-  border-left: 3px solid var(--va-c-primary, #0078e7);
-  background: var(--va-c-bg-light, rgba(125, 125, 125, 0.06));
-}
-
-.ai-summary-head {
-  margin-bottom: 0.5rem;
-}
-
-.ai-summary-badge {
-  display: inline-block;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: var(--va-c-primary, #0078e7);
-}
-
-.ai-summary-body {
-  margin: 0;
-  font-size: 0.925rem;
-  line-height: 1.8;
-  text-align: justify;
-  opacity: 0.85;
-}
-</style>

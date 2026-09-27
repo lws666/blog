@@ -32,7 +32,7 @@ const menus = [
 
 <template>
   <header
-    class="bf-navbar fixed top-0 inset-x-0 z-40 flex items-center px-4 md:px-8"
+    class="bf-navbar fixed top-0 inset-x-0 z-18 flex items-center px-4 md:px-8"
     :class="overHero ? 'bf-navbar--clear' : 'bf-navbar--solid'"
   >
     <RouterLink
@@ -70,7 +70,9 @@ const menus = [
       </button>
     </div>
 
-    <!-- 移动端全屏抽屉菜单（复用 Yun 的实现与数据） -->
-    <YunFullscreenMenu />
+    <!--
+      全屏抽屉菜单由主题 App 全局渲染（strato 类型自带），这里不再
+      重复挂载——两份同栈抽屉会互相遮挡，关闭按钮点不到。
+    -->
   </header>
 </template>

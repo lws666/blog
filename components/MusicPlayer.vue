@@ -47,7 +47,8 @@ const props = withDefaults(defineProps<{
   card: false,
 })
 
-const open = ref(false)
+// 卡片形态（嵌入右栏）默认展开且不可收起；浮动形态默认收起
+const open = ref(props.card)
 const loading = ref(false)
 const errorMsg = ref('')
 const loaded = ref(false)
@@ -156,6 +157,10 @@ const onResize = () => updateTocAvoid()
 onMounted(() => {
   document.addEventListener('keydown', onKeydown)
   window.addEventListener('resize', onResize)
+  // 卡片形态默认展开：挂载时拉取歌单并初始化 APlayer
+  // （浮动形态走 toggle() 的首次打开触发，卡片形态没有 toggle）
+  if (props.card && open.value)
+    initPlayer()
   // Wait for the page (and its aside) to render, then keep in sync on nav
   setTimeout(updateTocAvoid, 300)
   setTimeout(updateTocAvoid, 1200)

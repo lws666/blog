@@ -20,6 +20,8 @@ withDefaults(defineProps<{
 
 <template>
   <div class="bf-shell min-h-screen flex flex-col">
+    <BfProgressBar />
+    <BfContentEnhancer />
     <BfNavbar />
     <div class="flex-grow flex flex-col">
       <slot />

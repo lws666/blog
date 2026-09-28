@@ -6,6 +6,7 @@ import { createB2Client } from './b2'
 import { createPostsRouter } from './routes/posts'
 import { createUploadRouter } from './routes/upload'
 import { createAdminRouter } from './routes/admin'
+import { createTotpRouter } from './routes/totp'
 import { createAlbumRouter } from './routes/album'
 import { createAuthRouter } from './routes/auth'
 import { createTelegramRouter } from './routes/telegram'
@@ -153,6 +154,7 @@ app.route('/api/tg', createTelegramRouter())
 app.route('/api/posts', createPostsRouter())
 app.route('/api/upload', createUploadRouter())
 app.route('/api/admin', createAdminRouter())
+app.route('/api/admin/totp', createTotpRouter())
 app.route('/api/album', createAlbumRouter())
 app.route('/api/cover', createCoverRouter())
 

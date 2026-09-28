@@ -3,43 +3,101 @@
     <!-- ── Lock screen ────────────────────────────────────────── -->
     <div id="lock-screen" :class="{ 'hidden-lock': unlocked }">
       <div class="glass-card p-10 text-center space-y-6 w-[85%] max-w-sm">
-        <h2 class="text-2xl font-bold text-blue-400">valaxy admin</h2>
-        <input
-          v-model="tokenInput"
-          type="password"
-          placeholder="请输入管理 Token"
-          class="config-input text-center"
-          @keyup.enter="unlock"
-        />
-        <p v-if="lockError" class="text-red-400 text-xs">{{ lockError }}</p>
-        <button
-          id="unlock-btn"
-          class="w-full bg-blue-600 py-3 rounded-xl font-bold hover:bg-blue-500 transition-all disabled:opacity-50"
-          :disabled="unlocking"
-          @click="unlock"
-        >
-          {{ unlocking ? '验证中...' : '解锁进入' }}
-        </button>
-
-        <!-- GitHub OAuth login (visible once the worker reports a client_id) -->
-        <template v-if="githubConfigured">
-          <div class="flex items-center gap-3 text-white/30 text-xs select-none">
-            <span class="flex-1 h-px bg-white/10" />
-            或
-            <span class="flex-1 h-px bg-white/10" />
+        <!-- 2FA：绑定（扫码）阶段 -->
+        <template v-if="totpStage === 'setup' && totpSetup">
+          <h2 class="text-2xl font-bold text-blue-400">设置两步验证</h2>
+          <p class="text-white/60 text-xs leading-relaxed">
+            用 谷歌身份验证器 / Microsoft Authenticator 等 App 扫码，<br>或手动输入密钥，然后输入 6 位验证码确认。
+          </p>
+          <div class="bg-white rounded-xl p-3 inline-block">
+            <img
+              :src="`https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&data=${encodeURIComponent(totpSetup.otpauth)}`"
+              alt="TOTP 二维码"
+              class="w-[180px] h-[180px]"
+            >
           </div>
+          <div class="text-white/50 text-[11px] break-all font-mono bg-black/30 rounded-lg p-2 select-all">{{ totpSetup.secret }}</div>
+          <input
+            v-model="totpInput"
+            type="text"
+            inputmode="numeric"
+            maxlength="6"
+            placeholder="输入 6 位验证码"
+            class="config-input text-center tracking-[0.4em]"
+            @keyup.enter="submitTotp"
+          />
           <button
-            id="github-login-btn"
-            class="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold
-                   bg-[#24292f] hover:bg-[#32383f] transition-all disabled:opacity-50"
+            class="w-full bg-blue-600 py-3 rounded-xl font-bold hover:bg-blue-500 transition-all disabled:opacity-50"
             :disabled="unlocking"
-            @click="githubLogin"
+            @click="submitTotp"
           >
-            <svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" aria-hidden="true">
-              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
-            </svg>
-            {{ unlocking ? '登录中...' : '使用 GitHub 登录' }}
+            {{ unlocking ? '确认中...' : '确认绑定' }}
           </button>
+        </template>
+
+        <!-- 2FA：日常挑战阶段 -->
+        <template v-else-if="totpStage === 'challenge'">
+          <h2 class="text-2xl font-bold text-blue-400">两步验证</h2>
+          <p class="text-white/60 text-xs">输入身份验证器 App 中的 6 位验证码</p>
+          <input
+            v-model="totpInput"
+            type="text"
+            inputmode="numeric"
+            maxlength="6"
+            placeholder="6 位验证码"
+            class="config-input text-center tracking-[0.4em]"
+            @keyup.enter="submitTotp"
+          />
+          <p v-if="lockError" class="text-red-400 text-xs">{{ lockError }}</p>
+          <button
+            class="w-full bg-blue-600 py-3 rounded-xl font-bold hover:bg-blue-500 transition-all disabled:opacity-50"
+            :disabled="unlocking"
+            @click="submitTotp"
+          >
+            {{ unlocking ? '验证中...' : '验证进入' }}
+          </button>
+        </template>
+
+        <!-- 默认：Token + GitHub 登录 -->
+        <template v-else>
+          <h2 class="text-2xl font-bold text-blue-400">valaxy admin</h2>
+          <input
+            v-model="tokenInput"
+            type="password"
+            placeholder="请输入管理 Token"
+            class="config-input text-center"
+            @keyup.enter="unlock"
+          />
+          <p v-if="lockError" class="text-red-400 text-xs">{{ lockError }}</p>
+          <button
+            id="unlock-btn"
+            class="w-full bg-blue-600 py-3 rounded-xl font-bold hover:bg-blue-500 transition-all disabled:opacity-50"
+            :disabled="unlocking"
+            @click="unlock"
+          >
+            {{ unlocking ? '验证中...' : '解锁进入' }}
+          </button>
+
+          <!-- GitHub OAuth login (visible once the worker reports a client_id) -->
+          <template v-if="githubConfigured">
+            <div class="flex items-center gap-3 text-white/30 text-xs select-none">
+              <span class="flex-1 h-px bg-white/10" />
+              或
+              <span class="flex-1 h-px bg-white/10" />
+            </div>
+            <button
+              id="github-login-btn"
+              class="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold
+                     bg-[#24292f] hover:bg-[#32383f] transition-all disabled:opacity-50"
+              :disabled="unlocking"
+              @click="githubLogin"
+            >
+              <svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" aria-hidden="true">
+                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
+              </svg>
+              {{ unlocking ? '登录中...' : '使用 GitHub 登录' }}
+            </button>
+          </template>
         </template>
       </div>
     </div>
@@ -64,6 +122,10 @@
                 class="cursor-pointer p-3 hover:bg-white/10 rounded-lg transition-all"
                 @click="openAlbumModal"
               >🖼️ 切换相册</div>
+              <div
+                class="cursor-pointer p-3 hover:bg-white/10 rounded-lg transition-all"
+                @click="openTotpModal"
+              >🔐 两步验证</div>
               <div
                 class="cursor-pointer p-3 hover:bg-white/10 rounded-lg text-red-400 transition-all"
                 @click="logout"
@@ -240,6 +302,78 @@
       </div>
     </Teleport>
 
+    <!-- ── TOTP modal（两步验证管理） ───────────────────────────── -->
+    <Teleport to="body">
+      <div
+        id="totp-modal"
+        class="fixed inset-0 z-[10000] bg-black/70 backdrop-blur-md"
+        :class="{ hidden: !showTotpModal }"
+        @click.self="showTotpModal = false"
+      >
+        <div class="glass-card w-full max-w-md m-4 p-6 space-y-4 text-sm">
+          <div class="flex justify-between items-center">
+            <h3 class="font-bold">🔐 两步验证（谷歌身份验证器）</h3>
+            <button class="text-2xl leading-none" @click="showTotpModal = false">&times;</button>
+          </div>
+
+          <template v-if="totpEnabled">
+            <p class="text-white/60 text-xs leading-relaxed">
+              已启用。发布/删除文章等写操作需要验证码（登录后 12 小时内免重复输入）。<br>关闭前需要输入一次验证码确认身份。
+            </p>
+            <input
+              v-model="totpModalCode"
+              type="text"
+              inputmode="numeric"
+              maxlength="6"
+              placeholder="6 位验证码"
+              class="config-input text-center tracking-[0.4em]"
+            />
+            <p v-if="totpModalError" class="text-red-400 text-xs">{{ totpModalError }}</p>
+            <button
+              class="w-full bg-red-600/80 py-2.5 rounded-xl font-bold hover:bg-red-600 transition-all disabled:opacity-50"
+              :disabled="totpBusy"
+              @click="disableTotp"
+            >关闭两步验证</button>
+          </template>
+
+          <template v-else>
+            <p class="text-white/60 text-xs leading-relaxed">
+              未启用。启用后，即使管理 Token 泄露，没有你的手机验证码也无法操作。
+            </p>
+            <button
+              class="w-full bg-blue-600 py-2.5 rounded-xl font-bold hover:bg-blue-500 transition-all disabled:opacity-50"
+              :disabled="totpBusy"
+              @click="startTotpSetup"
+            >{{ totpBusy ? '生成中...' : '启用两步验证' }}</button>
+            <template v-if="totpSetup">
+              <div class="bg-white rounded-xl p-3 inline-block mx-auto">
+                <img
+                  :src="`https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&data=${encodeURIComponent(totpSetup.otpauth)}`"
+                  alt="TOTP 二维码"
+                  class="w-[180px] h-[180px]"
+                >
+              </div>
+              <div class="text-white/50 text-[11px] break-all font-mono bg-black/30 rounded-lg p-2 select-all">{{ totpSetup.secret }}</div>
+              <input
+                v-model="totpModalCode"
+                type="text"
+                inputmode="numeric"
+                maxlength="6"
+                placeholder="输入 6 位验证码确认"
+                class="config-input text-center tracking-[0.4em]"
+              />
+              <p v-if="totpModalError" class="text-red-400 text-xs">{{ totpModalError }}</p>
+              <button
+                class="w-full bg-blue-600 py-2.5 rounded-xl font-bold hover:bg-blue-500 transition-all disabled:opacity-50"
+                :disabled="totpBusy"
+                @click="confirmTotp"
+              >确认绑定</button>
+            </template>
+          </template>
+        </div>
+      </div>
+    </Teleport>
+
     <!-- ── Album modal ─────────────────────────────────────────── -->
     <Teleport to="body">
       <div
@@ -295,6 +429,38 @@ function getToken(): string {
   return sessionStorage.getItem('admin_token') || ''
 }
 
+/** 2FA 会令牌（启用二步验证后写操作要用它替代 Bearer） */
+function getTotpToken(): string {
+  return sessionStorage.getItem('totp_token') || ''
+}
+
+/**
+ * 写操作统一走这里：2FA 未启用用 Bearer，已启用用 TOTP 会话令牌。
+ * 收到 401（会话过期/被拒）时退回验证码挑战页。
+ */
+function authHeaders(json = true): Record<string, string> {
+  const totp = getTotpToken()
+  const headers: Record<string, string> = {
+    Authorization: totp ? `TOTP ${totp}` : `Bearer ${getToken()}`,
+  }
+  if (json) headers['Content-Type'] = 'application/json'
+  return headers
+}
+
+function totpRequired(): boolean {
+  return sessionStorage.getItem('totp_enabled') === '1'
+}
+
+/** 回到验证码挑战页（保留 admin_token 以便重新换发会话） */
+function fallbackToTotpChallenge() {
+  sessionStorage.removeItem('totp_token')
+  sessionStorage.removeItem('pub_auth')
+  unlocked.value = false
+  totpStage.value = 'challenge'
+  totpInput.value = ''
+  lockError.value = ''
+}
+
 async function apiAdminGet<T>(path: string, params?: Record<string, unknown>): Promise<T> {
   let url = `${API_BASE}${path}`
   if (params) {
@@ -313,9 +479,13 @@ async function apiAdminGet<T>(path: string, params?: Record<string, unknown>): P
 async function apiAdminPost<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+    headers: authHeaders(),
     body: JSON.stringify(body),
   })
+  if (res.status === 401 && totpRequired()) {
+    fallbackToTotpChallenge()
+    throw new Error('二步验证会话已过期，请重新输入验证码')
+  }
   const data = await res.json()
   if (!data.success) throw new Error(data.error || `API error: ${res.status}`)
   return data.data as T
@@ -324,8 +494,12 @@ async function apiAdminPost<T>(path: string, body: unknown): Promise<T> {
 async function apiAdminDelete(path: string): Promise<void> {
   const res = await fetch(`${API_BASE}${path}`, {
     method: 'DELETE',
-    headers: { Authorization: `Bearer ${getToken()}` },
+    headers: authHeaders(false),
   })
+  if (res.status === 401 && totpRequired()) {
+    fallbackToTotpChallenge()
+    throw new Error('二步验证会话已过期，请重新输入验证码')
+  }
   const data = await res.json()
   if (!data.success) throw new Error(data.error || `API error: ${res.status}`)
 }
@@ -446,6 +620,78 @@ const publishBtnText = ref('确认并上传')
 
 const showListModal = ref(false)
 const showAlbumModal = ref(false)
+
+// ── TOTP modal（面板内的两步验证管理） ─────────────────────────────
+const showTotpModal = ref(false)
+const totpEnabled = ref(false)
+const totpModalCode = ref('')
+const totpModalError = ref('')
+const totpBusy = ref(false)
+
+async function refreshTotpStatus() {
+  try {
+    const data = await apiAdminGet<{ enabled: boolean }>('/admin/totp/status')
+    totpEnabled.value = !!data.enabled
+  } catch {
+    totpEnabled.value = false
+  }
+}
+
+async function startTotpSetup() {
+  totpBusy.value = true
+  totpModalError.value = ''
+  try {
+    const data = await apiAdminPost<{ secret: string, otpauth: string }>('/admin/totp/setup', {})
+    totpSetup.value = data
+    totpModalCode.value = ''
+  } catch (e) {
+    totpModalError.value = (e as Error).message
+  } finally {
+    totpBusy.value = false
+  }
+}
+
+async function confirmTotp() {
+  totpBusy.value = true
+  totpModalError.value = ''
+  const code = totpModalCode.value.trim()
+  try {
+    await apiAdminPost('/admin/totp/confirm', { code })
+    totpEnabled.value = true
+    totpSetup.value = null
+    totpModalCode.value = ''
+    // 让本次面板会话立刻拿到 TOTP 会话令牌，写操作不再被打断
+    await totpExchange(code, getToken()).catch(() => {})
+  } catch (e) {
+    totpModalError.value = (e as Error).message
+  } finally {
+    totpBusy.value = false
+  }
+}
+
+async function disableTotp() {
+  totpBusy.value = true
+  totpModalError.value = ''
+  try {
+    await apiAdminPost('/admin/totp/disable', { code: totpModalCode.value.trim() })
+    totpEnabled.value = false
+    totpModalCode.value = ''
+    sessionStorage.removeItem('totp_token')
+    sessionStorage.removeItem('totp_enabled')
+  } catch (e) {
+    totpModalError.value = (e as Error).message
+  } finally {
+    totpBusy.value = false
+  }
+}
+
+function openTotpModal() {
+  totpModalCode.value = ''
+  totpModalError.value = ''
+  totpSetup.value = null
+  refreshTotpStatus()
+  showTotpModal.value = true
+}
 /** Lazy-mount the album so it only fetches after the first open */
 const albumOpened = ref(false)
 const listLoading = ref(false)
@@ -459,6 +705,59 @@ const articles = ref<Array<{
 let vditor: any = null
 
 // ── Lock screen ────────────────────────────────────────────────────
+const totpInput = ref('')
+const totpStage = ref<'none' | 'challenge' | 'setup'>('none')
+const totpSetup = ref<{ secret: string, otpauth: string } | null>(null)
+
+/** 验证码换 TOTP 会话令牌；成功后后续写操作用 Authorization: TOTP <token> */
+async function totpExchange(code: string, bearer: string): Promise<boolean> {
+  const res = await fetch(`${API_BASE}/admin/totp/session`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${bearer}` },
+    body: JSON.stringify({ code }),
+  })
+  const data = await res.json()
+  if (!data.success) throw new Error(data.error || '验证码错误')
+  sessionStorage.setItem('totp_token', data.data.token)
+  sessionStorage.setItem('totp_enabled', '1')
+  return true
+}
+
+async function submitTotp() {
+  const code = totpInput.value.trim()
+  const raw = tokenInput.value.trim()
+  if (!code || !raw) return
+  unlocking.value = true
+  lockError.value = ''
+  try {
+    if (totpStage.value === 'setup' && totpSetup.value) {
+      // 绑定流程：确认验证码 → 立即换会话令牌
+      const res = await fetch(`${API_BASE}/admin/totp/confirm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${raw}` },
+        body: JSON.stringify({ code }),
+      })
+      const data = await res.json()
+      if (!data.success) throw new Error(data.error || '验证码错误')
+      await totpExchange(code, raw)
+    } else {
+      await totpExchange(code, raw)
+    }
+
+    sessionStorage.setItem('admin_token', raw)
+    sessionStorage.setItem('pub_auth', '1')
+    totpStage.value = 'none'
+    totpInput.value = ''
+    unlocked.value = true
+    await nextTick()
+    initVditor()
+  } catch (e) {
+    lockError.value = (e as Error).message
+  } finally {
+    unlocking.value = false
+  }
+}
+
 async function unlock() {
   const raw = tokenInput.value.trim()
   if (!raw) return
@@ -472,6 +771,32 @@ async function unlock() {
     if (res.status === 401) throw new Error('Token 验证失败')
     const data = await res.json()
     if (!data.success) throw new Error(data.error || 'Token 验证失败')
+
+    // 2FA: enabled? → 要求验证码；setup 中断过？→ 回到扫码页
+    const st = await fetch(`${API_BASE}/admin/totp/status`, {
+      headers: { Authorization: `Bearer ${raw}` },
+    })
+    const stData = await st.json().catch(() => null)
+    if (stData?.data?.enabled) {
+      totpStage.value = 'challenge'
+      lockError.value = ''
+      totpInput.value = ''
+      unlocking.value = false
+      return
+    }
+    // 未确认绑定但库里有半截密钥 → 引导完成绑定
+    const setupRes = await fetch(`${API_BASE}/admin/totp/setup`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${raw}` },
+    }).catch(() => null)
+    const setupData = setupRes ? await setupRes.json().catch(() => null) : null
+    if (setupData?.success) {
+      totpSetup.value = setupData.data
+      totpStage.value = 'setup'
+      lockError.value = ''
+      unlocking.value = false
+      return
+    }
 
     sessionStorage.setItem('admin_token', raw)
     sessionStorage.setItem('pub_auth', '1')
@@ -594,7 +919,22 @@ async function handleGithubCallback(): Promise<boolean> {
     const data = await res.json()
     if (!data.success) throw new Error(data.error || 'GitHub 登录失败')
 
-    sessionStorage.setItem('admin_token', data.data.token)
+    const ghToken = data.data.token
+    // 2FA：与密码路径一致 —— 已启用则要求验证码
+    const st = await fetch(`${API_BASE}/admin/totp/status`, {
+      headers: { Authorization: `Bearer ${ghToken}` },
+    }).catch(() => null)
+    const stData = st ? await st.json().catch(() => null) : null
+    if (stData?.data?.enabled) {
+      tokenInput.value = ghToken
+      totpStage.value = 'challenge'
+      totpInput.value = ''
+      unlocking.value = false
+      return true
+    }
+
+    sessionStorage.setItem('admin_token', ghToken)
+    sessionStorage.setItem('totp_token', sessionStorage.getItem('totp_token') || '')
     sessionStorage.setItem('pub_auth', '1')
     unlocked.value = true
 
@@ -830,6 +1170,8 @@ function toggleDarkMode() {  document.getElementById('body-root')?.classList.tog
 
 function logout() {
   sessionStorage.removeItem('admin_token')
+  sessionStorage.removeItem('totp_token')
+  sessionStorage.removeItem('totp_enabled')
   sessionStorage.removeItem('pub_auth')
   unlocked.value = false
   tokenInput.value = ''
@@ -851,6 +1193,8 @@ onMounted(async () => {
 
   // Auto-unlock if session is still valid
   if (sessionStorage.getItem('pub_auth') === '1') {
+    // TOTP 会话令牌有 12h 有效期；过期时 API 会 401，由 apiAdmin* 的
+    // 401 处理退回挑战页（这里不主动探测，避免每次进面板都多一个请求）
     unlocked.value = true
     await nextTick()
     initVditor()

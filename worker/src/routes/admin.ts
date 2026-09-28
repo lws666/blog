@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { createDb } from '../db'
 import { createB2Client } from '../b2'
 import { createAuthMiddleware } from '../middleware/auth'
+import { requireTotp } from './totp'
 import { success, badRequest, notFound, error as errRes } from '../utils/response'
 import { summarizePost } from '../ai'
 import { notifyIndexNow } from '../index'
@@ -21,11 +22,25 @@ export function createAdminRouter() {
   const router = new Hono<{ Bindings: Env }>()
 
   // ── Auth ─────────────────────────────────────────────────────
+  // allowTotp: TOTP session tokens pass this layer and are verified by the
+  // 2FA gate below (requireTotp).
   router.use('*', async (c, next) => {
-    const rejected = createAuthMiddleware(c.env.UPLOAD_TOKEN)(c.req.raw)
+    const rejected = createAuthMiddleware(c.env.UPLOAD_TOKEN, { allowTotp: true })(c.req.raw)
     if (rejected) {
       const body = await rejected.json()
       return c.json(body, rejected.status as 401)
+    }
+    await next()
+  })
+
+  // ── 2FA gate: every write needs a TOTP session/code once enabled ──
+  // GET stays token-only, and /totp/* is excluded — those endpoints have
+  // their own Bearer auth and are how you *obtain* a session in the first
+  // place (a circular gate there would make logging in impossible).
+  router.use('*', async (c, next) => {
+    if (c.req.method !== 'GET' && !c.req.path.startsWith('/api/admin/totp')) {
+      const denied = await requireTotp(c)
+      if (denied) return denied
     }
     await next()
   })

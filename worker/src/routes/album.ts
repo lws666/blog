@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { createDb } from '../db'
 import { createB2Client } from '../b2'
 import { createAuthMiddleware } from '../middleware/auth'
+import { requireTotp } from './totp'
 import { success, badRequest, notFound, error as errRes } from '../utils/response'
 import type { Env } from '../index'
 
@@ -67,10 +68,19 @@ export function createAlbumRouter() {
 
   // ── Auth for every remaining route ──────────────────────────
   router.use('*', async (c, next) => {
-    const rejected = createAuthMiddleware(c.env.UPLOAD_TOKEN)(c.req.raw)
+    const rejected = createAuthMiddleware(c.env.UPLOAD_TOKEN, { allowTotp: true })(c.req.raw)
     if (rejected) {
       const body = await rejected.json()
       return c.json(body, rejected.status as 401)
+    }
+    await next()
+  })
+
+  // ── 2FA gate: writes need a TOTP session once enabled ───────
+  router.use('*', async (c, next) => {
+    if (c.req.method !== 'GET') {
+      const denied = await requireTotp(c)
+      if (denied) return denied
     }
     await next()
   })

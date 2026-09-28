@@ -31,22 +31,32 @@ export function createTelegramRouter() {
   router.post('/webhook', async (c) => {
     const raw = await c.req.text()
 
-    // 1. Verify the HMAC-SHA256 signature so nobody can spoof comments
+    // 1. Verify the HMAC-SHA256 signature so nobody can spoof comments.
+    // Fail closed: without TG_WEBHOOK_SECRET configured the endpoint refuses
+    // everything instead of silently accepting unsigned (spoofable) requests.
     const secret = c.env.TG_WEBHOOK_SECRET
     const sig = c.req.header('X-Hub-Signature-256') || ''
-    if (secret) {
-      const key = await crypto.subtle.importKey(
-        'raw',
-        new TextEncoder().encode(secret),
-        { name: 'HMAC', hash: 'SHA-256' },
-        false,
-        ['sign'],
-      )
-      const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(raw))
-      const hex = [...new Uint8Array(mac)].map(b => b.toString(16).padStart(2, '0')).join('')
-      if (sig !== `sha256=${hex}`) {
-        return c.json({ success: false, error: 'invalid signature' }, 401)
-      }
+    if (!secret) {
+      console.error('TG_WEBHOOK_SECRET is not configured — rejecting webhook')
+      return c.json({ success: false, error: 'webhook not configured' }, 503)
+    }
+    const key = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign'],
+    )
+    const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(raw))
+    const hex = [...new Uint8Array(mac)].map(b => b.toString(16).padStart(2, '0')).join('')
+    const a = sig.startsWith('sha256=') ? sig.slice(7) : sig
+    // Compare every byte (no early exit) so response timing can't leak how
+    // many leading characters of the signature an attacker guessed right.
+    let diff = a.length === hex.length ? 0 : 1
+    for (let i = 0; i < hex.length; i++)
+      diff |= (a.charCodeAt(i) || 0) ^ hex.charCodeAt(i)
+    if (diff !== 0) {
+      return c.json({ success: false, error: 'invalid signature' }, 401)
     }
 
     // 2. Parse the event

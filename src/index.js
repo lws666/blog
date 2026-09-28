@@ -89,6 +89,8 @@ function plainTextResponse(request, html, res) {
   const headers = new Headers(res.headers)
   headers.delete('Content-Encoding')
   headers.delete('Content-Length')
+  for (const [k, v] of Object.entries(SECURITY_HEADERS))
+    headers.set(k, v)
   return new Response(request.method === 'HEAD' ? null : html, {
     status: res.status,
     headers,
@@ -159,10 +161,28 @@ async function withSeoHead(env, request, url, apiPath) {
   return new Response(request.method === 'HEAD' ? null : html, {
     status: 200,
     headers: {
+      ...SECURITY_HEADERS,
       'Content-Type': 'text/html; charset=utf-8',
       'Cache-Control': shellRes.headers.get('Cache-Control') || 'no-cache',
     },
   })
+}
+
+/**
+ * Security headers for every HTML page we serve (or re-write).
+ *
+ * Clickjacking: the site has no reason to be framed (the admin dashboard
+ * operates via same-origin fetch + sessionStorage, not iframe embedding),
+ * so deny framing outright.
+ * Sniffing: assets are served with correct Content-Types; disallow guessing.
+ * Referral: only the origin is sent cross-origin, keeping URLs (admin tokens
+ * never appear in URLs anyway) out of third-party referrer headers.
+ */
+const SECURITY_HEADERS = {
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
 }
 
 export default {
@@ -209,7 +229,13 @@ export default {
       const res = await env.ASSETS.fetch(request)
       if (res.status !== 404) {
         if (path !== '/' || !(res.headers.get('Content-Type') || '').includes('text/html')) {
-          return res
+          // Non-HTML assets: pass through with the security headers added
+          // (X-Frame-Options only matters for documents, but nosniff helps
+          // everywhere; headers are merged, not duplicated).
+          const headers = new Headers(res.headers)
+          for (const [k, v] of Object.entries(SECURITY_HEADERS))
+            headers.set(k, v)
+          return new Response(res.body, { status: res.status, headers })
         }
         return plainTextResponse(request, withHeroPreload(await res.text(), path), res)
       }
@@ -220,9 +246,6 @@ export default {
     // ── SPA fallback (admin, client-side routes) ────────────────
     try {
       const res = await env.ASSETS.fetch(new Request(url.origin + '/index.html'))
-      if (path !== '/' || !(res.headers.get('Content-Type') || '').includes('text/html')) {
-        return res
-      }
       return plainTextResponse(request, withHeroPreload(await res.text(), path), res)
     } catch {
       return new Response('Not Found', { status: 404 })

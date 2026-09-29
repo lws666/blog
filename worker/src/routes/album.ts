@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { createDb } from '../db'
 import { createB2Client } from '../b2'
-import { createAuthMiddleware } from '../middleware/auth'
+import { resolveToken } from '../tokens'
 import { requireTotp } from './totp'
 import { success, badRequest, notFound, error as errRes } from '../utils/response'
 import type { Env } from '../index'
@@ -33,7 +33,7 @@ const ALLOWED_MIME = new Set([
 const MAX_SIZE = 10 * 1024 * 1024
 
 export function createAlbumRouter() {
-  const router = new Hono<{ Bindings: Env }>()
+  const router = new Hono<{ Bindings: Env, Variables: { auth: { is_admin: boolean, scope: string } } }>()
 
   // ── Public image proxy ──────────────────────────────────────
   // Registered before the auth middleware so <img src> works without a token.
@@ -67,18 +67,33 @@ export function createAlbumRouter() {
   })
 
   // ── Auth for every remaining route ──────────────────────────
+  // 管理员本尊 / TOTP 会话 / 子令牌(write)；read 子令牌仅可 GET
   router.use('*', async (c, next) => {
-    const rejected = createAuthMiddleware(c.env.UPLOAD_TOKEN, { allowTotp: true })(c.req.raw)
-    if (rejected) {
-      const body = await rejected.json()
-      return c.json(body, rejected.status as 401)
+    const authHeader = c.req.header('Authorization') || ''
+    if (authHeader.startsWith('TOTP ')) {
+      c.set('auth', { is_admin: true, scope: 'admin' })
+      await next()
+      return
     }
+    const plaintext = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
+    const resolved = plaintext ? await resolveToken(c.env.DB, c.env.UPLOAD_TOKEN, plaintext) : null
+    if (!resolved) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401)
+    }
+    if (c.req.method !== 'GET' && !resolved.is_admin && resolved.scope !== 'write') {
+      return c.json({ success: false, error: '只读令牌无权执行写操作' }, 403)
+    }
+    c.set('auth', { is_admin: resolved.is_admin, scope: resolved.scope })
     await next()
   })
 
-  // ── 2FA gate: writes need a TOTP session once enabled ───────
+  // ── 写操作门禁：read 子令牌一律 403；管理员需 2FA；write 子令牌放行
   router.use('*', async (c, next) => {
+    const auth = c.get('auth') as { is_admin: boolean } | undefined
     if (c.req.method !== 'GET') {
+      if (auth && !auth.is_admin) {
+        return c.json({ success: false, error: '只读令牌无权执行写操作' }, 403)
+      }
       const denied = await requireTotp(c)
       if (denied) return denied
     }

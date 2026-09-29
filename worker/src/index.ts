@@ -7,6 +7,7 @@ import { createPostsRouter } from './routes/posts'
 import { createUploadRouter } from './routes/upload'
 import { createAdminRouter } from './routes/admin'
 import { createTotpRouter } from './routes/totp'
+import { createTokensRouter } from './routes/tokens'
 import { createAlbumRouter } from './routes/album'
 import { createAuthRouter } from './routes/auth'
 import { createTelegramRouter } from './routes/telegram'
@@ -43,7 +44,7 @@ export interface Env {
 }
 
 // ── App ───────────────────────────────────────────────────────
-const app = new Hono<{ Bindings: Env }>()
+const app = new Hono<{ Bindings: Env, Variables: { auth: { is_admin: boolean, scope: string } } }>()
 
 // CORS: allow Valaxy frontend from any origin
 app.use('*', cors())
@@ -155,6 +156,7 @@ app.route('/api/posts', createPostsRouter())
 app.route('/api/upload', createUploadRouter())
 app.route('/api/admin', createAdminRouter())
 app.route('/api/admin/totp', createTotpRouter())
+app.route('/api/admin', createTokensRouter())
 app.route('/api/album', createAlbumRouter())
 app.route('/api/cover', createCoverRouter())
 

@@ -9,15 +9,19 @@ Base URL：`https://api.lwsnb.eu.cc`
 { "success": false, "error": "错误信息" }
 ```
 
-**认证方式（二选一）：**
+**认证方式：**
 
-| 方式 | Header | 适用 |
-|---|---|---|
-| 管理令牌 | `Authorization: Bearer <UPLOAD_TOKEN>` | 全部管理接口（2FA 启用后写操作会被拒） |
-| TOTP 会话 | `Authorization: TOTP <session_token>` | 写操作（2FA 启用后）；12h 有效 |
-| 单次验证码 | `Authorization: Bearer <token>` + `X-TOTP-Code: 123456` | 写操作（2FA 启用后，临时替代会话） |
+| 凭证 | Header | 权限 | 2FA |
+|---|---|---|---|
+| 管理员令牌 | `Authorization: Bearer <UPLOAD_TOKEN>` | 全部（含令牌/2FA 管理） | 启用后写操作需 TOTP |
+| TOTP 会话 | `Authorization: TOTP <session_token>` | 等同管理员写通道 | —（本身就是第二因子） |
+| **子令牌 `blg_…`（write）** | `Authorization: Bearer blg_…` | 读写（含发文/删文/上传），**无 2FA 要求** | 不需要 |
+| **子令牌 `blg_…`（read）** | `Authorization: Bearer blg_…` | 只读（一切 GET，含含草稿的 admin 列表） | 不需要 |
 
-> 公开接口（GET /api/posts 等）无需任何认证。App 登录后应先调 `/admin/totp/status` 决定 UI 流程。
+> - 子令牌由管理员在 `POST /api/admin/tokens` 签发（App 用户向博主索取）。
+> - 子令牌**不能**访问 `/api/admin/tokens`（令牌管理）与 `/api/admin/totp/*`（2FA 管理）——403。
+> - 2FA 是否启用**由管理员本人决定**（`/admin/totp/setup|confirm|disable`）；启用只影响管理员令牌自己的写操作，App 子令牌不受影响。
+> - 公开接口（GET /api/posts 等）无需任何认证。
 
 ---
 
@@ -218,15 +222,29 @@ Content-Type: application/json
 ## 4. 相册管理
 
 ```
-POST   /api/album          # multipart/form-data，字段名 file；≤10MB
-                        # 允许: jpeg/png/gif/webp/avif/svg+xml
-DELETE /api/album/:id      # 按 id 删除
+GET    /api/album?page=1&limit=50    # 列表（管理员或 read/write 子令牌）
+POST   /api/album                    # multipart/form-data，字段名 file；≤10MB
+                                     # 允许: jpeg/png/gif/webp/avif/svg+xml
+DELETE /api/album/:id                # 按 id 删除（管理员或 write 子令牌）
 ```
 POST 成功 `data`：`{ "id", "b2_key", "filename", "url", … }`。
 
 ---
 
-## 5. 封面生成
+## 5. API 子令牌管理（仅管理员本尊）
+
+```
+GET    /api/admin/tokens             # 列出全部（含已吊销）
+POST   /api/admin/tokens             # 签发 { "name": "App-只读", "scope": "read" | "write" }
+DELETE /api/admin/tokens/:id         # 吊销
+```
+签发响应 `data`：`{ "id", "token": "blg_…", "name", "scope", "created_at" }`。
+**`token` 明文只出现这一次**，立刻保存；库里只有 SHA-256 哈希，丢了只能吊销重发。
+`last_used_at` 可观察令牌是否被使用过。
+
+---
+
+## 6. 封面生成
 
 ```
 POST /api/cover
@@ -245,7 +263,7 @@ POST /api/cover/raster      # 把 SVG 转成 PNG（社交平台不认 SVG）
 
 ---
 
-## 6. Telegram webhook（App 用不到）
+## 7. Telegram webhook（App 用不到）
 
 ```
 POST /api/tg/webhook    # GitHub webhook 专用，X-Hub-Signature-256 HMAC 校验
@@ -253,7 +271,7 @@ POST /api/tg/webhook    # GitHub webhook 专用，X-Hub-Signature-256 HMAC 校�
 
 ---
 
-## 7. App 集成要点
+## 8. App 集成要点
 
 1. **HTTP 客户端**：请设置浏览器式 `User-Agent`。Cloudflare 对无 UA / 脚本 UA 可能返回 403（error 1010）。
 2. **Markdown 渲染**：`content` 是带 frontmatter 的原文。App 侧要么解析 frontmatter，要么用 `data.frontmatter`（已解析好的对象）渲染属性。

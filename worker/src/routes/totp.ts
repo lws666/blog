@@ -73,7 +73,7 @@ async function checkCode(
 }
 
 export function createTotpRouter() {
-  const router = new Hono<{ Bindings: Env }>()
+  const router = new Hono<{ Bindings: Env, Variables: { auth: { is_admin: boolean, scope: string } } }>()
 
   // ── Bearer token required on everything below ───────────────
   router.use('*', async (c, next) => {

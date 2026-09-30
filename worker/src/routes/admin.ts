@@ -3,7 +3,7 @@ import { createDb } from '../db'
 import { createB2Client } from '../b2'
 import { createAuthMiddleware } from '../middleware/auth'
 import { requireTotp } from './totp'
-import { resolveToken } from '../tokens'
+import { resolveCredential } from '../auth'
 import { success, badRequest, notFound, error as errRes } from '../utils/response'
 import { summarizePost } from '../ai'
 import { notifyIndexNow } from '../index'
@@ -43,11 +43,18 @@ export function createAdminRouter() {
       return c.json({ success: false, error: 'Unauthorized' }, 401)
     }
 
-    const resolved = await resolveToken(c.env.DB, c.env.UPLOAD_TOKEN, plaintext)
-    if (!resolved) {
+    // 统一凭证解析：UPLOAD_TOKEN / sess_ 会话 / blg_ 子令牌
+    const cred = await resolveCredential(c.env.DB, c.env.UPLOAD_TOKEN, `Bearer ${plaintext}`)
+    if (!cred) {
       return c.json({ success: false, error: 'Unauthorized' }, 401)
     }
-    c.set('auth', { is_admin: resolved.is_admin, scope: resolved.scope })
+    if (cred.kind === 'admin') {
+      c.set('auth', { is_admin: true, scope: 'admin' })
+    }
+    else {
+      const role = cred.role
+      c.set('auth', { is_admin: false, scope: role })
+    }
     await next()
   })
 
@@ -67,7 +74,8 @@ export function createAdminRouter() {
   // - 管理员：2FA 启用时需要 TOTP 会话/验证码；/totp/* 豁免
   router.use('*', async (c, next) => {
     const auth = c.get('auth') as { is_admin: boolean, scope: string } | undefined
-    if (c.req.method !== 'GET' && !c.req.path.startsWith('/api/admin/totp')) {
+    const p = c.req.path
+    if (c.req.method !== 'GET' && !p.startsWith('/api/admin/totp') && !p.startsWith('/api/admin/users')) {
       if (auth && !auth.is_admin) {
         if (auth.scope !== 'write') {
           return c.json({ success: false, error: '只读令牌无权执行写操作' }, 403)

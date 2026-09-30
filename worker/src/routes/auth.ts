@@ -1,6 +1,73 @@
 import { Hono } from 'hono'
 import { success, badRequest, error as errRes } from '../utils/response'
+import { loginWithPassword } from '../auth'
 import type { Env } from '../index'
+
+/**
+ * Auth API.
+ *
+ * POST /api/auth/login        — 用户名+密码登录，签发 7 天会话令牌
+ * POST /api/auth/logout       — 吊销当前会话（需要会话令牌）
+ * GET  /api/auth/me           — 当前会话的用户信息
+ *
+ * （GitHub OAuth 登录保留在下方，仅管理员本人可用）
+ */
+export function createUserAuthRoutes() {
+  const router = new Hono<{ Bindings: Env }>()
+
+  // ── POST /login — 用户名 + 密码 ──────────────────────────────
+  router.post('/login', async (c) => {
+    try {
+      const body = await c.req.json<{ username?: string, password?: string }>()
+      const username = (body.username || '').trim().toLowerCase()
+      const password = body.password || ''
+      if (!username || !password)
+        return badRequest('username and password are required')
+
+      const result = await loginWithPassword(c.env.DB, username, password)
+      if ('error' in result)
+        return errRes(result.error, 401)
+
+      return success({
+        token: result.token,
+        expires_in: 7 * 24 * 3600,
+        user: result.user,
+      })
+    } catch (e) {
+      return errRes((e as Error).message)
+    }
+  })
+
+  // ── POST /logout — 吊销当前会话 ──────────────────────────────
+  router.post('/logout', async (c) => {
+    const plaintext = (c.req.header('Authorization') || '').replace(/^Bearer\s+/i, '').trim()
+    if (plaintext.startsWith('sess_')) {
+      const { sha256Hex } = await import('../auth')
+      await c.env.DB.prepare('DELETE FROM sessions WHERE token_hash = ?')
+        .bind(await sha256Hex(plaintext)).run()
+    }
+    return success({ logged_out: true })
+  })
+
+  // ── GET /me — 当前会话信息 ───────────────────────────────────
+  router.get('/me', async (c) => {
+    const plaintext = (c.req.header('Authorization') || '').replace(/^Bearer\s+/i, '').trim()
+    if (!plaintext.startsWith('sess_'))
+      return errRes('Unauthorized', 401)
+    const { userBySessionToken } = await import('../auth')
+    const user = await userBySessionToken(c.env.DB, plaintext)
+    if (!user)
+      return errRes('Unauthorized', 401)
+    return success({
+      username: user.username,
+      role: user.role,
+      totp_enabled: user.totp_enabled === 1,
+      last_login_at: user.last_login_at,
+    })
+  })
+
+  return router
+}
 
 /**
  * Auth API: GitHub OAuth login for the admin dashboard.

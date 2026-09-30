@@ -76,14 +76,16 @@ export function createTotpRouter() {
   const router = new Hono<{ Bindings: Env, Variables: { auth: { is_admin: boolean, scope: string } } }>()
 
   // ── Bearer token required on everything below ───────────────
-  router.use('*', async (c, next) => {
+  // 守卫：2FA 管理仅限管理员本尊凭证（UPLOAD_TOKEN）。Hono 子 app 的
+  // use('/totp*') 不命中，handler 内显式调用
+  const guard = async (c: any): Promise<Response | null> => {
     const rejected = createAuthMiddleware(c.env.UPLOAD_TOKEN)(c.req.raw)
     if (rejected) {
       const body = await rejected.json()
       return c.json(body, rejected.status as 401)
     }
-    await next()
-  })
+    return null
+  }
 
   /** 读取（或初始化）当前账号的 TOTP 行 */
   async function getRow(c: any): Promise<{ secret: string, confirmed: number, last_used_step: number }> {
@@ -107,12 +109,14 @@ export function createTotpRouter() {
 
   // ── GET /status ──────────────────────────────────────────────
   router.get('/status', async (c) => {
+    const denied = await guard(c); if (denied) return denied
     const row = await getRow(c)
     return success({ enabled: row.confirmed === 1 })
   })
 
   // ── POST /setup — 生成（或重置）密钥，进入绑定流程 ───────────
   router.post('/setup', async (c) => {
+    const denied = await guard(c); if (denied) return denied
     const row = await getRow(c)
     if (row.confirmed === 1) {
       return badRequest('二步验证已启用。如需重新绑定，请先用验证码关闭。')
@@ -134,6 +138,7 @@ export function createTotpRouter() {
 
   // ── POST /confirm — 输入验证码确认绑定 ───────────────────────
   router.post('/confirm', async (c) => {
+    const denied = await guard(c); if (denied) return denied
     const { code } = await c.req.json<{ code?: string }>()
     if (!code) return badRequest('code is required')
 
@@ -154,6 +159,7 @@ export function createTotpRouter() {
 
   // ── POST /session — 验证码换 12h 会话令牌 ────────────────────
   router.post('/session', async (c) => {
+    const denied = await guard(c); if (denied) return denied
     const { code } = await c.req.json<{ code?: string }>()
     if (!code) return badRequest('code is required')
 
@@ -172,6 +178,7 @@ export function createTotpRouter() {
 
   // ── POST /disable — 关闭二步验证（需验证码） ─────────────────
   router.post('/disable', async (c) => {
+    const denied = await guard(c); if (denied) return denied
     const { code } = await c.req.json<{ code?: string }>()
     if (!code) return badRequest('code is required')
 

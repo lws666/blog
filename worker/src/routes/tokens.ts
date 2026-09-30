@@ -60,18 +60,20 @@ export async function findApiToken(db: D1Database, plaintext: string): Promise<T
 export function createTokensRouter() {
   const router = new Hono<{ Bindings: Env, Variables: { auth: { is_admin: boolean, scope: string } } }>()
 
-  // ── 仅管理员令牌（UPLOAD_TOKEN 本尊）可管理子令牌 ─────────────
-  router.use('*', async (c, next) => {
+  // 守卫：仅管理员本尊（UPLOAD_TOKEN）可管理子令牌。Hono 子 app 的
+  // use('/tokens*') 不命中，handler 内显式调用
+  const guard = async (c: any): Promise<Response | null> => {
     const rejected = createAuthMiddleware(c.env.UPLOAD_TOKEN)(c.req.raw)
     if (rejected) {
       const body = await rejected.json()
       return c.json(body, rejected.status as 401)
     }
-    await next()
-  })
+    return null
+  }
 
   // ── GET /tokens — 列出全部子令牌（不含哈希） ─────────────────
   router.get('/tokens', async (c) => {
+    const denied = await guard(c); if (denied) return denied
     const { results } = await c.env.DB.prepare(
       'SELECT id, name, scope, created_at, last_used_at, revoked FROM api_tokens ORDER BY id DESC',
     ).all()
@@ -80,6 +82,7 @@ export function createTokensRouter() {
 
   // ── POST /tokens — 签发 ─────────────────────────────────────
   router.post('/tokens', async (c) => {
+    const denied = await guard(c); if (denied) return denied
     const body = await c.req.json<{ name?: string, scope?: string }>()
     const scope = body.scope === 'write' ? 'write' : 'read'
     const name = (body.name || '').trim().slice(0, 60)
@@ -103,6 +106,7 @@ export function createTokensRouter() {
 
   // ── DELETE /tokens/:id — 吊销 ────────────────────────────────
   router.delete('/tokens/:id', async (c) => {
+    const denied = await guard(c); if (denied) return denied
     const id = Number(c.req.param('id'))
     if (!Number.isInteger(id) || id <= 0)
       return badRequest('Invalid id')

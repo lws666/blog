@@ -9,7 +9,8 @@ import { createAdminRouter } from './routes/admin'
 import { createTotpRouter } from './routes/totp'
 import { createTokensRouter } from './routes/tokens'
 import { createAlbumRouter } from './routes/album'
-import { createAuthRouter } from './routes/auth'
+import { createAuthRouter, createUserAuthRoutes } from './routes/auth'
+import { createUsersRouter } from './routes/users'
 import { createTelegramRouter } from './routes/telegram'
 import { createCoverRouter } from './routes/cover'
 import { success, error as errRes } from './utils/response'
@@ -149,6 +150,7 @@ app.get('/api/indexnow-key.txt', (c) => {
 // ── Route groups ──────────────────────────────────────────────
 // Auth router first: /api/auth/github does its own access control
 // (GitHub OAuth identity check) and must bypass the Bearer middleware.
+app.route('/api/auth', createUserAuthRoutes())
 app.route('/api/auth', createAuthRouter())
 // Telegram webhook does its own HMAC-signature access control
 app.route('/api/tg', createTelegramRouter())
@@ -157,6 +159,7 @@ app.route('/api/upload', createUploadRouter())
 app.route('/api/admin', createAdminRouter())
 app.route('/api/admin/totp', createTotpRouter())
 app.route('/api/admin', createTokensRouter())
+app.route('/api/admin', createUsersRouter())
 app.route('/api/album', createAlbumRouter())
 app.route('/api/cover', createCoverRouter())
 

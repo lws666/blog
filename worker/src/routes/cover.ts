@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { createB2Client } from '../b2'
-import { resolveToken } from '../tokens'
+import { resolveCredential } from '../auth'
 import { requireTotp } from './totp'
 import { success, badRequest, error as errRes } from '../utils/response'
 import { buildCoverSvg, headlineFrom } from '../cover-svg'
@@ -354,14 +354,16 @@ export function createCoverRouter() {
       return
     }
     const plaintext = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
-    const resolved = plaintext ? await resolveToken(c.env.DB, c.env.UPLOAD_TOKEN, plaintext) : null
-    if (!resolved) {
+    const cred = plaintext ? await resolveCredential(c.env.DB, c.env.UPLOAD_TOKEN, `Bearer ${plaintext}`) : null
+    if (!cred) {
       return c.json({ success: false, error: 'Unauthorized' }, 401)
     }
-    if (!resolved.is_admin && resolved.scope !== 'write') {
-      return c.json({ success: false, error: '只读令牌无权执行写操作' }, 403)
+    const isAdmin = cred.kind === 'admin'
+    const role = isAdmin ? 'admin' : cred.role
+    if (!isAdmin && role !== 'write') {
+      return c.json({ success: false, error: '只读凭证无权执行写操作' }, 403)
     }
-    c.set('auth', { is_admin: resolved.is_admin, scope: resolved.scope })
+    c.set('auth', { is_admin: isAdmin, scope: role })
     await next()
   })
 

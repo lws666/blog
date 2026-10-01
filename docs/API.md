@@ -141,7 +141,7 @@ Content-Type: application/json
 ```
 GET /api/auth/me        # Authorization: Bearer sess_…
 ```
-→ `{ "username": "admin", "role": "admin", "totp_enabled": false, "last_login_at": "…" }`
+→ `{ "username": "admin", "role": "admin", "last_login_at": "…" }`
 
 ### 2.3 登出（吊销当前会话）
 ```
@@ -171,7 +171,7 @@ GET /api/admin/verify           # Authorization: Bearer <UPLOAD_TOKEN | sess_…
 |---|---|---|---|
 | GET（列表/详情，含草稿） | ✅ | ✅ | ✅ |
 | POST/PUT/DELETE（内容/相册/封面） | ✅ | ✅ | ❌ 403 |
-| /admin/users、/admin/tokens、/admin/totp | ✅ | ❌ 401/403 | ❌ 401/403 |
+| /admin/users、/admin/tokens（管理面） | ✅ | ❌ 401/403 | ❌ 401/403 |
 
 ### 3.1 发布 / 更新文章
 ```
@@ -324,7 +324,7 @@ POST /api/tg/webhook    # GitHub webhook 专用，X-Hub-Signature-256 HMAC 校�
 
 1. **HTTP 客户端**：请设置浏览器式 `User-Agent`。Cloudflare 对无 UA / 脚本 UA 可能返回 403（error 1010）。
 2. **登录流程**：`POST /auth/login` → 存 `sess_…`（7 天）→ 每个请求带 `Authorization: Bearer sess_…`。401 时重新登录。
-3. **2FA 探测**：登录后 `GET /auth/me` 看 `role`；管理员账号再 `GET /admin/totp/status`，`enabled=true` 时写操作前需 `POST /admin/totp/session` 换 12h 的 TOTP 会话。read/write 子用户永远不需要验证码。
+3. **角色探测**：登录后 `GET /auth/me` 看 `role`——`admin` 全权，`write` 可读写，`read` 只读。
 4. **Markdown 渲染**：`content` 是带 frontmatter 的原文。App 侧要么解析 frontmatter，要么用 `data.frontmatter`（已解析好的对象）渲染属性。
 5. **分页**：所有列表都是 `page`/`limit` + `pagination.total_pages`，无游标。
 6. **图片域名**：正文/封面图片在 `img.lwsnb.eu.cc`（CDN 缓存，30 天/1 年），不要硬编码 `dpdns.org` 旧域名。

@@ -15,8 +15,7 @@ import type { Env } from '../index'
  * 安全：
  * - 库里只存 SHA-256(token)；明文 blg_… 只在创建响应中出现一次
  * - 令牌可吊销（revoked=1），可查 last_used_at
- * - 子令牌不能访问 /api/admin/tokens（令牌管理）与 /api/admin/totp/*
- *   （2FA 管理）——那些是管理员本尊的权限
+ * - 子令牌不能访问 /api/admin/users（用户管理）——那是管理员本尊的权限
  */
 
 export interface TokenRow {
@@ -40,7 +39,7 @@ export function generateApiToken(): string {
   return `blg_${body}`
 }
 
-/** 归一化 Authorization：Bearer blg_… / Bearer <admin token> / TOTP <…> */
+/** 归一化 Authorization：Bearer blg_… / Bearer <admin token> */
 export function bearerOf(request: Request): string {
   const auth = request.headers.get('Authorization') || ''
   return auth.startsWith('Bearer ') ? auth.slice(7).trim() : ''

@@ -13,17 +13,15 @@ Base URL：`https://api.lwsnb.eu.cc`
 
 | 凭证 | Header | 权限 | 2FA |
 |---|---|---|---|
-| **用户会话 `sess_…`（admin 角色）** | `Authorization: Bearer sess_…` | 全部（含用户/令牌/2FA 管理） | 启用后写操作需 TOTP |
-| 管理员令牌（兼容） | `Authorization: Bearer <UPLOAD_TOKEN>` | 同上（等同 admin 会话） | 启用后写操作需 TOTP |
-| TOTP 会话 | `Authorization: TOTP <totp_session>` | 等同管理员写通道 | —（本身就是第二因子） |
-| **用户会话 `sess_…`（write 角色）** | `Authorization: Bearer sess_…` | 读写（发文/删文/上传），**无 2FA 要求** | 不需要 |
-| **用户会话 `sess_…`（read 角色）** | `Authorization: Bearer sess_…` | 只读（一切 GET，含含草稿的 admin 列表） | 不需要 |
-| 子令牌 `blg_…`（兼容，read/write） | `Authorization: Bearer blg_…` | 同名角色的用户会话 | 不需要 |
+| **用户会话 `sess_…`（admin 角色）** | `Authorization: Bearer sess_…` | 全部（含用户/令牌管理） | — |
+| 管理员令牌（兼容） | `Authorization: Bearer <UPLOAD_TOKEN>` | 同上（等同 admin 会话） | — |
+| **用户会话 `sess_…`（write 角色）** | `Authorization: Bearer sess_…` | 读写（发文/删文/上传） | — |
+| **用户会话 `sess_…`（read 角色）** | `Authorization: Bearer sess_…` | 只读（一切 GET，含含草稿的 admin 列表） | — |
+| 子令牌 `blg_…`（兼容，read/write） | `Authorization: Bearer blg_…` | 同名角色的用户会话 | — |
 
 > - 内置管理员：`admin`（密码即原 UPLOAD_TOKEN `BlogUpload_lws666`）。
-> - 子用户由管理员在 `POST /api/admin/users` 创建（见 §5）。
-> - 子用户/子令牌**不能**访问 `/api/admin/users`、`/api/admin/tokens`（令牌管理）、`/api/admin/totp/*`（2FA 管理）——401/403。
-> - 2FA 是否启用**由管理员本人决定**（`/admin/totp/setup|confirm|disable`）；启用只影响管理员凭证自己的写操作，read/write 子用户与子令牌不受影响。
+> - 子用户由管理员在 `POST /api/admin/users` 创建（见 §4）。
+> - 子用户/子令牌**不能**访问 `/api/admin/users`、`/api/admin/tokens`（管理面）——401/403。
 > - 公开接口（GET /api/posts 等）无需任何认证。
 
 ---
@@ -165,48 +163,20 @@ GET /api/admin/verify           # Authorization: Bearer <UPLOAD_TOKEN | sess_…
 ```
 200 = 凭证有效。**注意：该接口只验证凭证，不涉及 2FA。**
 
-### 2.6 2FA（TOTP，管理员自选，只约束管理员写操作）
-
-```
-GET  /api/admin/totp/status     → { "enabled": false }
-POST /api/admin/totp/setup      → { "secret": "<base32>", "otpauth": "otpauth://totp/…" }
-POST /api/admin/totp/confirm    body: { "code": "123456" } → { "enabled": true }
-POST /api/admin/totp/session    body: { "code": "123456" } → { "token": "<totp_session>", "ttlSeconds": 43200 }
-POST /api/admin/totp/disable    body: { "code": "123456" } → { "enabled": false }
-```
-
-管理员登录标准流程：
-
-```
-1. POST /auth/login                             → sess_…（7 天）
-2. GET  /admin/totp/status                      → enabled?
-   ├─ false → 直接可用（Bearer sess_…）
-   └─ true  → POST /admin/totp/session { code } → totp_session（12h）
-3. 写操作带 Authorization: TOTP <totp_session>
-   （只读操作始终用 Bearer sess_… 即可）
-```
-
-> - 2FA 只拦截**管理员凭证**（admin 会话 / UPLOAD_TOKEN）的写操作；
->   read/write 子用户与 blg_ 子令牌完全不受影响。
-> - `POST /setup` 在「未确认绑定」状态下重复调用会重新生成密钥（旧的作废）；
->   已启用状态下调 setup 返回 400「二步验证已启用」。
-> - 验证码 30 秒刷新，每个码只能用一次（重放返回 400「已被使用」）。
-> - 也可用单次验证码头代替会话：`X-TOTP-Code: 123456` + `Authorization: Bearer sess_…`。
-
 ---
 
-## 3. 管理接口（需要认证；管理员写操作在 2FA 启用后需 TOTP）
+## 3. 管理接口（需要认证）
 
 | 操作 | admin 会话 | write 用户/令牌 | read 用户/令牌 |
 |---|---|---|---|
 | GET（列表/详情，含草稿） | ✅ | ✅ | ✅ |
-| POST/PUT/DELETE（内容/相册/封面） | ✅（2FA 启用后需 TOTP） | ✅ | ❌ 403 |
+| POST/PUT/DELETE（内容/相册/封面） | ✅ | ✅ | ❌ 403 |
 | /admin/users、/admin/tokens、/admin/totp | ✅ | ❌ 401/403 | ❌ 401/403 |
 
 ### 3.1 发布 / 更新文章
 ```
 POST /api/admin/posts
-Authorization: Bearer sess_…        （admin 在 2FA 启用后改用 TOTP 会话）
+Authorization: Bearer sess_…
 Content-Type: application/json
 ```
 ```json

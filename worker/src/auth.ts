@@ -201,9 +201,6 @@ export async function resolveCredential(
   uploadToken: string,
   authorization: string,
 ): Promise<Credential | null> {
-  if (authorization.startsWith('TOTP '))
-    return { kind: 'admin' }
-
   const plaintext = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : ''
   if (!plaintext)
     return null

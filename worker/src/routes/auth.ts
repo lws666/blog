@@ -61,7 +61,6 @@ export function createUserAuthRoutes() {
     return success({
       username: user.username,
       role: user.role,
-      totp_enabled: user.totp_enabled === 1,
       last_login_at: user.last_login_at,
     })
   })

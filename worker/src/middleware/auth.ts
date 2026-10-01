@@ -1,18 +1,16 @@
 /**
- * Bearer Token authentication middleware for upload endpoints.
+ * Bearer Token authentication middleware for admin/upload endpoints.
  *
- * opts.allowTotp: also accept `Authorization: TOTP <token>` without checking
- * it here — the caller's 2FA gate (requireTotp) validates that scheme.
- * Needed so TOTP session tokens reach the 2FA gate instead of being rejected
- * as an unknown auth scheme. The TOTP management router itself must NOT
- * enable this (a session must never be able to mint new sessions).
+ * Accepts the admin master token (UPLOAD_TOKEN) and issued sub-tokens
+ * (blg_…, validated against the api_tokens table by the caller) — the
+ * authorization layers live in each router, not here.
  */
 
-export function createAuthMiddleware(token: string, opts: { allowTotp?: boolean } = {}) {
+export function createAuthMiddleware(token: string) {
   return (request: Request): Response | null => {
     const authHeader = request.headers.get('Authorization')
 
-    if (!authHeader || (!authHeader.startsWith('Bearer ') && !(opts.allowTotp && authHeader.startsWith('TOTP ')))) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return new Response(
         JSON.stringify({ success: false, error: 'Unauthorized' }),
         {
@@ -20,11 +18,6 @@ export function createAuthMiddleware(token: string, opts: { allowTotp?: boolean 
           headers: { 'Content-Type': 'application/json' },
         },
       )
-    }
-
-    // TOTP scheme is validated downstream by requireTotp
-    if (authHeader.startsWith('TOTP ')) {
-      return null
     }
 
     const providedToken = authHeader.slice(7)

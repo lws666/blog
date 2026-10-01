@@ -17,7 +17,7 @@ import type { Env } from '../index'
  * - 不允许删除/禁用 admin 自己
  * - 删除/禁用/改密码会作废该用户全部会话
  * - 独立路由（不在 admin.ts 的中间件链内），因此自行解析凭证；
- *   管理员可用 UPLOAD_TOKEN、sess_ 会话或 TOTP 会话
+ *   管理员可用 UPLOAD_TOKEN 或 admin 角色的 sess_ 会话
  */
 export function createUsersRouter() {
   const router = new Hono<{ Bindings: Env, Variables: { auth: { is_admin: boolean, scope: string } } }>()
@@ -27,8 +27,7 @@ export function createUsersRouter() {
   const guard = async (c: any): Promise<Response | null> => {
     const authHeader = c.req.header('Authorization') || ''
     const cred = await resolveCredential(c.env.DB, c.env.UPLOAD_TOKEN, authHeader)
-    // TOTP 会话也算管理员
-    const isAdmin = cred?.kind === 'admin' || authHeader.startsWith('TOTP ')
+    const isAdmin = cred?.kind === 'admin'
     if (!isAdmin)
       return c.json({ success: false, error: '仅管理员可管理用户' }, 403)
     return null

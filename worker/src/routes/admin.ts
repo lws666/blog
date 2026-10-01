@@ -2,7 +2,6 @@ import { Hono } from 'hono'
 import { createDb } from '../db'
 import { createB2Client } from '../b2'
 import { createAuthMiddleware } from '../middleware/auth'
-import { requireTotp } from './totp'
 import { resolveCredential } from '../auth'
 import { success, badRequest, notFound, error as errRes } from '../utils/response'
 import { summarizePost } from '../ai'
@@ -17,26 +16,19 @@ import type { Env } from '../index'
  * GET    /api/admin/posts/:slug   — single post with content
  * DELETE /api/admin/posts/:slug   — delete a post
  *
- * Auth accepts three credential kinds, in one Authorization header:
- *   Bearer <UPLOAD_TOKEN>  — 管理员本尊；一切权限；2FA 启用后写操作需 TOTP
- *   Bearer blg_…           — 签发的子令牌：read 只读 / write 读写（无 2FA 要求）；
- *                            子令牌不能访问 /tokens、/totp（管理面）
- *   TOTP <session>         — 2FA 会话令牌（等同管理员写通道）
+ * Auth accepts these credential kinds, in one Authorization header:
+ *   Bearer <UPLOAD_TOKEN>  — 管理员本尊；一切权限
+ *   Bearer sess_…          — 用户会话：admin 全权；read 只读 / write 读写
+ *   Bearer blg_…           — 旧版子令牌：read 只读 / write 读写
+ *   子凭证不能访问 /tokens、/users（管理面）
  */
 export function createAdminRouter() {
   const router = new Hono<{ Bindings: Env, Variables: { auth: { is_admin: boolean, scope: string } } }>()
 
   // ── Auth ─────────────────────────────────────────────────────
-  // 管理员令牌 / 子令牌 / TOTP 会话三选一；结果写入 c.set('auth')
+  // 管理员令牌 / 子令牌二选一；结果写入 c.set('auth')
   router.use('*', async (c, next) => {
     const authHeader = c.req.header('Authorization') || ''
-
-    // TOTP 会话：交给下方 2FA 门禁验证（保持原语义）
-    if (authHeader.startsWith('TOTP ')) {
-      c.set('auth', { is_admin: true, scope: 'admin' })
-      await next()
-      return
-    }
 
     const plaintext = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
     if (!plaintext) {
@@ -53,41 +45,15 @@ export function createAdminRouter() {
     }
     else {
       const role = cred.role
+      // 只读凭证不可写（这是权限边界，与 2FA 无关，始终生效）
+      if (c.req.method !== 'GET' && role !== 'write') {
+        return c.json({ success: false, error: '只读凭证无权执行写操作' }, 403)
+      }
       c.set('auth', { is_admin: false, scope: role })
     }
     await next()
   })
 
-  // ── 子令牌权限边界：tokens/totp 管理面仅限管理员本尊 ──────────
-  // （tokens 路由有独立的本尊-only 中间件；这里兜底 /totp/* 与其余 admin 面）
-  router.use('/totp/*', async (c, next) => {
-    const auth = c.get('auth') as { is_admin: boolean } | undefined
-    if (auth && !auth.is_admin) {
-      return c.json({ success: false, error: '子令牌无权访问 2FA 管理' }, 403)
-    }
-    await next()
-  })
-
-  // ── 写操作门禁 ───────────────────────────────────────────────
-  // - 子令牌 read：一律 403（与 2FA 开关无关！2FA 关闭时也必须拦）
-  // - 子令牌 write：放行（业主签发的授权，不要求 2FA）
-  // - 管理员：2FA 启用时需要 TOTP 会话/验证码；/totp/* 豁免
-  router.use('*', async (c, next) => {
-    const auth = c.get('auth') as { is_admin: boolean, scope: string } | undefined
-    const p = c.req.path
-    if (c.req.method !== 'GET' && !p.startsWith('/api/admin/totp') && !p.startsWith('/api/admin/users')) {
-      if (auth && !auth.is_admin) {
-        if (auth.scope !== 'write') {
-          return c.json({ success: false, error: '只读令牌无权执行写操作' }, 403)
-        }
-      }
-      else {
-        const denied = await requireTotp(c)
-        if (denied) return denied
-      }
-    }
-    await next()
-  })
 
   // ── GET /verify — lightweight token verification ────────────
   router.get('/verify', (c) => {

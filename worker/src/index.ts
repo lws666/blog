@@ -166,7 +166,7 @@ app.get('/sitemap.xml', async (c) => {
   try {
     const db = createDb(c.env.DB)
     const result = await db.listPosts({ page: 1, limit: 9999 })
-    const siteUrl = 'https://cf.lwsnb.eu.cc'
+    const siteUrl = 'https://www.lwsnb.eu.cc'
 
     // Homepage
     const homeLastmod = result.posts.length
@@ -232,7 +232,7 @@ Allow: /
 # 后台登录页，无需抓取
 Disallow: /admin/
 
-Sitemap: https://cf.lwsnb.eu.cc/sitemap.xml
+Sitemap: https://www.lwsnb.eu.cc/sitemap.xml
 `
   return c.newResponse(txt, 200, { 'Content-Type': 'text/plain' })
 })
@@ -242,7 +242,7 @@ app.get('/llms.txt', async (c) => {
   try {
     const db = createDb(c.env.DB)
     const result = await db.listPosts({ page: 1, limit: 9999 })
-    const siteUrl = 'https://cf.lwsnb.eu.cc'
+    const siteUrl = 'https://www.lwsnb.eu.cc'
 
     let lines = `# 谢谢の博客
 > 一个普通人.
@@ -278,7 +278,7 @@ app.get('/rss.xml', async (c) => {
   try {
     const db = createDb(c.env.DB)
     const result = await db.listPosts({ page: 1, limit: 50 })
-    const siteUrl = 'https://cf.lwsnb.eu.cc'
+    const siteUrl = 'https://www.lwsnb.eu.cc'
     const siteTitle = '谢谢の博客 - 一个普通人的技术博客'
     const siteDesc = '一个普通人的技术博客，分享 Cloudflare、Valaxy、Vue、前端开发、AI 等领域的实践与思考。'
 
@@ -333,7 +333,7 @@ let spaHtml: string | null = null
  */
 async function getSpaHtml(): Promise<string> {
   if (spaHtml) return spaHtml
-  const res = await fetch('https://cf.lwsnb.eu.cc/')
+  const res = await fetch('https://www.lwsnb.eu.cc/')
   if (!res.ok) throw new Error(`SPA fetch failed: ${res.status}`)
   spaHtml = await res.text()
   return spaHtml
@@ -341,7 +341,7 @@ async function getSpaHtml(): Promise<string> {
 
 /** Build a pre-rendered HTML page for the homepage */
 function buildHomeHtml(posts?: Array<{ slug: string; title: string; date: string }>): string {
-  const siteUrl = 'https://cf.lwsnb.eu.cc'
+  const siteUrl = 'https://www.lwsnb.eu.cc'
   const siteName = '谢谢の博客 - 一个普通人的技术博客'
 
   const postList = (posts || [])
@@ -449,7 +449,7 @@ function buildPostHtml(data: {
   cover: string
   bodyHtml: string
 }): string {
-  const siteUrl = 'https://cf.lwsnb.eu.cc'
+  const siteUrl = 'https://www.lwsnb.eu.cc'
   const siteName = '谢谢の博客 | 一个普通人的技术博客'
   const absUrl = `${siteUrl}/posts/${data.slug}`
   const tagsJson = JSON.stringify(data.tags)
@@ -707,15 +707,15 @@ export async function notifyIndexNow(env: Env, slug: string): Promise<void> {
   const key = env.INDEXNOW_KEY
   if (!key) return
 
-  const postUrl = `https://cf.lwsnb.eu.cc/posts/${slug}`
-  const keyLocation = 'https://cf.lwsnb.eu.cc/api/indexnow-key.txt'
+  const postUrl = `https://www.lwsnb.eu.cc/posts/${slug}`
+  const keyLocation = 'https://www.lwsnb.eu.cc/api/indexnow-key.txt'
 
   try {
     await fetch('https://api.indexnow.org/indexnow', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        host: 'cf.lwsnb.eu.cc',
+        host: 'www.lwsnb.eu.cc',
         key,
         keyLocation,
         urlList: [postUrl],

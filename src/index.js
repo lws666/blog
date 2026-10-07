@@ -18,10 +18,10 @@
  */
 const API_ORIGIN = 'https://api.lwsnb.eu.cc'
 const OLD_HOST = 'www.lwsnb.dpdns.org'
-// 主线路现用 cf.lwsnb.eu.cc;www 与旧 dpdns 域名一律 301 过去,继承权重
-const NEW_HOST = 'cf.lwsnb.eu.cc'
+// 规范域名回落到 www(历史收录所在);cf 子域仅作线路,一律 301 过来
+const NEW_HOST = 'www.lwsnb.eu.cc'
 // 需要 301 到 NEW_HOST 的历史域名
-const REDIRECT_HOSTS = new Set([OLD_HOST, 'www.lwsnb.eu.cc'])
+const REDIRECT_HOSTS = new Set([OLD_HOST, 'cf.lwsnb.eu.cc'])
 
 /** Bot / crawler User-Agent patterns */
 const BOT_UA = /googlebot|bingbot|baiduspider|yandexbot|duckduckbot|twitterbot|facebookexternalhit|slackbot|discordbot|whatsapp|telegrambot|applebot|semrushbot|ahrefsbot|dotbot|mj12bot|seznambot|ia_archiver|twitter|facebook|linkedinbot|slack|pinterest|skypeuripreview|wget|curl|python-requests|java|http-client/i

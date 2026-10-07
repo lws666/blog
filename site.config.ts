@@ -1,7 +1,7 @@
 import { defineSiteConfig } from 'valaxy'
 
 export default defineSiteConfig({
-  url: 'https://cf.lwsnb.eu.cc', // 站点基准 URL(canonical/sitemap/RSS);www 旧域 301 而来
+  url: 'https://www.lwsnb.eu.cc', // 规范域名(canonical/sitemap/RSS)
   lang: 'zh-CN',
   title: '谢谢の博客 - 一个普通人的技术博客',
   author: {

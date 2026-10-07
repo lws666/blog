@@ -7,10 +7,10 @@ main = "src/index.js"
 # 不在清单里的旧域名一并删除(www.lwsnb.eu.cc 曾因此被顶掉)。
 routes = [
   { pattern = "www.lwsnb.dpdns.org/*", zone_id = "7b56790c6ed08c291850e8ea182b2341" },
-  # CF 主线路新域名（custom_domain 自动建 DNS）
-  { pattern = "cf.lwsnb.eu.cc", custom_domain = true },
-  # 旧主域名:保留并 301 到 cf.lwsnb.eu.cc,继承已有收录权重
+  # 规范域名(主线路,canonical/sitemap/RSS 基准)
   { pattern = "www.lwsnb.eu.cc", custom_domain = true },
+  # 备用线路域名:301 到 www(在 src/index.js 的 REDIRECT_HOSTS 中)
+  { pattern = "cf.lwsnb.eu.cc", custom_domain = true },
 ]
 
 compatibility_flags = [ "nodejs_compat" ]

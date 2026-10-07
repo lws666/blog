@@ -9,7 +9,9 @@
 #      filesystem → serve dist assets
 #      everything else → /index.html (SPA fallback)
 set -euo pipefail
-cd "$(dirname "$0")"
+# Script lives in scripts/ — the project root is its parent.
+# (Vercel runs `bash scripts/vercel-build.sh` from the repo root.)
+cd "$(dirname "$0")/.."
 
 rm -rf dist .valaxy
 # Call valaxy's real entry with node. node_modules/.bin/valaxy is a symlink,

@@ -53,3 +53,4 @@ worker/node_modules/
 
 # DSH harness workspace (never commit)
 .dsh/
+.vercel

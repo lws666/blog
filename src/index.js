@@ -18,7 +18,10 @@
  */
 const API_ORIGIN = 'https://api.lwsnb.eu.cc'
 const OLD_HOST = 'www.lwsnb.dpdns.org'
-const NEW_HOST = 'www.lwsnb.eu.cc'
+// 主线路现用 cf.lwsnb.eu.cc;www 与旧 dpdns 域名一律 301 过去,继承权重
+const NEW_HOST = 'cf.lwsnb.eu.cc'
+// 需要 301 到 NEW_HOST 的历史域名
+const REDIRECT_HOSTS = new Set([OLD_HOST, 'www.lwsnb.eu.cc'])
 
 /** Bot / crawler User-Agent patterns */
 const BOT_UA = /googlebot|bingbot|baiduspider|yandexbot|duckduckbot|twitterbot|facebookexternalhit|slackbot|discordbot|whatsapp|telegrambot|applebot|semrushbot|ahrefsbot|dotbot|mj12bot|seznambot|ia_archiver|twitter|facebook|linkedinbot|slack|pinterest|skypeuripreview|wget|curl|python-requests|java|http-client/i
@@ -190,8 +193,8 @@ export default {
     const url = new URL(request.url)
     const path = url.pathname
 
-    // ── Domain migration: old host → new host (301) ────────────
-    if (url.hostname === OLD_HOST) {
+    // ── Domain migration: legacy hosts → current host (301) ────
+    if (REDIRECT_HOSTS.has(url.hostname)) {
       return Response.redirect(`https://${NEW_HOST}${path}${url.search}`, 301)
     }
 

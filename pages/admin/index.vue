@@ -504,9 +504,9 @@ const githubClientId = ref('')
  *
  * GitHub requires this to match a Redirect URL registered on the OAuth app,
  * so the current origin is used instead of a hardcoded host: browsing the
- * admin on https://www.lwsnb.eu.cc/admin/ (the canonical domain, and a
+ * admin on https://cf.lwsnb.eu.cc/admin/ (the canonical domain, and a
  * registered URL) now completes the whole flow on that domain, with no hop
- * through the retired www.lwsnb.dpdns.org host.
+ * through the retired www.* hosts.
  *
  * NOTE: any other origin used to reach the admin (a preview deployment, the
  * apex domain) must also be registered, otherwise GitHub refuses the login
@@ -514,7 +514,7 @@ const githubClientId = ref('')
  * settings before using them.
  */
 function adminRedirectUrl(): string {
-  const origin = typeof window === 'undefined' ? 'https://www.lwsnb.eu.cc' : window.location.origin
+  const origin = typeof window === 'undefined' ? 'https://cf.lwsnb.eu.cc' : window.location.origin
   return `${origin}/admin/`
 }
 

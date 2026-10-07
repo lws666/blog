@@ -426,6 +426,33 @@ html {
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
+/* ---------- AI 摘要卡片（文章页正文上方） ---------- */
+
+.ai-summary {
+  max-width: 780px;
+  margin: 0 auto 1.5rem;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--va-c-divider, rgba(125, 125, 125, 0.2));
+  border-left: 3px solid var(--bf-primary, #4a89dc);
+  background: var(--bf-card-bg, rgba(125, 125, 125, 0.06));
+}
+
+.ai-summary-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--bf-primary, #4a89dc);
+}
+
+.ai-summary-body {
+  margin: 0.35rem 0 0;
+  font-size: 0.925rem;
+  line-height: 1.8;
+  text-align: justify;
+  opacity: 0.85;
+}
+
 /* ---------- 顶部加载进度条（pace 风格） ---------- */
 
 .bf-progress {

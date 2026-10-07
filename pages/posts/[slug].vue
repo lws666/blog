@@ -296,6 +296,14 @@ onUnmounted(() => {
   <!-- 标题与元信息（日期/标签）由 layouts/post.vue 的 Butterfly banner 呈现，
        这里不再重复渲染，保证每页只有一个 h1。 -->
   <article v-else>
+    <!-- AI summary card -->
+    <aside v-if="post.summary" class="ai-summary">
+      <div class="ai-summary-head">
+        <span class="ai-summary-badge">✨ AI 摘要</span>
+      </div>
+      <p class="ai-summary-body">{{ post.summary }}</p>
+    </aside>
+
     <!-- Rendered markdown content -->
     <div
       v-if="html"

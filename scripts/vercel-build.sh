@@ -12,10 +12,10 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 rm -rf dist .valaxy
-# Use the repo-local valaxy binary (node_modules/.bin). Plain `npx valaxy`
-# can resolve to the registry package and fail with "No pages directory
-# found" because it runs outside the project's dependency tree.
-./node_modules/.bin/valaxy build
+# Call valaxy's real entry with node. node_modules/.bin/valaxy is a symlink,
+# which does not survive Vercel's file upload (only regular files are
+# uploaded), and `npx valaxy` may resolve to the registry package.
+node node_modules/valaxy/bin/valaxy.mjs build
 
 mkdir -p .vercel/output/static
 cp -r dist/* .vercel/output/static/

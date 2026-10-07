@@ -1,4 +1,4 @@
 {
-  "buildCommand": "rm -rf dist .valaxy && valaxy build && mkdir -p .vercel/output/static && cp -r dist/* .vercel/output/static/ && echo '{\"version\":3,\"routes\":[{\"src\":\"/api/(.*)\",\"dest\":\"https://api.lwsnb.eu.cc/api/$1\"},{\"handle\":\"filesystem\"},{\"src\":\"/(.*)\",\"dest\":\"/index.html\"}]}' > .vercel/output/config.json",
+  "buildCommand": "bash scripts/vercel-build.sh",
   "installCommand": "npm install"
 }

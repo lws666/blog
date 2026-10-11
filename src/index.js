@@ -108,9 +108,9 @@ const LOADING_AVATAR = 'https://img.lwsnb.eu.cc/file/1770349295364_IMG_20250823_
 //              must not dismiss it before this even if Vue mounted fast.
 // FADE_MS    : fade-out duration (matches the CSS transition below).
 // HARD_CAP   : absolute safety cap; the screen always leaves by this time.
-const MIN_SHOW = 2000
+const MIN_SHOW = 3000
 const FADE_MS = 500
-const HARD_CAP = 10000
+const HARD_CAP = 12000
 
 const APP_SKELETON_CSS
   = '<style id="az-loading-style">'
@@ -131,7 +131,8 @@ const APP_SKELETON_CSS
     + '</style>'
 
 const APP_SKELETON
-  = '<div id="loading-box" onclick="this.classList.add(\'loaded\')">'
+  = '<link rel="preload" as="image" href="' + LOADING_AVATAR + '">'
+    + '<div id="loading-box" onclick="this.classList.add(\'loaded\')">'
     + '<div class="loading-bg">'
     + `<img class="loading-img" alt="加载头像" src="${LOADING_AVATAR}">`
     + '<div class="loading-image-dot"></div>'
@@ -144,9 +145,16 @@ const APP_SKELETON
     // hydration, which would unfix the overlay and dump it in the flow.
     + 'var st=document.getElementById("az-loading-style");'
     + 'if(st)document.head.appendChild(st);'
-    + 'var t0=Date.now(),done=false;'
-    // end() honours MIN_SHOW: a fast mount waits out the remainder so the
-    // animation is actually seen; a slow mount dismisses immediately.
+    // t0 = when the AVATAR becomes visible, not navigation start. On Asian
+    // links to the CF edge the image itself can take seconds; timing from
+    // navigation would leave users staring at an empty ring that "flashes
+    // away" right when the avatar finally shows up.
+    + 'var t0=Date.now(),avatarSeen=false;'
+    + 'var img=b.querySelector(".loading-img");'
+    + 'function markAvatar(){if(!avatarSeen){avatarSeen=true;t0=Date.now()}}'
+    + 'if(img){if(img.complete&&img.naturalWidth>0)markAvatar();else{img.addEventListener("load",markAvatar);img.addEventListener("error",markAvatar)}}'
+    + 'var done=false;'
+    // end() honours MIN_SHOW measured from avatar visibility.
     + 'function end(){if(done)return;done=true;'
     + `var wait=Math.max(0,${MIN_SHOW}-(Date.now()-t0));`
     + 'setTimeout(function(){b.classList.add("loaded");'

@@ -88,12 +88,13 @@ function withHeroPreload(html, pathname) {
  * return. Keeping them makes the browser try to decode plain HTML a second
  * time — a blank page. Drop them; the runtime re-compresses on the way out.
  */
-function plainTextResponse(request, html, res) {
+function plainTextResponse(request, html, res, corsOrigin = null) {
   const headers = new Headers(res.headers)
   headers.delete('Content-Encoding')
   headers.delete('Content-Length')
   for (const [k, v] of Object.entries(SECURITY_HEADERS))
     headers.set(k, v)
+  if (corsOrigin) withCors(headers, corsOrigin)
   return new Response(request.method === 'HEAD' ? null : html, {
     status: res.status,
     headers,
@@ -188,15 +189,44 @@ const SECURITY_HEADERS = {
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
 }
 
+/**
+ * CORS for the CDN-gateway speed test.
+ *
+ * gate.lwsnb.eu.cc probes candidate lines from the BROWSER (cross-origin
+ * fetch). A line that doesn't answer with Access-Control-Allow-Origin is
+ * rejected before any latency is measured, so it can never win the race —
+ * with only strict lines configured every probe "fails" and the gateway
+ * appears to hang forever. Echo the origin back only for known gateway
+ * hosts; every other cross-origin request gets nothing, as before.
+ */
+const CORS_ALLOWED_ORIGINS = new Set([
+  'https://gate.lwsnb.eu.cc',
+  'https://lwsnb.eu.cc', // 裸域即将指向网关
+])
+
+function withCors(headers, origin) {
+  if (origin && CORS_ALLOWED_ORIGINS.has(origin)) {
+    headers.set('Access-Control-Allow-Origin', origin)
+    headers.set('Vary', 'Origin')
+  }
+  return headers
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url)
     const path = url.pathname
+    const origin = request.headers.get('Origin')
 
     // ── Domain migration: legacy hosts → current host (301) ────
     if (REDIRECT_HOSTS.has(url.hostname)) {
       return Response.redirect(`https://${NEW_HOST}${path}${url.search}`, 301)
     }
+
+    // ── Gateway speed test: preflight + CORS on HTML responses ──
+    // The browser probe is a simple GET, but it is cross-origin, so add the
+    // ACAO header on every HTML response we build below.
+    const corsForGateway = CORS_ALLOWED_ORIGINS.has(origin || '')
 
     // ── API: same-origin for the browser ────────────────────────
     // Invoked through the API service binding, so the request never leaves
@@ -238,9 +268,10 @@ export default {
           const headers = new Headers(res.headers)
           for (const [k, v] of Object.entries(SECURITY_HEADERS))
             headers.set(k, v)
+          if (corsForGateway) withCors(headers, origin)
           return new Response(res.body, { status: res.status, headers })
         }
-        return plainTextResponse(request, withHeroPreload(await res.text(), path), res)
+        return plainTextResponse(request, withHeroPreload(await res.text(), path), res, corsForGateway ? origin : null)
       }
     } catch {
       // ASSETS unavailable or threw — try index.html fallback below

@@ -117,7 +117,7 @@ const APP_SKELETON_CSS
     + '#loading-box{user-select:none;-webkit-user-select:none}'
     + '#loading-box .loading-bg{display:flex;width:100%;height:100%;position:fixed;'
     + 'background:var(--va-c-bg,#f7f9fe);z-index:1001;opacity:1;overflow:hidden;'
-    + 'transition:opacity .5s;animation:az-show-loading .3s 0s backwards;align-items:center;justify-content:center}'
+    + 'transition:opacity .5s;align-items:center;justify-content:center}'
     + '#loading-box .loading-img{width:100px;height:100px;border-radius:50%;margin:auto;'
     + 'border:4px solid #f0f0f2;animation-duration:.2s;animation-name:az-loading-action;'
     + 'animation-iteration-count:infinite;animation-direction:alternate;object-fit:cover}'

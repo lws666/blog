@@ -39,25 +39,54 @@ find .vercel/output/static -name 'index.html' | while read -r f; do
 done
 
 
-# ── First-paint skeleton inside #app ───────────────────────────
-# The SPA shell ships an empty <div id="app">, so the first 0.3-0.9s is a
-# white void until Vue mounts. Inject an inline skeleton (background +
-# spinner) that Vue wipes on mount. Mirrors APP_SKELETON in src/index.js,
-# which does the same for the Cloudflare entry Worker.
+# ── Anzhiyu-style fullpage loading (ported) ────────────────────
+# Mirror of APP_SKELETON in src/index.js: full-viewport overlay with the
+# site avatar pulsing + green dot; fades out on Vue mount (inline interval
+# adds .loaded when .loading-bg disappears from #app). Inline-only, zero
+# extra requests; runs only on the Vercel copy of the shell.
 find .vercel/output/static -name 'index.html' | while read -r f; do
-  if ! grep -q 'bfs-spin' "$f"; then
+  if ! grep -q 'loading-box' "$f"; then
     python3 - "$f" <<'PYIN'
 import sys, pathlib
 f = pathlib.Path(sys.argv[1])
 s = f.read_text()
-skeleton = ('<div style="position:fixed;inset:0;display:flex;align-items:center;'
-            'justify-content:center;background:var(--va-c-bg,#f7f9fe)">'
-            '<div style="width:34px;height:34px;border:3px solid rgba(73,177,245,.25);'
-            'border-top-color:#49b1f5;border-radius:50%;animation:bfs-spin .8s linear infinite"></div>'
-            '<style>@keyframes bfs-spin{to{transform:rotate(360deg)}}'
-            '@media (prefers-reduced-motion:reduce){[style*="bfs-spin"]{animation:none}}</style>'
-            '</div>')
-f.write_text(s.replace('<div id="app"></div>', '<div id="app">' + skeleton + '</div>'))
+AVATAR = 'https://img.lwsnb.eu.cc/file/1770349295364_IMG_20250823_144910_239.jpg'
+block = (
+ '<style>'
+ '#loading-box{user-select:none;-webkit-user-select:none}'
+ '#loading-box .loading-bg{display:flex;width:100%;height:100%;position:fixed;'
+ 'background:var(--va-c-bg,#f7f9fe);z-index:1001;opacity:1;overflow:hidden;'
+ 'transition:opacity .2s;animation:az-show-loading .3s 0s backwards;align-items:center;justify-content:center}'
+ '#loading-box .loading-img{width:100px;height:100px;border-radius:50%;margin:auto;'
+ 'border:4px solid #f0f0f2;animation-duration:.2s;animation-name:az-loading-action;'
+ 'animation-iteration-count:infinite;animation-direction:alternate;object-fit:cover}'
+ '#loading-box .loading-image-dot{width:30px;height:30px;background:#6bdf8f;'
+ 'position:absolute;border-radius:50%;border:6px solid #fff;top:50%;left:50%;'
+ 'transform:translate(18px,24px)}'
+ '#loading-box.loaded .loading-bg{opacity:0;z-index:-1000}'
+ '@keyframes az-loading-action{0%{opacity:1}100%{opacity:.4}}'
+ '@keyframes az-show-loading{from{opacity:0}to{opacity:1}}'
+ '@media (prefers-reduced-motion:reduce){#loading-box .loading-img{animation:none}}'
+ '</style>'
+ '<div id="loading-box" onclick="this.classList.add(\'loaded\')">'
+ '<div class="loading-bg">'
+ f'<img class="loading-img" alt="加载头像" src="{AVATAR}">'
+ '<div class="loading-image-dot"></div>'
+ '</div>'
+ '<script>(function(){var b=document.getElementById("loading-box");'
+ 'if(!b)return;'
+ 'function end(){b.classList.add("loaded")}'
+ 'window.addEventListener("load",end);'
+ 'setTimeout(end,10000);'
+ 'var t=setInterval(function(){var app=document.getElementById("app");'
+ 'if(app&&app.querySelector(".loading-bg")===null){end();clearInterval(t)}},60);'
+ 'setTimeout(function(){clearInterval(t)},12000);'
+ '})();</' + 'script>'
+ '</div>')
+if '<div id="app"></div>' in s:
+    s = s.replace('<div id="app"></div>', '<div id="app">' + block + '</div>')
+    f.write_text(s)
+    print('injected anzhiyu loading:', f)
 PYIN
   fi
 done

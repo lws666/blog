@@ -124,16 +124,24 @@ const APP_SKELETON_CSS
     + '#loading-box .loading-image-dot{width:30px;height:30px;background:#6bdf8f;'
     + 'position:absolute;border-radius:50%;border:6px solid #fff;top:50%;left:50%;'
     + 'transform:translate(18px,24px)}'
+    + '#loading-box .loading-img{opacity:0;transition:opacity .15s}'
+    + '#loading-box .loading-img.az-ready{opacity:1}'
+    + '#loading-box .az-ring{position:absolute;width:100px;height:100px;margin:auto;'
+    + 'border:4px solid rgba(73,177,245,.25);border-top-color:#49b1f5;border-radius:50%;'
+    + 'animation:az-spin .8s linear infinite;box-shadow:0 0 0 4px #f0f0f2}'
+    + '#loading-box .az-ring.done{display:none}'
     + '#loading-box.loaded .loading-bg{opacity:0;z-index:-1000;pointer-events:none}'
     + '@keyframes az-loading-action{0%{opacity:1}100%{opacity:.4}}'
     + '@keyframes az-show-loading{from{opacity:0}to{opacity:1}}'
-    + '@media (prefers-reduced-motion:reduce){#loading-box .loading-img{animation:none}}'
+    + '@keyframes az-spin{to{transform:rotate(360deg)}}'
+    + '@media (prefers-reduced-motion:reduce){#loading-box .loading-img,#loading-box .az-ring{animation:none}}'
     + '</style>'
 
 const APP_SKELETON
   = '<link rel="preload" as="image" href="' + LOADING_AVATAR + '">'
     + '<div id="loading-box" onclick="this.classList.add(\'loaded\')">'
     + '<div class="loading-bg">'
+    + '<div class="az-ring" aria-hidden="true"></div>'
     + `<img class="loading-img" alt="加载头像" src="${LOADING_AVATAR}">`
     + '<div class="loading-image-dot"></div>'
     + '</div>'
@@ -151,7 +159,10 @@ const APP_SKELETON
     // away" right when the avatar finally shows up.
     + 'var t0=Date.now(),avatarSeen=false;'
     + 'var img=b.querySelector(".loading-img");'
-    + 'function markAvatar(){if(!avatarSeen){avatarSeen=true;t0=Date.now()}}'
+    + 'var ring=b.querySelector(".az-ring");'
+    + 'function markAvatar(){if(!avatarSeen){avatarSeen=true;t0=Date.now();'
+    + 'if(ring)ring.classList.add("done");'
+    + 'if(img)img.classList.add("az-ready")}}'
     + 'if(img){if(img.complete&&img.naturalWidth>0)markAvatar();else{img.addEventListener("load",markAvatar);img.addEventListener("error",markAvatar)}}'
     + 'var done=false;'
     // end() honours MIN_SHOW measured from avatar visibility.

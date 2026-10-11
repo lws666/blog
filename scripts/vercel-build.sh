@@ -38,6 +38,30 @@ find .vercel/output/static -name 'index.html' | while read -r f; do
   fi
 done
 
+
+# ── First-paint skeleton inside #app ───────────────────────────
+# The SPA shell ships an empty <div id="app">, so the first 0.3-0.9s is a
+# white void until Vue mounts. Inject an inline skeleton (background +
+# spinner) that Vue wipes on mount. Mirrors APP_SKELETON in src/index.js,
+# which does the same for the Cloudflare entry Worker.
+find .vercel/output/static -name 'index.html' | while read -r f; do
+  if ! grep -q 'bfs-spin' "$f"; then
+    python3 - "$f" <<'PYIN'
+import sys, pathlib
+f = pathlib.Path(sys.argv[1])
+s = f.read_text()
+skeleton = ('<div style="position:fixed;inset:0;display:flex;align-items:center;'
+            'justify-content:center;background:var(--va-c-bg,#f7f9fe)">'
+            '<div style="width:34px;height:34px;border:3px solid rgba(73,177,245,.25);'
+            'border-top-color:#49b1f5;border-radius:50%;animation:bfs-spin .8s linear infinite"></div>'
+            '<style>@keyframes bfs-spin{to{transform:rotate(360deg)}}'
+            '@media (prefers-reduced-motion:reduce){[style*="bfs-spin"]{animation:none}}</style>'
+            '</div>')
+f.write_text(s.replace('<div id="app"></div>', '<div id="app">' + skeleton + '</div>'))
+PYIN
+  fi
+done
+
 cat > .vercel/output/config.json <<'EOF'
 {
   "version": 3,

@@ -108,7 +108,7 @@ const LOADING_AVATAR = 'https://img.lwsnb.eu.cc/file/1770349295364_IMG_20250823_
 //              must not dismiss it before this even if Vue mounted fast.
 // FADE_MS    : fade-out duration (matches the CSS transition below).
 // HARD_CAP   : absolute safety cap; the screen always leaves by this time.
-const MIN_SHOW = 1800
+const MIN_SHOW = 2000
 const FADE_MS = 500
 const HARD_CAP = 10000
 

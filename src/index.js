@@ -80,6 +80,34 @@ function withHeroPreload(html, pathname) {
 }
 
 /**
+ * First-paint skeleton inside #app.
+ *
+ * The SPA shell ships an empty <div id="app">, so between HTML arrival and
+ * Vue mounting (~0.3-0.9s depending on line) the viewport is a plain white
+ * void. This inline skeleton paints instantly with the HTML — solid
+ * background (no FOUC against dark mode), centered spinner — and is wiped
+ * automatically when Vue mounts into #app. Pure inline CSS, zero requests.
+ */
+const APP_SKELETON
+  = '<div style="position:fixed;inset:0;display:flex;align-items:center;'
+    + 'justify-content:center;background:var(--va-c-bg,#f7f9fe)">'
+    + '<style>#app:empty+*{display:none}</style>'
+    + '<div style="width:34px;height:34px;border:3px solid rgba(73,177,245,.25);'
+    + 'border-top-color:#49b1f5;border-radius:50%;animation:bfs-spin .8s linear infinite"></div>'
+    + '<style>@keyframes bfs-spin{to{transform:rotate(360deg)}}'
+    + '@media (prefers-reduced-motion:reduce){[style*="bfs-spin"]{animation:none}}</style>'
+    + '</div>'
+
+/**
+ * Replace the empty #app with the skeleton. Idempotent: Vue's mount wipes
+ * the container's children, so no unmount cleanup is needed.
+ */
+function withAppSkeleton(html) {
+  if (!html.includes('<div id="app"></div>')) return html
+  return html.replace('<div id="app"></div>', `<div id="app">${APP_SKELETON}</div>`)
+}
+
+/**
  * Rebuild a response around a body we re-wrote as plain text.
  *
  * Reading an asset with .text() decodes it (ASSETS serves index.html brotli-
@@ -271,7 +299,7 @@ export default {
           if (corsForGateway) withCors(headers, origin)
           return new Response(res.body, { status: res.status, headers })
         }
-        return plainTextResponse(request, withHeroPreload(await res.text(), path), res, corsForGateway ? origin : null)
+        return plainTextResponse(request, withAppSkeleton(withHeroPreload(await res.text(), path)), res, corsForGateway ? origin : null)
       }
     } catch {
       // ASSETS unavailable or threw — try index.html fallback below
@@ -280,7 +308,7 @@ export default {
     // ── SPA fallback (admin, client-side routes) ────────────────
     try {
       const res = await env.ASSETS.fetch(new Request(url.origin + '/index.html'))
-      return plainTextResponse(request, withHeroPreload(await res.text(), path), res)
+      return plainTextResponse(request, withAppSkeleton(withHeroPreload(await res.text(), path)), res)
     } catch {
       return new Response('Not Found', { status: 404 })
     }

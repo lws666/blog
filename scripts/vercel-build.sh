@@ -56,7 +56,7 @@ css = (
  '#loading-box{user-select:none;-webkit-user-select:none}'
  '#loading-box .loading-bg{display:flex;width:100%;height:100%;position:fixed;'
  'background:var(--va-c-bg,#f7f9fe);z-index:1001;opacity:1;overflow:hidden;'
- 'transition:opacity .2s;animation:az-show-loading .3s 0s backwards;align-items:center;justify-content:center}'
+ 'transition:opacity .5s;animation:az-show-loading .3s 0s backwards;align-items:center;justify-content:center}'
  '#loading-box .loading-img{width:100px;height:100px;border-radius:50%;margin:auto;'
  'border:4px solid #f0f0f2;animation-duration:.2s;animation-name:az-loading-action;'
  'animation-iteration-count:infinite;animation-direction:alternate;object-fit:cover}'
@@ -79,9 +79,11 @@ box = (
  'if(!b)return;'
  'var st=document.getElementById("az-loading-style");'
  'if(st)document.head.appendChild(st);'
- 'var done=false;'
- 'function end(){if(done)return;done=true;b.classList.add("loaded");'
- 'setTimeout(function(){b.remove();var s=document.getElementById("az-loading-style");if(s)s.remove()},300)}'
+ 'var t0=Date.now(),done=false;'
+ 'function end(){if(done)return;done=true;'
+ 'var wait=Math.max(0,1800-(Date.now()-t0));'
+ 'setTimeout(function(){b.classList.add("loaded");'
+ 'setTimeout(function(){b.remove();var s=document.getElementById("az-loading-style");if(s)s.remove()},500)},wait)}'
  'window.addEventListener("load",end);'
  'setTimeout(end,10000);'
  'b.addEventListener("click",end);'
@@ -91,10 +93,11 @@ box = (
  'setTimeout(function(){clearInterval(t)},12000);'
  '})();</' + 'script>'
  '</div>')
-if '<div id="app"></div>' in s:
-    # style 先插到 </head> 前(head 里 Vue 动不到),box 插入 #app
+if '</body>' in s:
+    # style 插到 </head> 前;box 插到 </body> 前 —— 都在 #app 之外,
+    # Vue 水合不会触碰,最短显示时长因此可靠。
     s = s.replace('</head>', css + '</head>', 1)
-    s = s.replace('<div id="app"></div>', '<div id="app">' + box + '</div>')
+    s = s.replace('</body>', box + '</body>', 1)
     f.write_text(s)
     print('injected anzhiyu loading:', f)
 PYIN

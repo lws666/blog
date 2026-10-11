@@ -88,11 +88,9 @@ function withHeroPreload(html, pathname) {
  * bottom-right. Fades out via the .loaded class, driven by:
  *   - window 'load' (original behaviour)
  *   - click-to-dismiss (original) and a 10s timeout fallback (original)
- *   - Vue mount: Valaxy does NOT wipe #app's children — it appends beside
- *     them, so the overlay node survives as a stray at the end of #app.
- *     The watcher below detects that (overlay's computed position leaving
- *     'fixed' because its <style> was dropped from the hydrated DOM) and
- *     removes the node outright, with a .loaded fade where possible.
+ *   - Vue mount: the overlay lives outside #app (see withAppSkeleton), so
+ *     Vue never touches it. The watcher below keeps the DOM honest anyway
+ *     (style-only failures, extensions, etc.) and enforces removal.
  *
  * The <style> block lives in document.head (NOT beside the node): styles
  * inside #app get stripped when Vue hydrates, which would leave the overlay
@@ -105,12 +103,21 @@ function withHeroPreload(html, pathname) {
  */
 const LOADING_AVATAR = 'https://img.lwsnb.eu.cc/file/1770349295364_IMG_20250823_144910_239.jpg'
 
+// ── Timing (ms) ─────────────────────────────────────────────
+// MIN_SHOW   : minimum time the loading screen stays visible — the page
+//              must not dismiss it before this even if Vue mounted fast.
+// FADE_MS    : fade-out duration (matches the CSS transition below).
+// HARD_CAP   : absolute safety cap; the screen always leaves by this time.
+const MIN_SHOW = 1800
+const FADE_MS = 500
+const HARD_CAP = 10000
+
 const APP_SKELETON_CSS
   = '<style id="az-loading-style">'
     + '#loading-box{user-select:none;-webkit-user-select:none}'
     + '#loading-box .loading-bg{display:flex;width:100%;height:100%;position:fixed;'
     + 'background:var(--va-c-bg,#f7f9fe);z-index:1001;opacity:1;overflow:hidden;'
-    + 'transition:opacity .2s;animation:az-show-loading .3s 0s backwards;align-items:center;justify-content:center}'
+    + 'transition:opacity .5s;animation:az-show-loading .3s 0s backwards;align-items:center;justify-content:center}'
     + '#loading-box .loading-img{width:100px;height:100px;border-radius:50%;margin:auto;'
     + 'border:4px solid #f0f0f2;animation-duration:.2s;animation-name:az-loading-action;'
     + 'animation-iteration-count:infinite;animation-direction:alternate;object-fit:cover}'
@@ -137,11 +144,16 @@ const APP_SKELETON
     // hydration, which would unfix the overlay and dump it in the flow.
     + 'var st=document.getElementById("az-loading-style");'
     + 'if(st)document.head.appendChild(st);'
-    + 'var done=false;'
-    + 'function end(){if(done)return;done=true;b.classList.add("loaded");'
-    + 'setTimeout(function(){b.remove();var s=document.getElementById("az-loading-style");if(s)s.remove()},300)}'
+    + 'var t0=Date.now(),done=false;'
+    // end() honours MIN_SHOW: a fast mount waits out the remainder so the
+    // animation is actually seen; a slow mount dismisses immediately.
+    + 'function end(){if(done)return;done=true;'
+    + `var wait=Math.max(0,${MIN_SHOW}-(Date.now()-t0));`
+    + 'setTimeout(function(){b.classList.add("loaded");'
+    + 'setTimeout(function(){b.remove();var s=document.getElementById("az-loading-style");if(s)s.remove()},'
+    + `${FADE_MS})},wait)}`
     + 'window.addEventListener("load",end);'
-    + 'setTimeout(end,10000);'
+    + `setTimeout(end,${HARD_CAP});`
     + 'b.addEventListener("click",end);'
     // Vue mount watch: once the overlay is no longer position:fixed its CSS
     // is gone from the hydrated DOM — remove it before it paints in flow.
@@ -153,12 +165,17 @@ const APP_SKELETON
     + '</div>'
 
 /**
- * Replace the empty #app with the loading screen. The inline watcher removes
- * the node once Vue's hydration has taken over (see APP_SKELETON notes).
+ * Inject the loading screen right before </body> — OUTSIDE #app.
+ *
+ * Inside #app it is at the mercy of Vue's hydration: depending on page
+ * structure Vue may keep or drop unmatched nodes, which makes the minimum
+ * display time unreliable (and once dropped mid-fade the overlay can land
+ * in the document flow — the earlier "avatar in the footer" bug). Outside
+ * #app, Vue never touches it; the inline watcher owns the full lifecycle.
  */
 function withAppSkeleton(html) {
-  if (!html.includes('<div id="app"></div>')) return html
-  return html.replace('<div id="app"></div>', `<div id="app">${APP_SKELETON}</div>`)
+  if (!html.includes('</body>')) return html
+  return html.replace('</body>', `${APP_SKELETON}</body>`)
 }
 
 /**

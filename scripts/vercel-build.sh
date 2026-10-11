@@ -51,8 +51,8 @@ import sys, pathlib
 f = pathlib.Path(sys.argv[1])
 s = f.read_text()
 AVATAR = 'https://img.lwsnb.eu.cc/file/1770349295364_IMG_20250823_144910_239.jpg'
-block = (
- '<style>'
+css = (
+ '<style id="az-loading-style">'
  '#loading-box{user-select:none;-webkit-user-select:none}'
  '#loading-box .loading-bg{display:flex;width:100%;height:100%;position:fixed;'
  'background:var(--va-c-bg,#f7f9fe);z-index:1001;opacity:1;overflow:hidden;'
@@ -63,32 +63,42 @@ block = (
  '#loading-box .loading-image-dot{width:30px;height:30px;background:#6bdf8f;'
  'position:absolute;border-radius:50%;border:6px solid #fff;top:50%;left:50%;'
  'transform:translate(18px,24px)}'
- '#loading-box.loaded .loading-bg{opacity:0;z-index:-1000}'
+ '#loading-box.loaded .loading-bg{opacity:0;z-index:-1000;pointer-events:none}'
  '@keyframes az-loading-action{0%{opacity:1}100%{opacity:.4}}'
  '@keyframes az-show-loading{from{opacity:0}to{opacity:1}}'
  '@media (prefers-reduced-motion:reduce){#loading-box .loading-img{animation:none}}'
- '</style>'
+ '</style>')
+box = (
  '<div id="loading-box" onclick="this.classList.add(\'loaded\')">'
  '<div class="loading-bg">'
  f'<img class="loading-img" alt="加载头像" src="{AVATAR}">'
  '<div class="loading-image-dot"></div>'
  '</div>'
- '<script>(function(){var b=document.getElementById("loading-box");'
+ '<script>(function(){'
+ 'var b=document.getElementById("loading-box");'
  'if(!b)return;'
- 'function end(){b.classList.add("loaded")}'
+ 'var st=document.getElementById("az-loading-style");'
+ 'if(st)document.head.appendChild(st);'
+ 'var done=false;'
+ 'function end(){if(done)return;done=true;b.classList.add("loaded");'
+ 'setTimeout(function(){b.remove();var s=document.getElementById("az-loading-style");if(s)s.remove()},300)}'
  'window.addEventListener("load",end);'
  'setTimeout(end,10000);'
- 'var t=setInterval(function(){var app=document.getElementById("app");'
- 'if(app&&app.querySelector(".loading-bg")===null){end();clearInterval(t)}},60);'
+ 'b.addEventListener("click",end);'
+ 'var t=setInterval(function(){'
+ 'var bg=b.querySelector(".loading-bg");'
+ 'if(!bg||getComputedStyle(bg).position!=="fixed"){end();clearInterval(t)}},60);'
  'setTimeout(function(){clearInterval(t)},12000);'
  '})();</' + 'script>'
  '</div>')
 if '<div id="app"></div>' in s:
-    s = s.replace('<div id="app"></div>', '<div id="app">' + block + '</div>')
+    # style 先插到 </head> 前(head 里 Vue 动不到),box 插入 #app
+    s = s.replace('</head>', css + '</head>', 1)
+    s = s.replace('<div id="app"></div>', '<div id="app">' + box + '</div>')
     f.write_text(s)
     print('injected anzhiyu loading:', f)
 PYIN
-  fi
+fi
 done
 
 cat > .vercel/output/config.json <<'EOF'

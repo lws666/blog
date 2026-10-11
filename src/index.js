@@ -87,9 +87,17 @@ function withHeroPreload(html, pathname) {
  * (opacity alternate) with the signature green dot pinned at its
  * bottom-right. Fades out via the .loaded class, driven by:
  *   - window 'load' (original behaviour)
- *   - Vue mount detection (SPA equivalent — the overlay sits INSIDE #app,
- *     so mounting replaces it; .loaded is added as it happens so the fade)
  *   - click-to-dismiss (original) and a 10s timeout fallback (original)
+ *   - Vue mount: Valaxy does NOT wipe #app's children — it appends beside
+ *     them, so the overlay node survives as a stray at the end of #app.
+ *     The watcher below detects that (overlay's computed position leaving
+ *     'fixed' because its <style> was dropped from the hydrated DOM) and
+ *     removes the node outright, with a .loaded fade where possible.
+ *
+ * The <style> block lives in document.head (NOT beside the node): styles
+ * inside #app get stripped when Vue hydrates, which would leave the overlay
+ * statically rendered at full opacity at the bottom of the page — the
+ * "avatar in the footer" bug.
  *
  * Inline-only CSS/JS, zero extra requests. Avatar URL is fixed here to
  * match site.config.ts author.avatar (the shell HTML cannot read Valaxy
@@ -97,8 +105,8 @@ function withHeroPreload(html, pathname) {
  */
 const LOADING_AVATAR = 'https://img.lwsnb.eu.cc/file/1770349295364_IMG_20250823_144910_239.jpg'
 
-const APP_SKELETON
-  = '<style>'
+const APP_SKELETON_CSS
+  = '<style id="az-loading-style">'
     + '#loading-box{user-select:none;-webkit-user-select:none}'
     + '#loading-box .loading-bg{display:flex;width:100%;height:100%;position:fixed;'
     + 'background:var(--va-c-bg,#f7f9fe);z-index:1001;opacity:1;overflow:hidden;'
@@ -109,31 +117,44 @@ const APP_SKELETON
     + '#loading-box .loading-image-dot{width:30px;height:30px;background:#6bdf8f;'
     + 'position:absolute;border-radius:50%;border:6px solid #fff;top:50%;left:50%;'
     + 'transform:translate(18px,24px)}'
-    + '#loading-box.loaded .loading-bg{opacity:0;z-index:-1000}'
+    + '#loading-box.loaded .loading-bg{opacity:0;z-index:-1000;pointer-events:none}'
     + '@keyframes az-loading-action{0%{opacity:1}100%{opacity:.4}}'
     + '@keyframes az-show-loading{from{opacity:0}to{opacity:1}}'
     + '@media (prefers-reduced-motion:reduce){#loading-box .loading-img{animation:none}}'
     + '</style>'
-    + '<div id="loading-box" onclick="this.classList.add(\'loaded\')">'
+
+const APP_SKELETON
+  = '<div id="loading-box" onclick="this.classList.add(\'loaded\')">'
     + '<div class="loading-bg">'
     + `<img class="loading-img" alt="加载头像" src="${LOADING_AVATAR}">`
     + '<div class="loading-image-dot"></div>'
     + '</div>'
-    + '<script>(function(){var b=document.getElementById("loading-box");'
+    + APP_SKELETON_CSS
+    + '<script>(function(){'
+    + 'var b=document.getElementById("loading-box");'
     + 'if(!b)return;'
-    + 'function end(){b.classList.add("loaded")}'
+    // Keep the <style> in <head> — Vue strips style tags inside #app on
+    // hydration, which would unfix the overlay and dump it in the flow.
+    + 'var st=document.getElementById("az-loading-style");'
+    + 'if(st)document.head.appendChild(st);'
+    + 'var done=false;'
+    + 'function end(){if(done)return;done=true;b.classList.add("loaded");'
+    + 'setTimeout(function(){b.remove();var s=document.getElementById("az-loading-style");if(s)s.remove()},300)}'
     + 'window.addEventListener("load",end);'
     + 'setTimeout(end,10000);'
-    + 'var t=setInterval(function(){var app=document.getElementById("app");'
-    + 'if(app&&app.querySelector(".loading-bg")===null){end();clearInterval(t)}},60);'
+    + 'b.addEventListener("click",end);'
+    // Vue mount watch: once the overlay is no longer position:fixed its CSS
+    // is gone from the hydrated DOM — remove it before it paints in flow.
+    + 'var t=setInterval(function(){'
+    + 'var bg=b.querySelector(".loading-bg");'
+    + 'if(!bg||getComputedStyle(bg).position!=="fixed"){end();clearInterval(t)}},60);'
     + 'setTimeout(function(){clearInterval(t)},12000);'
     + '})();<\/script>'
     + '</div>'
 
 /**
- * Replace the empty #app with the loading screen. Vue's mount replaces the
- * container's children (wiping the overlay); the inline interval adds
- * .loaded the moment that happens so the 0.2s fade-out completes smoothly.
+ * Replace the empty #app with the loading screen. The inline watcher removes
+ * the node once Vue's hydration has taken over (see APP_SKELETON notes).
  */
 function withAppSkeleton(html) {
   if (!html.includes('<div id="app"></div>')) return html

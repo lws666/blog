@@ -80,27 +80,60 @@ function withHeroPreload(html, pathname) {
 }
 
 /**
- * First-paint skeleton inside #app.
+ * Anzhiyu-style fullpage loading screen (ported from
+ * hexo-theme-anzhiyu layout/includes/loading/fullpage-loading.pug).
  *
- * The SPA shell ships an empty <div id="app">, so between HTML arrival and
- * Vue mounting (~0.3-0.9s depending on line) the viewport is a plain white
- * void. This inline skeleton paints instantly with the HTML — solid
- * background (no FOUC against dark mode), centered spinner — and is wiped
- * automatically when Vue mounts into #app. Pure inline CSS, zero requests.
+ * Full-viewport overlay on the card background: the site avatar pulsing
+ * (opacity alternate) with the signature green dot pinned at its
+ * bottom-right. Fades out via the .loaded class, driven by:
+ *   - window 'load' (original behaviour)
+ *   - Vue mount detection (SPA equivalent — the overlay sits INSIDE #app,
+ *     so mounting replaces it; .loaded is added as it happens so the fade)
+ *   - click-to-dismiss (original) and a 10s timeout fallback (original)
+ *
+ * Inline-only CSS/JS, zero extra requests. Avatar URL is fixed here to
+ * match site.config.ts author.avatar (the shell HTML cannot read Valaxy
+ * config).
  */
+const LOADING_AVATAR = 'https://img.lwsnb.eu.cc/file/1770349295364_IMG_20250823_144910_239.jpg'
+
 const APP_SKELETON
-  = '<div style="position:fixed;inset:0;display:flex;align-items:center;'
-    + 'justify-content:center;background:var(--va-c-bg,#f7f9fe)">'
-    + '<style>#app:empty+*{display:none}</style>'
-    + '<div style="width:34px;height:34px;border:3px solid rgba(73,177,245,.25);'
-    + 'border-top-color:#49b1f5;border-radius:50%;animation:bfs-spin .8s linear infinite"></div>'
-    + '<style>@keyframes bfs-spin{to{transform:rotate(360deg)}}'
-    + '@media (prefers-reduced-motion:reduce){[style*="bfs-spin"]{animation:none}}</style>'
+  = '<style>'
+    + '#loading-box{user-select:none;-webkit-user-select:none}'
+    + '#loading-box .loading-bg{display:flex;width:100%;height:100%;position:fixed;'
+    + 'background:var(--va-c-bg,#f7f9fe);z-index:1001;opacity:1;overflow:hidden;'
+    + 'transition:opacity .2s;animation:az-show-loading .3s 0s backwards;align-items:center;justify-content:center}'
+    + '#loading-box .loading-img{width:100px;height:100px;border-radius:50%;margin:auto;'
+    + 'border:4px solid #f0f0f2;animation-duration:.2s;animation-name:az-loading-action;'
+    + 'animation-iteration-count:infinite;animation-direction:alternate;object-fit:cover}'
+    + '#loading-box .loading-image-dot{width:30px;height:30px;background:#6bdf8f;'
+    + 'position:absolute;border-radius:50%;border:6px solid #fff;top:50%;left:50%;'
+    + 'transform:translate(18px,24px)}'
+    + '#loading-box.loaded .loading-bg{opacity:0;z-index:-1000}'
+    + '@keyframes az-loading-action{0%{opacity:1}100%{opacity:.4}}'
+    + '@keyframes az-show-loading{from{opacity:0}to{opacity:1}}'
+    + '@media (prefers-reduced-motion:reduce){#loading-box .loading-img{animation:none}}'
+    + '</style>'
+    + '<div id="loading-box" onclick="this.classList.add(\'loaded\')">'
+    + '<div class="loading-bg">'
+    + `<img class="loading-img" alt="加载头像" src="${LOADING_AVATAR}">`
+    + '<div class="loading-image-dot"></div>'
+    + '</div>'
+    + '<script>(function(){var b=document.getElementById("loading-box");'
+    + 'if(!b)return;'
+    + 'function end(){b.classList.add("loaded")}'
+    + 'window.addEventListener("load",end);'
+    + 'setTimeout(end,10000);'
+    + 'var t=setInterval(function(){var app=document.getElementById("app");'
+    + 'if(app&&app.querySelector(".loading-bg")===null){end();clearInterval(t)}},60);'
+    + 'setTimeout(function(){clearInterval(t)},12000);'
+    + '})();<\/script>'
     + '</div>'
 
 /**
- * Replace the empty #app with the skeleton. Idempotent: Vue's mount wipes
- * the container's children, so no unmount cleanup is needed.
+ * Replace the empty #app with the loading screen. Vue's mount replaces the
+ * container's children (wiping the overlay); the inline interval adds
+ * .loaded the moment that happens so the 0.2s fade-out completes smoothly.
  */
 function withAppSkeleton(html) {
   if (!html.includes('<div id="app"></div>')) return html

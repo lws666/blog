@@ -20,8 +20,8 @@
   </div>
 {/if}
 
-<div class="bf-layout" style="padding-top:{data.post.cover ? '40px' : 'calc(var(--nav-height) + 40px)'}">
-  <div class="bf-main">
+<div class="bf-layout" style="padding-top:{data.post.cover ? '32px' : 'calc(var(--nav-height) + 32px)'}">
+  <main class="bf-main">
     <article class="bf-card bf-post">
       <!-- 有封面时标题在 banner 的 <h1> 里，这里不再重复 -->
       {#if !data.post.cover}
@@ -74,16 +74,17 @@
         {/if}
       </nav>
     {/if}
-  </div>
+  </main>
 
-  <!-- 侧栏：TOC 吸顶 -->
-  <aside class="bf-sidebar">
+  <aside class="bf-aside">
+    <div class="bf-aside__inner">
     {#if data.toc.length}
       <Toc items={data.toc} />
     {/if}
     <div class="bf-card bf-widget">
       <h3 class="bf-widget__title">返回</h3>
       <a href="/blog/" style="color:var(--btn-bg);font-size:0.9rem">← 全部文章</a>
+    </div>
     </div>
   </aside>
 </div>

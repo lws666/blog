@@ -1,10 +1,11 @@
 <script lang="ts">
   import { site } from '#lib/site'
   import { page } from '$app/state'
+  import Icon from './Icon.svelte'
+  import type { IconName } from '#lib/icons'
 
   let { onToggleTheme, theme }: { onToggleTheme: () => void; theme: 'light' | 'dark' } = $props()
 
-  // 主题行为：scrollY > 56 加 .nav-fixed
   let fixed = $state(false)
   let menuOpen = $state(false)
 
@@ -15,13 +16,6 @@
     return () => window.removeEventListener('scroll', onScroll)
   })
 
-  const links = [
-    { href: '/', label: '首页' },
-    { href: '/blog/', label: '博客' },
-    { href: '/archives/', label: '归档' },
-    { href: '/about/', label: '关于' }
-  ]
-
   const isActive = (href: string) => {
     const p = page.url.pathname
     return href === '/' ? p === '/' : p.startsWith(href)
@@ -29,23 +23,29 @@
 </script>
 
 <nav class="bf-nav" class:bf-nav--fixed={fixed}>
-  <a href="/" class="bf-nav__brand">{site.name}</a>
+  <!-- 品牌：头像 + 站点完整标题（与线上一致） -->
+  <a href="/" class="bf-nav__brand">
+    <img src={site.author.avatar} alt="" width="32" height="32" class="bf-nav__avatar" />
+    <span>{site.titleFull}</span>
+  </a>
 
   <div class="bf-nav__links" class:bf-nav__links--open={menuOpen}>
-    {#each links as link (link.href)}
+    {#each site.nav as link (link.href)}
       <a
         href={link.href}
         class="bf-nav__link"
         class:bf-nav__link--active={isActive(link.href)}
         onclick={() => (menuOpen = false)}
-      >{link.label}</a>
+      >
+        <span class="bf-nav__icon" aria-hidden="true"><Icon name={link.icon as IconName} size={15} /></span>
+        <span>{link.label}</span>
+      </a>
     {/each}
   </div>
 
-  <div style="display:flex;align-items:center;gap:2px">
+  <div class="bf-nav__actions">
     <button
-      class="bf-nav__toggle"
-      style="display:block"
+      class="bf-nav__toggle bf-nav__toggle--always"
       aria-label="切换主题"
       title={theme === 'dark' ? '切换到亮色' : '切换到暗色'}
       onclick={onToggleTheme}

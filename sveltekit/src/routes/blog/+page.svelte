@@ -10,8 +10,8 @@
 
 <Seo seo={data.seo} />
 
-<div class="bf-layout" style="padding-top:calc(var(--nav-height) + 40px)">
-  <div class="bf-main">
+<div class="bf-layout" style="padding-top:calc(var(--nav-height) + 32px)">
+  <main class="bf-main">
     <h1 style="font-size:1.6rem;margin:0 0 20px;color:var(--text-highlight-color)">博客</h1>
 
     {#each data.posts as post (post.slug)}
@@ -23,7 +23,7 @@
     {/if}
 
     <Pagination page={data.currentPage} totalPages={data.pagination.total_pages} />
-  </div>
+  </main>
 
   <Sidebar recentPosts={data.posts} categories={data.categories} tags={data.tags} />
 </div>

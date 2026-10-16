@@ -41,9 +41,9 @@
   --search-bg: #f6f8fa;
   --preloader-bg: #37474f;
 
-  /* 卡片阴影（主题原值） */
-  --card-box-shadow: 0 3px 8px 6px rgba(7, 17, 27, 0.05);
-  --card-hover-box-shadow: 0 3px 8px 6px rgba(7, 17, 27, 0.09);
+  /* 卡片阴影：线上实测值 */
+  --card-box-shadow: 0 0 4px rgba(0, 0, 0, 0.12);
+  --card-hover-box-shadow: 0 0 8px rgba(0, 0, 0, 0.16);
 
   /* 强调色（激活态，非主色） */
   --accent-active: #00c4b6;
@@ -54,10 +54,15 @@
 
   --content-width: 1200px;
   --nav-height: 60px;
+  /* 侧栏固定 300px（线上实测，非百分比） */
+  --sidebar-width: 300px;
+  /* 内容区：侧栏 300px sticky top:76px */
+  --sidebar-top: 76px;
 
   --font:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Lato, Roboto,
-    'PingFang SC', 'Microsoft YaHei', sans-serif;
+    'DM Sans', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Microsoft YaHei', sans-serif;
+  --font-serif: 'Noto Serif SC', Georgia, 'Songti SC', serif;
   --font-mono: consolas, Menlo, monospace, 'PingFang SC', 'Microsoft YaHei';
 }
 
@@ -157,11 +162,11 @@ img {
 /* ── 布局骨架：74% 内容 + 26% 侧栏，居中 max 1200px ─────── */
 .bf-layout {
   display: flex;
-  gap: 20px;
+  gap: 24px;
   max-width: var(--content-width);
   width: 100%;
   margin: 0 auto;
-  padding: 40px 15px;
+  padding: 32px 16px 40px;
   align-items: flex-start;
 }
 
@@ -172,15 +177,15 @@ img {
 }
 
 .bf-sidebar {
-  flex: 0 0 auto;
-  width: 26%;
+  flex: 0 0 var(--sidebar-width);
+  width: var(--sidebar-width);
   min-width: 0;
 }
 
 /* 侧栏内的吸顶容器 */
 .bf-sidebar--sticky {
   position: sticky;
-  top: 20px;
+  top: var(--sidebar-top);
 }
 
 /* ── Banner / Hero ───────────────────────────────────────── */
@@ -251,18 +256,20 @@ img {
 
 .bf-banner__title {
   margin: 0;
-  font-size: 1.85rem;
-  font-weight: 400;
-  letter-spacing: 2px;
+  font-family: var(--font-serif);
+  font-size: 3.75rem; /* 60px */
+  font-weight: 900;
+  letter-spacing: 3.6px;
   color: #fff;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.15);
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.45);
 }
 
 .bf-banner__subtitle {
-  margin-top: 8px;
-  font-size: 1.15rem;
+  margin-top: 10px;
+  font-size: 1.3rem; /* 20.8px */
+  font-weight: 700;
   color: #fff;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.15);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
   min-height: 1.6em;
 }
 
@@ -319,7 +326,7 @@ img {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 36px;
+  padding: 0 32px;
   transition: background 0.3s, box-shadow 0.3s;
 }
 
@@ -657,7 +664,7 @@ img {
 /* ── 目录 TOC ─────────────────────────────────────────────── */
 .bf-toc {
   position: sticky;
-  top: 20px;
+  top: var(--sidebar-top);
   max-height: calc(100vh - 40px);
   overflow-y: auto;
   padding: 20px 22px;
@@ -1157,4 +1164,259 @@ img {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* ============================================================
+ * 对齐线上 www.lwsnb.eu.cc 的补充样式
+ * 数值均来自线上实测（getComputedStyle / DOM 结构）
+ * ============================================================ */
+
+/* ── 导航品牌：头像 + 完整标题 ───────────────────────────── */
+.bf-nav__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  max-width: 46vw;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.bf-nav--fixed .bf-nav__brand {
+  color: var(--text-highlight-color);
+  text-shadow: none;
+}
+
+.bf-nav__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 auto;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
+.bf-nav--fixed .bf-nav__avatar {
+  box-shadow: 0 0 0 2px var(--btn-bg);
+}
+
+.bf-nav__icon {
+  margin-right: 4px;
+  font-size: 0.95em;
+}
+
+.bf-nav__actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* 主题切换按钮在所有尺寸都显示 */
+.bf-nav__toggle--always {
+  display: block !important;
+}
+
+/* ── Hero 出处与波浪 ─────────────────────────────────────── */
+.bf-banner__source {
+  margin-top: 6px;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  animation: bf-fade-in 0.4s ease forwards;
+}
+
+@keyframes bf-fade-in {
+  to { opacity: 1; }
+}
+
+.bf-banner__wave {
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 100%;
+  height: 70px;
+  z-index: 1;
+}
+
+@media (min-width: 768px) {
+  .bf-banner__wave { height: 100px; }
+}
+
+/* 下滑箭头在波浪之上 */
+.bf-banner__scroll {
+  z-index: 3;
+  bottom: 26px;
+}
+
+/* ── 右栏整体（sticky 容器） ────────────────────────────── */
+.bf-aside__inner {
+  position: sticky;
+  top: var(--sidebar-top);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-height: calc(100vh - var(--sidebar-top) - 20px);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.bf-aside__inner::-webkit-scrollbar { display: none; }
+
+/* ── 作者卡 ─────────────────────────────────────────────── */
+.bf-author__name {
+  margin: 14px 0 8px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-highlight-color);
+}
+
+.bf-author__desc {
+  margin: 0 0 16px;
+  font-size: 0.86rem;
+  line-height: 1.75;
+  color: var(--font-color);
+}
+
+.bf-author__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+  padding: 12px 0;
+  border-top: 1px solid var(--light-grey);
+  border-bottom: 1px solid var(--light-grey);
+}
+
+.bf-author__stats a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--font-color);
+  transition: color 0.2s;
+}
+
+.bf-author__stats a:hover { color: var(--btn-bg); }
+
+.bf-author__stats strong {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-highlight-color);
+}
+
+.bf-author__stats span {
+  font-size: 12px;
+  color: var(--card-meta);
+}
+
+.bf-author__social {
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  margin-top: 16px;
+  font-size: 1.35rem;
+}
+
+.bf-author__social a {
+  transition: transform 0.2s, filter 0.2s;
+  filter: grayscale(0.35);
+}
+
+.bf-author__social a:hover {
+  transform: translateY(-3px);
+  filter: none;
+}
+
+/* ── 侧栏小工具补充 ─────────────────────────────────────── */
+.bf-widget__text {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.8;
+  color: var(--font-color);
+}
+
+/* 最新文章：标题与日期上下排布 */
+.bf-widget__item {
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+}
+
+.bf-widget__item-date {
+  font-size: 11px;
+  color: var(--card-meta);
+}
+
+.bf-widget__item:hover .bf-widget__item-date { color: rgba(255, 255, 255, 0.85); }
+
+/* 网站资讯 dl */
+.bf-webinfo {
+  display: block;
+  text-align: left;
+}
+
+.bf-webinfo > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  font-size: 0.88rem;
+}
+
+.bf-webinfo dt { color: var(--card-meta); }
+.bf-webinfo dd { margin: 0; color: var(--text-highlight-color); font-weight: 600; }
+
+/* 音乐 iframe */
+.bf-music {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+/* ── 文章卡片：封面在右/左交替（线上 nth-child(even) 翻转） ── */
+.bf-post-card--cover:nth-child(even) {
+  flex-direction: row-reverse;
+}
+
+/* ── 响应式：<900px 隐藏侧栏（线上 hidden lg:flex） ─────── */
+@media (max-width: 900px) {
+  .bf-aside { display: none; }
+  .bf-nav__brand { font-size: 0.9rem; max-width: 60vw; }
+  .bf-banner__title { font-size: 2.2rem; letter-spacing: 1px; }
+  .bf-banner__subtitle { font-size: 1.05rem; }
+}
+
+@media (min-width: 901px) {
+  .bf-nav__toggle:not(.bf-nav__toggle--always) { display: none; }
+}
+
+/* ── 内联 SVG 图标对齐 ─────────────────────────────────── */
+.bf-icon {
+  display: inline-block;
+  vertical-align: -0.15em;
+  flex: 0 0 auto;
+}
+
+.bf-nav__link .bf-icon { margin-right: 5px; }
+.bf-widget__title .bf-icon { margin-right: 7px; color: var(--btn-bg); }
+.bf-post-card__meta .bf-icon { margin-right: 4px; opacity: 0.75; }
+
+.bf-author__social a { color: var(--card-meta); }
+.bf-author__social a:hover { color: var(--btn-bg); }
+
+/* 文章卡片封面比例：避免被裁切成一条 */
+.bf-post-card__cover {
+  flex: 0 0 42%;
+  min-height: 16.8em;
+}
+
+@media (max-width: 900px) {
+  .bf-post-card__cover { min-height: 0; aspect-ratio: 5 / 2; }
 }

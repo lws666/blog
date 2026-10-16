@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { PostListItem } from '#lib/api'
+  import Icon from './Icon.svelte'
 
   let { post }: { post: PostListItem } = $props()
 
@@ -24,9 +25,9 @@
     {/if}
 
     <div class="bf-post-card__meta">
-      <span>📅 {fmtDate(post.date)}</span>
+      <span><Icon name="archive" size={13} /> {fmtDate(post.date)}</span>
       {#if post.categories?.length}
-        <span>📂 {post.categories.map(cleanTag).join(' / ')}</span>
+        <span><Icon name="folder" size={13} /> {post.categories.map(cleanTag).join(' / ')}</span>
       {/if}
       {#if post.tags?.length}
         <span class="bf-post-card__tags">

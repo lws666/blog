@@ -1,18 +1,19 @@
 <script lang="ts">
-  import Icon from './Icon.svelte'
   import { t } from '#lib/i18n.svelte'
 
   /**
-   * 音乐播放器 —— 用 APlayer（与老版 Valaxy 站一致），外观即老版的样子：
-   * 圆角封面 + 歌名/歌手 + 进度条 + 音量 + 播放列表 + 歌词滚动。
+   * 音乐播放器 —— 与老版 Valaxy 站（components/MusicPlayer.vue）1:1 对齐。
    *
-   * 数据源：自建 Meting API
-   *   https://music.lwsnb.eu.cc/api?server=netease&type=playlist&id=<歌单>
+   * 结构（老版）：
+   *   .yun-music（fixed，右下，纵向 flex）
+   *     └ section.yun-music-panel   ← 面板在按钮「上方」，点按钮展开/收起
+   *          header.yun-music-head（标题 + × 收起）
+   *          p.yun-music-hint（加载中 / 错误）
+   *          div.yun-music-body ← APlayer 挂载点
+   *     └ button.yun-music-btn      ← 圆形音乐按钮（打开时变 ×）
    *
-   * 设计约束（沿用老版）：
-   *  - 默认收起，点击悬浮按钮才展开；绝不自动播放
-   *  - 首次展开才请求歌单
-   *  - 客户端动态 import APlayer（只用 CSS/JS 时不影响预渲染）
+   * 老版没有遮罩层，关闭靠：再点按钮 / 面板里的 × / Esc。
+   * 数据源：自建 Meting API（同老版）。
    */
   const API = 'https://music.lwsnb.eu.cc'
   const SERVER = 'netease'
@@ -24,7 +25,7 @@
   let { open = $bindable(false) }: { open?: boolean } = $props()
 
   let loading = $state(false)
-  let error = $state('')
+  let errorMsg = $state('')
   let container = $state<HTMLElement | null>(null)
   let loaded = false
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -32,7 +33,7 @@
 
   const d = $derived(t())
 
-  /** Meting -> APlayer 音频结构 */
+  /** Meting -> APlayer 音频结构（无 per-track theme，避免覆盖主题色） */
   const toAudio = (list: Song[]) =>
     list.map(s => ({
       name: s.title,
@@ -45,7 +46,7 @@
   async function initPlayer() {
     if (loaded || loading) return
     loading = true
-    error = ''
+    errorMsg = ''
     try {
       const url = `${API}/api?server=${SERVER}&type=${TYPE}&id=${ID}`
       const res = await fetch(url)
@@ -53,8 +54,7 @@
       const data = (await res.json()) as Song[]
       if (!Array.isArray(data) || !data.length) throw new Error('歌单为空')
 
-      // APlayer 是 UMD 包（依赖 window/document），动态加载以保证预渲染安全。
-      // UMD 在打包器下通过 default 导出，而不是挂到 window.APlayer。
+      // UMD 包：必须用 import 的 default 导出（不是 window.APlayer）
       await import('aplayer/dist/APlayer.min.css')
       const mod = await import('aplayer')
       const APlayerCtor = ((mod as { default?: unknown }).default ?? mod) as
@@ -62,7 +62,6 @@
         | undefined
       if (typeof APlayerCtor !== 'function') throw new Error('APlayer 加载失败')
 
-      // 等待容器渲染
       await new Promise(r => requestAnimationFrame(r))
       if (!container) throw new Error('容器未就绪')
 
@@ -73,7 +72,7 @@
         fixed: false,
         mini: false,
         listFolded: false,
-        listMaxHeight: '150px',
+        listMaxHeight: '160px',
         lrcType: 3,
         preload: 'none',
         volume: 0.7,
@@ -81,51 +80,67 @@
       })
       loaded = true
     } catch (e) {
-      error = (e as Error).message || '加载失败'
+      errorMsg = (e as Error).message || '加载失败'
     } finally {
       loading = false
     }
   }
 
-  function close() {
-    open = false
-    // 关闭时暂停，避免后台继续播放
-    try { player?.pause?.() } catch { /* ignore */ }
+  function toggle() {
+    open = !open
+    if (open) queueMicrotask(initPlayer)
+    else { try { player?.pause?.() } catch { /* ignore */ } }
+  }
+
+  function onKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape' && open) open = false
   }
 
   $effect(() => {
-    if (open) queueMicrotask(initPlayer)
+    window.addEventListener('keydown', onKeydown)
+    return () => window.removeEventListener('keydown', onKeydown)
   })
 
-  $effect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+  $effect(() => () => {
+    // 卸载时销毁播放器，避免离开页面后仍在播放
+    try { player?.destroy?.() } catch { /* ignore */ }
+    player = null
   })
 </script>
 
-{#if open}
-  <button class="bf-music-scrim" aria-label="关闭音乐播放器" onclick={close}></button>
+<div class="yun-music" class:is-open={open}>
+  {#if open}
+    <section class="yun-music-panel" aria-label="音乐播放器">
+      <header class="yun-music-head">
+        <span class="yun-music-title">{d.music}</span>
+        <button class="yun-music-close" title="收起" aria-label="收起" onclick={() => (open = false)}>
+          ×
+        </button>
+      </header>
 
-  <section class="bf-music-panel" aria-label={d.music}>
-    <header class="bf-music-head">
-      <span class="bf-music-head__title">
-        <Icon name="music2" size={15} /> {d.music}
-      </span>
-      <button class="bf-music-close" aria-label="关闭" title="关闭" onclick={close}>
-        <Icon name="close" size={16} />
-      </button>
-    </header>
-
-    <div class="bf-music-body">
       {#if loading}
-        <p class="bf-music-msg">加载中…</p>
-      {:else if error}
-        <p class="bf-music-msg">⚠ {error}</p>
+        <p class="yun-music-hint">加载中…</p>
+      {:else if errorMsg}
+        <p class="yun-music-hint yun-music-err">{errorMsg}</p>
       {/if}
+
       <!-- APlayer 挂载点 -->
-      <div class="bf-aplayer" bind:this={container}></div>
-    </div>
-  </section>
-{/if}
+      <div class="yun-music-body" bind:this={container}></div>
+    </section>
+  {/if}
+
+  <!-- 圆形音乐按钮（打开时显示 ×） -->
+  <button
+    class="yun-music-btn"
+    title={open ? '收起音乐' : '打开音乐'}
+    aria-label={open ? '收起音乐' : '打开音乐'}
+    aria-expanded={open}
+    onclick={toggle}
+  >
+    {#if open}
+      <span class="yun-music-x" aria-hidden="true">×</span>
+    {:else}
+      <span class="yun-music-note" aria-hidden="true">♪</span>
+    {/if}
+  </button>
+</div>

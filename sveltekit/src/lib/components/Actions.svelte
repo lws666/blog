@@ -1,7 +1,6 @@
 <script lang="ts">
   import Icon from './Icon.svelte'
   import { i18n, t, toggleLang } from '#lib/i18n.svelte'
-  import MusicPlayer from './MusicPlayer.svelte'
 
   let {
     theme,
@@ -19,7 +18,6 @@
 
   let visible = $state(false)
   let pct = $state(0)
-  let musicOpen = $state(false)
   let tocOpen = $state(false)
 
   const d = $derived(t())
@@ -85,17 +83,6 @@
     </button>
   {/if}
 
-  <!-- 音乐播放器 -->
-  <button
-    class="bf-action"
-    aria-label={d.toggleMusic}
-    title={d.toggleMusic}
-    onclick={() => (musicOpen = !musicOpen)}
-  >
-    <Icon name={musicOpen ? 'close' : 'music2'} size={17} />
-  </button>
-
-  <MusicPlayer bind:open={musicOpen} />
 
   <!-- 语言切换 -->
   <button

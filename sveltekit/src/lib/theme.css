@@ -58,6 +58,9 @@
   --sidebar-width: 300px;
   /* 内容区：侧栏 300px sticky top:76px */
   --sidebar-top: 76px;
+  /* 悬浮球统一皮肤（老版变量名） */
+  --bf-float-bg: rgba(255, 255, 255, 0.82);
+  --bf-float-shadow: 0 1px 8px rgba(0, 0, 0, 0.12);
 
   --font:
     'DM Sans', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
@@ -68,6 +71,8 @@
 
 /* ── 暗色令牌（data-theme="dark"） ───────────────────────── */
 [data-theme='dark'] {
+  --bf-float-bg: rgba(37, 37, 40, 0.82);
+  --bf-float-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
   --global-bg: #0d0d0d;
   --font-color: rgba(255, 255, 255, 0.7);
   --card-bg: #121212;
@@ -1677,135 +1682,141 @@ img {
 }
 
 /* ============================================================
- * 音乐播放器（APlayer，与老版一致）
+ * 音乐播放器 —— 与老版 components/MusicPlayer.vue 1:1 对齐
+ * 数值逐条来自老版 SCSS，变量映射到本项目主题令牌：
+ *   --va-c-bg -> --card-bg        --va-c-text-2 -> --font-color
+ *   --va-c-primary -> --btn-bg    --va-c-divider -> --light-grey
  * ============================================================ */
-.bf-music-scrim {
+.yun-music {
   position: fixed;
-  inset: 0;
-  z-index: 125;
-  border: 0;
-  padding: 0;
-  background: rgba(0, 0, 0, 0.25);
-  cursor: pointer;
-}
-
-.bf-music-panel {
-  position: fixed;
-  right: 74px;
-  bottom: 40px;
+  right: 1rem;
+  bottom: 4.5rem;          /* 在回到顶部按钮之上 */
   z-index: 130;
-  width: 340px;
-  max-height: min(76vh, 560px);
   display: flex;
   flex-direction: column;
-  background: var(--card-bg);
-  border-radius: var(--radius-card);
-  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.22);
-  overflow: hidden;
-  animation: bf-music-in 0.22s ease;
+  align-items: flex-end;
+  gap: 0.5rem;
 }
 
-@keyframes bf-music-in {
-  from { opacity: 0; transform: translateY(10px) scale(0.97); }
-  to   { opacity: 1; transform: none; }
-}
-
-.bf-music-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 10px 10px 10px 14px;
-  background: linear-gradient(135deg, var(--btn-bg), var(--accent-active));
-  color: #fff;
-  flex: 0 0 auto;
-}
-
-.bf-music-head__title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-
-.bf-music-close {
-  width: 28px;
-  height: 28px;
-  border: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.22);
-  color: #fff;
-  cursor: pointer;
+/* 圆形切换按钮：与老版的悬浮球统一皮肤一致
+   （老版把 .yun-music-btn / .toc-btn / .bf-gotop 归为同一组：
+     2.5rem 圆、无边框、半透明底 + blur(8px)、统一阴影与 hover） */
+.yun-music-btn {
+  width: 2.5rem;
+  height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s, transform 0.2s;
-}
-
-.bf-music-close:hover {
-  background: rgba(255, 255, 255, 0.4);
-  transform: rotate(90deg);
-}
-
-.bf-music-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-}
-
-.bf-music-msg {
-  margin: 0;
-  padding: 20px 16px;
-  font-size: 0.86rem;
-  color: var(--card-meta);
-  text-align: center;
-}
-
-/* APlayer 容器：去掉它自带的外阴影，融入面板 */
-.bf-aplayer .aplayer {
-  margin: 0;
-  background: var(--card-bg);
+  border: none;
+  border-radius: 50%;
   color: var(--font-color);
-  box-shadow: none;
-  border-radius: 0;
+  background: var(--bf-float-bg, rgba(255, 255, 255, 0.82));
+  box-shadow: var(--bf-float-shadow, 0 1px 8px rgba(0, 0, 0, 0.12));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
 }
 
-/* 内部文字跟随主题 */
-.bf-aplayer .aplayer .aplayer-info .aplayer-music .aplayer-title,
-.bf-aplayer .aplayer .aplayer-info .aplayer-music .aplayer-author {
+.yun-music-btn:hover {
+  color: var(--btn-bg);
+  transform: scale(1.06);
+}
+
+[data-theme='dark'] .yun-music-btn {
+  background: var(--bf-float-bg, rgba(37, 37, 40, 0.82));
+}
+
+.yun-music-x { font-size: 1.35rem; }
+
+/* 面板：宽 min(20rem, 100vw-2rem)，圆角 0.75rem，内边距 0.75rem */
+.yun-music-panel {
+  width: min(20rem, calc(100vw - 2rem));
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--card-bg);
+  border: 1px solid var(--light-grey);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.12);
+}
+
+.yun-music-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--light-grey);
+}
+
+.yun-music-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--btn-bg);
+}
+
+.yun-music-close {
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--card-meta);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.yun-music-close:hover { color: var(--btn-bg); }
+
+.yun-music-hint {
+  margin: 0.25rem 0;
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+.yun-music-err { color: #e34d59; }
+
+/* ── APlayer 融入主题（老版同名规则） ───────────────────── */
+.yun-music-body.aplayer {
+  margin: 0;
+  background: transparent;
+  box-shadow: none;
+  font-family: inherit;
+}
+
+.yun-music-body.aplayer .aplayer-info { border-bottom: none; }
+
+.yun-music-body.aplayer .aplayer-title,
+.yun-music-body.aplayer .aplayer-author {
   color: var(--text-highlight-color);
 }
 
-.bf-aplayer .aplayer .aplayer-info .aplayer-music .aplayer-author {
-  color: var(--card-meta);
-}
-
-.bf-aplayer .aplayer .aplayer-list ol li {
-  color: var(--font-color);
+.yun-music-body.aplayer .aplayer-list ol li {
   border-top-color: var(--light-grey);
+  color: var(--font-color);
 }
 
-.bf-aplayer .aplayer .aplayer-list ol li:hover {
-  background: var(--text-bg-hover);
-}
-
-.bf-aplayer .aplayer .aplayer-list ol li.aplayer-list-light {
+.yun-music-body.aplayer .aplayer-list ol li:hover {
   background: var(--primary-dim, rgba(73, 177, 245, 0.12));
 }
 
-.bf-aplayer .aplayer .aplayer-list ol li .aplayer-list-index,
-.bf-aplayer .aplayer .aplayer-list ol li .aplayer-list-author {
-  color: var(--card-meta);
+.yun-music-body.aplayer .aplayer-list ol li.aplayer-list-light {
+  background: var(--primary-dim, rgba(73, 177, 245, 0.2));
 }
 
-/* 手机端：占满宽度 */
-@media (max-width: 900px) {
-  .bf-music-panel {
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
-    width: auto;
-    max-height: 74vh;
+/* 面板开合动画（0.22s，与老版一致） */
+.yun-music-panel {
+  animation: yun-music-fade 0.22s ease;
+}
+
+@keyframes yun-music-fade {
+  from { opacity: 0; transform: translateY(0.5rem); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (max-width: 768px) {
+  .yun-music {
+    right: 0.75rem;
+    bottom: 4.25rem;
   }
 }

@@ -3,6 +3,7 @@
   import Nav from '#lib/components/Nav.svelte'
   import Footer from '#lib/components/Footer.svelte'
   import Actions from '#lib/components/Actions.svelte'
+  import MusicPlayer from '#lib/components/MusicPlayer.svelte'
   import { page } from '$app/state'
   import { initLang, i18n, t } from '#lib/i18n.svelte'
 
@@ -44,3 +45,4 @@
   <Footer />
 </div>
 <Actions {theme} onToggleTheme={toggleTheme} hasToc={tocItems.length > 0} {tocItems} />
+<MusicPlayer />

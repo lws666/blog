@@ -662,9 +662,12 @@ img {
 }
 
 /* ── 目录 TOC ─────────────────────────────────────────────── */
-/* 目录：随页面滚动（不吸顶，按用户要求） */
+/* 目录：吸顶（与老版一致） */
 .bf-toc {
-  position: static;
+  position: sticky;
+  top: var(--sidebar-top);
+  max-height: calc(100vh - var(--sidebar-top) - 20px);
+  overflow-y: auto;
   padding: 20px 22px;
 }
 
@@ -1795,5 +1798,69 @@ img {
     bottom: 12px;
     width: auto;
     max-height: 72vh;
+  }
+}
+
+/* ── 目录抽屉（悬浮按钮展开，与老版 .toc-btn 行为一致） ──── */
+.bf-toc-drawer {
+  position: fixed;
+  right: 74px;
+  bottom: 40px;
+  z-index: 130;
+  width: 300px;
+  max-height: min(70vh, 480px);
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border-radius: var(--radius-card);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  animation: bf-music-in 0.22s ease;
+}
+
+.bf-toc-drawer__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 10px 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--btn-bg), var(--accent-active));
+}
+
+.bf-toc-drawer__head button {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.bf-toc-drawer__head button:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: rotate(90deg);
+}
+
+.bf-toc-drawer .bf-toc__list {
+  padding: 8px 6px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* 手机端抽屉占满宽度 */
+@media (max-width: 900px) {
+  .bf-toc-drawer {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+    max-height: 70vh;
   }
 }

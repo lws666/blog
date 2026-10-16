@@ -29,6 +29,11 @@
 
   // 只有首页有全屏 banner；其余页面导航必须实底，否则白字压白底看不见
   const hasBanner = $derived(page.url.pathname === '/')
+
+  // 文章页会把 toc 放进 page.data；有目录时显示悬浮目录按钮
+  const tocItems = $derived(
+    (page.data as { toc?: { id: string, text: string, level: number }[] })?.toc ?? []
+  )
 </script>
 
 <Nav onToggleTheme={toggleTheme} theme={theme} {hasBanner} />
@@ -38,4 +43,4 @@
 <div style="max-width:var(--content-width);margin:0 auto">
   <Footer />
 </div>
-<Actions {theme} onToggleTheme={toggleTheme} />
+<Actions {theme} onToggleTheme={toggleTheme} hasToc={tocItems.length > 0} {tocItems} />

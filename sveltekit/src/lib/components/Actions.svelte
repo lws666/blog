@@ -5,12 +5,22 @@
 
   let {
     theme,
-    onToggleTheme
-  }: { theme: 'light' | 'dark'; onToggleTheme: () => void } = $props()
+    onToggleTheme,
+    hasToc = false,
+    tocItems = []
+  }: {
+    theme: 'light' | 'dark'
+    onToggleTheme: () => void
+    /** 文章页传 true，显示目录悬浮按钮 */
+    hasToc?: boolean
+    /** 目录条目（由文章页提供） */
+    tocItems?: { id: string, text: string, level: number }[]
+  } = $props()
 
   let visible = $state(false)
   let pct = $state(0)
   let musicOpen = $state(false)
+  let tocOpen = $state(false)
 
   const d = $derived(t())
 
@@ -38,7 +48,43 @@
   const offset = $derived(C * (1 - pct / 100))
 </script>
 
+<!-- 目录抽屉 -->
+{#if tocOpen && tocItems.length}
+  <div class="bf-toc-drawer">
+    <div class="bf-toc-drawer__head">
+      <span>{d.toc}</span>
+      <button aria-label="关闭" title="关闭" onclick={() => (tocOpen = false)}>
+        <Icon name="close" size={15} />
+      </button>
+    </div>
+    <ul class="bf-toc__list">
+      {#each tocItems as it (it.id)}
+        <li>
+          <a
+            class="bf-toc__item"
+            class:bf-toc__item--h3={it.level === 3}
+            href={`#${it.id}`}
+            onclick={() => (tocOpen = false)}
+          >{it.text}</a>
+        </li>
+      {/each}
+    </ul>
+  </div>
+{/if}
+
 <div class="bf-actions">
+  <!-- 目录：悬浮按钮，点击展开/收起（与老版一致） -->
+  {#if hasToc}
+    <button
+      class="bf-action"
+      aria-label={d.toc}
+      title={d.toc}
+      onclick={() => (tocOpen = !tocOpen)}
+    >
+      <Icon name={tocOpen ? 'close' : 'list'} size={17} />
+    </button>
+  {/if}
+
   <!-- 音乐播放器 -->
   <button
     class="bf-action"
@@ -87,6 +133,7 @@
         stroke-dashoffset={offset}
       />
     </svg>
-    <span class="bf-gotop-text">{pct >= 100 ? '↑' : `${pct}`}</span>
+    <!-- 图标用「↑」（对齐老版），进度仍以圆环体现 -->
+    <span class="bf-gotop-text">↑</span>
   </button>
 </div>

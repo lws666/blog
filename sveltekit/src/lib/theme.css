@@ -667,9 +667,8 @@ img {
 }
 
 /* ── 目录 TOC ─────────────────────────────────────────────── */
-/* 目录卡片：老版是右栏里的普通卡片，不吸顶 */
-.bf-toc {
-  position: static;
+/* 目录卡：右栏普通卡片（老版），随右栏一起吸顶 */
+.bf-toc-card {
   padding: 20px 22px;
 }
 
@@ -1251,6 +1250,18 @@ img {
 }
 
 /* ── 右栏整体（sticky 容器） ────────────────────────────── */
+/* 右栏：固定 300px（对齐老版 BfSidebar 的 w-[300px]）
+   align-self: stretch 让 aside 与主内容等高，内部 sticky 才有作用区间 */
+.bf-aside {
+  flex: 0 0 var(--sidebar-width);
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  max-width: var(--sidebar-width);
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+}
+
 .bf-aside__inner {
   position: sticky;
   top: var(--sidebar-top);
@@ -1689,8 +1700,11 @@ img {
  * ============================================================ */
 .yun-music {
   position: fixed;
-  right: 1rem;
-  bottom: 4.5rem;          /* 在回到顶部按钮之上 */
+  /* 与悬浮按钮列同一右边缘（right:24px），并整列置于按钮列之上：
+     按钮列 .bf-actions 从 bottom:40 起、共 4 项 ≈ 190px 高，
+     因此音乐球起点放到 250px，避免与按钮/面板重叠 */
+  right: 24px;
+  bottom: 250px;
   z-index: 130;
   display: flex;
   flex-direction: column;
@@ -1814,9 +1828,144 @@ img {
   to   { opacity: 1; transform: none; }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .yun-music {
-    right: 0.75rem;
-    bottom: 4.25rem;
+    right: 12px;
+    bottom: 200px;
   }
+}
+
+/* ============================================================
+ * 文章页布局 —— 对齐老版 layouts/post.vue
+ *   有 banner：banner 378px(min300) → 内容卡 -mt-14 上移压住
+ *   无 banner：内容区 pt-24 让开固定导航
+ *   容器：1200px 居中，flex + gap 24px，主内容 flex-1，右栏 300px
+ * ============================================================ */
+.bf-post-banner {
+  position: relative;
+  width: 100%;
+  /* 比老版略高：底部要容纳标题+元信息，并留出卡片压线空间 */
+  height: 48vh;
+  min-height: 340px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  background: var(--default-bg-color);
+  background-size: cover;
+  background-position: center;
+}
+
+.bf-post-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.55));
+}
+
+.bf-post-banner__inner {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: var(--content-width);
+  margin: 0 auto;
+  /* 底部留出 4.5rem：内容卡会以 -3.5rem 上移压住 banner，
+     元信息必须待在这条压线之上才不被遮住 */
+  padding: 0 16px 4.5rem;
+  text-align: center;
+  color: #fff;
+}
+
+.bf-post-banner__title {
+  margin: 0 0 10px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.bf-post-banner__meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 16px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+}
+
+.bf-post-banner__meta .bf-icon { margin-right: 4px; }
+
+/* 内容容器：与首页同宽同位，flex 排布 */
+.bf-container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 0 16px 40px;
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+/* 有 banner：上移压住 banner（老版 -mt-14 = 3.5rem） */
+.bf-container--overlap {
+  margin-top: -3.5rem;
+}
+
+/* 无 banner：让开固定导航（老版 pt-24 = 6rem） */
+.bf-container:not(.bf-container--overlap) {
+  padding-top: 6rem;
+}
+
+.bf-post-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* 正文卡内边距（老版 p-5 md:p-8） */
+.bf-post {
+  padding: 20px;
+}
+
+@media (min-width: 768px) {
+  .bf-post { padding: 32px; }
+}
+
+.bf-post__summary {
+  margin: 0 0 24px;
+}
+
+.bf-post__tags {
+  margin-top: 26px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.bf-post__tags-label {
+  font-size: 12px;
+  color: var(--card-meta);
+}
+
+.bf-widget__back {
+  font-size: 0.9rem;
+  color: var(--btn-bg);
+}
+
+/* 手机端：单列 */
+@media (max-width: 900px) {
+  .bf-container {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .bf-post-banner {
+    height: 34vh;
+    min-height: 220px;
+  }
+
+  .bf-post-banner__title { font-size: 1.2rem; }
 }

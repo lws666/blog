@@ -11,7 +11,7 @@ import type { RequestHandler } from './$types'
  *
  * 改良：补 atom:link self 与 lastBuildDate（acofork 缺失，但属无害增强）。
  */
-export const prerender = false
+export const prerender = true
 
 const ITEM_LIMIT = 20
 

@@ -11,7 +11,7 @@ import type { RequestHandler } from './$types'
  *
  * 改良：acofork 不输出 lastmod/changefreq/priority；这里同样不输出以保持一致。
  */
-export const prerender = false
+export const prerender = true
 
 const STATIC_PATHS = ['/', '/blog/', '/about/', '/archives/', '/categories/', '/tags/', '/album/']
 

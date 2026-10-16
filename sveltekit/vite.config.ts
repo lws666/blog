@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-cloudflare'
+import adapter from '@sveltejs/adapter-static'
 import { sveltekit } from '@sveltejs/kit/vite'
 import { defineConfig } from 'vite'
 
@@ -9,12 +9,19 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [
     sveltekit({
+      // adapter-static：构建期把全站预渲染为静态 HTML（对齐 acofork 第 20 代）
+      // 不设 fallback —— 所有路由都应被预渲染，未知路径得到真实 404.html
       adapter: adapter({
-        // 显式指定本目录的 wrangler.toml：否则 adapter 会用仓库根的配置，
-        // 把 SvelteKit 入口写进根 src/index.js，覆盖生产 Worker 源码
-        config: 'wrangler.toml',
-        routes: { include: ['/*'], exclude: ['<all>'] }
-      })
+        pages: 'build',
+        assets: 'build',
+        strict: true
+      }),
+      prerender: {
+        // 分页路由 /blog/page/[page] 只在总页数 > 1 时才有实例；
+        // 文章不足一页时不生成，不算错误
+        handleUnseenRoutes: ({ routes }) =>
+          routes.every(r => r.startsWith('/blog/page/')) ? 'ignore' : 'fail'
+      }
     })
   ],
   server: {

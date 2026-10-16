@@ -1,14 +1,7 @@
-# SvelteKit 应用的独立 Wrangler 配置。
+# Cloudflare Pages 静态站点配置（adapter-static 产物在 build/）
 #
-# 必须存在且被 adapter 显式引用：否则 adapter-cloudflare 会向上找到仓库根
-# 的 wrangler.toml（Valaxy 版 Worker），并按其中的 main 字段把 SvelteKit
-# 的服务端入口写进根 src/index.js，覆盖掉生产 Worker 的源码。
+# 用 Pages（而非 Workers）部署：全站已是静态 HTML，
+# Pages 的 CDN + 自动 404.html 回退最贴合 acofork 的部署形态。
 name = "lwsnb-sveltekit"
-main = ".svelte-kit/cloudflare/_worker.js"
 compatibility_date = "2025-03-01"
-compatibility_flags = ["nodejs_compat"]
-
-# 静态资源目录（adapter 输出）
-[assets]
-binding = "ASSETS"
-directory = ".svelte-kit/cloudflare"
+pages_build_output_dir = "build"

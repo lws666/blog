@@ -1864,3 +1864,63 @@ img {
     max-height: 70vh;
   }
 }
+
+/* ============================================================
+ * 回到顶部按钮（按线上实测值 1:1 还原）
+ *   40×40 圆形 · 背景 rgba(255,255,255,.82) · 文字 #49b1f5
+ *   阴影 0 1px 8px rgba(0,0,0,.12) · 环内百分比 11.2px/700
+ * ============================================================ */
+.bf-gotop {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.82);
+  color: #49b1f5;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.12);
+  transition: background 0.2s, color 0.2s, transform 0.2s, opacity 0.3s;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.bf-gotop.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.bf-gotop:hover {
+  background: var(--btn-bg);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 12px rgba(73, 177, 245, 0.4);
+}
+
+/* 进度环：绝对定位铺满按钮，rotate(-90deg) 让进度从 12 点方向开始 */
+.bf-gotop-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  opacity: 0.9;
+}
+
+/* 环内百分比文字 */
+.bf-gotop-text {
+  position: relative;
+  font-size: 11.2px;
+  font-weight: 700;
+  line-height: 1;
+  font-family: var(--font);
+}
+
+[data-theme='dark'] .bf-gotop {
+  background: rgba(37, 37, 40, 0.82);
+  color: #6cc4f8;
+}

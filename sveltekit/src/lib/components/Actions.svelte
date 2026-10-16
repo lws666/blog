@@ -121,7 +121,7 @@
   <button
     class="bf-gotop"
     class:show={visible}
-    aria-label={d.backToTop}
+    aria-label={`${d.backToTop}（当前 ${pct}%）`}
     title={d.backToTop}
     onclick={toTop}
   >
@@ -133,7 +133,7 @@
         stroke-dashoffset={offset}
       />
     </svg>
-    <!-- 图标用「↑」（对齐老版），进度仍以圆环体现 -->
-    <span class="bf-gotop-text">↑</span>
+    <!-- 文字为滚动百分比（对齐线上实测：环内显示 89 这样的数字） -->
+    <span class="bf-gotop-text">{pct}</span>
   </button>
 </div>

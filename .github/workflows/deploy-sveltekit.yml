@@ -1,0 +1,57 @@
+name: Deploy SvelteKit to Cloudflare Pages
+
+# 触发方式：
+#  1) push 到 sveltekit-rebuild / main 且改动了 sveltekit/ → 自动构建部署
+#  2) repository_dispatch 事件 post-published → 文章发布后由 Worker 触发重建
+#     （adapter-static 全站预渲染，新文章必须重建才会出现在静态产物里）
+#  3) 手动 workflow_dispatch
+on:
+  push:
+    branches: [sveltekit-rebuild, main]
+    paths:
+      - 'sveltekit/**'
+      - '.github/workflows/deploy-sveltekit.yml'
+  repository_dispatch:
+    types: [post-published]
+  workflow_dispatch:
+
+# 同一时间只跑一个部署，新触发取消排队中的旧任务
+concurrency:
+  group: deploy-sveltekit
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    # 所有构建/部署命令都在 sveltekit 子目录执行
+    defaults:
+      run:
+        working-directory: sveltekit
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: sveltekit/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (adapter-static 全站预渲染)
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: sveltekit
+          command: pages deploy build --project-name lwsnb-sveltekit --branch main --commit-dirty=true

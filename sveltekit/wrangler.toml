@@ -1,0 +1,7 @@
+# Cloudflare Pages 静态站点配置（adapter-static 产物在 build/）
+#
+# 用 Pages（而非 Workers）部署：全站已是静态 HTML，
+# Pages 的 CDN + 自动 404.html 回退最贴合 acofork 的部署形态。
+name = "lwsnb-sveltekit"
+compatibility_date = "2025-03-01"
+pages_build_output_dir = "build"

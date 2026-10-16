@@ -54,3 +54,10 @@ worker/node_modules/
 # DSH harness workspace (never commit)
 .dsh/
 .vercel
+
+# SvelteKit 重构目录的构建产物
+sveltekit/.svelte-kit/
+sveltekit/node_modules/
+sveltekit/build/
+sveltekit/.wrangler/
+sveltekit/.vercel/

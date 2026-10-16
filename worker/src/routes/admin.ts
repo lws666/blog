@@ -5,7 +5,7 @@ import { createAuthMiddleware } from '../middleware/auth'
 import { resolveCredential } from '../auth'
 import { success, badRequest, notFound, error as errRes } from '../utils/response'
 import { summarizePost } from '../ai'
-import { notifyIndexNow } from '../index'
+import { notifyIndexNow, notifyRebuild } from '../index'
 import type { Env } from '../index'
 
 /**
@@ -143,6 +143,8 @@ export function createAdminRouter() {
       // Notify IndexNow for published (non-draft) posts
       if (!isDraft) {
         notifyIndexNow(c.env, slug)
+        // 静态站需重建才能收录新文章（fire-and-forget）
+        notifyRebuild(c.env, slug)
       }
 
       return success({ slug, url: `/posts/${slug}` }, 201)

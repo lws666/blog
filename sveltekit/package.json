@@ -1,0 +1,40 @@
+{
+  "name": "lwsnb-sveltekit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build && cp build/404/index.html build/404.html",
+    "preview": "vite preview",
+    "prepare": "svelte-kit sync || echo ''",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "deploy": "wrangler deploy",
+    "og": "node scripts/render-og.mjs"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-cloudflare": "8.0.1",
+    "@sveltejs/adapter-static": "^4.0.0",
+    "@sveltejs/kit": "3.1.0",
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "svelte": "5.57.2",
+    "svelte-check": "latest",
+    "typescript": "6.0.3",
+    "vite": "8.3.4",
+    "wrangler": "4.151.1"
+  },
+  "dependencies": {
+    "marked": "^16.0.0",
+    "shiki": "^3.0.0"
+  },
+  "imports": {
+    "#lib": {
+      "types": "./src/lib/index.ts",
+      "default": "./src/lib/index.ts"
+    },
+    "#lib/*": {
+      "types": "./src/lib/*",
+      "default": "./src/lib/*"
+    }
+  }
+}

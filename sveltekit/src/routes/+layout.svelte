@@ -4,6 +4,7 @@
   import Footer from '#lib/components/Footer.svelte'
   import Actions from '#lib/components/Actions.svelte'
   import { page } from '$app/state'
+  import { initLang, i18n, t } from '#lib/i18n.svelte'
 
   let { children } = $props()
 
@@ -13,6 +14,7 @@
   $effect(() => {
     const cur = document.documentElement.getAttribute('data-theme')
     theme = cur === 'dark' ? 'dark' : 'light'
+    initLang()
   })
 
   function toggleTheme() {
@@ -36,4 +38,4 @@
 <div style="max-width:var(--content-width);margin:0 auto">
   <Footer />
 </div>
-<Actions />
+<Actions {theme} onToggleTheme={toggleTheme} />

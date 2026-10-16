@@ -1420,3 +1420,175 @@ img {
 @media (max-width: 900px) {
   .bf-post-card__cover { min-height: 0; aspect-ratio: 5 / 2; }
 }
+
+/* ============================================================
+ * 本轮修改：波浪动效 / 悬浮按钮组 / 头像去边框 / 单一卡片风格
+ * ============================================================ */
+
+/* ── 波浪：横向平移一个周期即无缝（对齐线上 bf-wave-move） ── */
+.bf-banner__wave {
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 300%;
+  height: 70px;
+  z-index: 1;
+  pointer-events: none;
+  will-change: transform;
+}
+
+@media (min-width: 768px) {
+  .bf-banner__wave { height: 100px; }
+}
+
+/* 两层速度不同形成视差；用百分比平移（用户单位≠CSS 像素） */
+.bf-wave--back  { animation: bf-wave-move 26s linear infinite; }
+.bf-wave--front { animation: bf-wave-move 16s linear infinite; }
+
+@keyframes bf-wave-move {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-33.3333%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bf-wave--back, .bf-wave--front { animation: none; }
+}
+
+/* ── 头像：去掉描边/阴影 ────────────────────────────────── */
+.bf-nav__avatar {
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.bf-nav--fixed .bf-nav__avatar {
+  box-shadow: none !important;
+}
+
+/* ── 悬浮按钮组：竖排 4 个（音乐/语言/主题/顶部） ───────── */
+.bf-actions {
+  position: fixed;
+  right: 24px;
+  bottom: 40px;
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  opacity: 1;
+}
+
+.bf-action {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card-bg);
+  color: var(--btn-bg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+}
+
+.bf-action:hover {
+  background: var(--btn-bg);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+/* 音乐面板：浮在按钮左侧 */
+.bf-music-panel {
+  position: fixed;
+  right: 74px;
+  bottom: 150px;
+  background: var(--card-bg);
+  border-radius: var(--radius-card);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  line-height: 0;
+}
+
+.bf-music-panel iframe { border: 0; display: block; }
+
+/* ── 回到顶部：与其它按钮同一列风格，带百分比环 ─────────── */
+.bf-gotop {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card-bg);
+  color: var(--btn-bg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: background 0.2s, color 0.2s, transform 0.2s, opacity 0.3s;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.bf-gotop.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.bf-gotop:hover {
+  background: var(--btn-bg);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+.bf-gotop-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.bf-gotop-text {
+  position: relative;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  font-family: var(--font);
+}
+
+/* ── 文章卡片：统一为「封面在左」一种风格 ───────────────── */
+.bf-post-card--cover,
+.bf-post-card--cover:nth-child(even) {
+  flex-direction: row;
+}
+
+.bf-post-card__cover {
+  flex: 0 0 45%;
+  min-height: 16.8em;
+}
+
+.bf-post-card__body {
+  padding: 20px 24px;
+  text-align: left;
+  align-items: flex-start;
+}
+
+.bf-post-card__meta {
+  justify-content: flex-start;
+}
+
+@media (max-width: 900px) {
+  .bf-post-card--cover { flex-direction: column; }
+  .bf-post-card__cover { flex: 0 0 auto; min-height: 0; aspect-ratio: 5 / 2; }
+}
+
+/* 移动端悬浮按钮缩小 */
+@media (max-width: 900px) {
+  .bf-actions { right: 12px; bottom: 20px; gap: 8px; }
+  .bf-action, .bf-gotop { width: 36px; height: 36px; }
+  .bf-music-panel { right: 60px; bottom: 20px; }
+  .bf-music-panel iframe { width: 260px; }
+}

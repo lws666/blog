@@ -4,6 +4,7 @@
   import Icon from './Icon.svelte'
   import type { IconName } from '#lib/icons'
 
+  // 主题/语言/音乐按钮统一放在右下角悬浮按钮组（Actions.svelte）
   let { onToggleTheme, theme }: { onToggleTheme: () => void; theme: 'light' | 'dark' } = $props()
 
   let fixed = $state(false)
@@ -44,13 +45,6 @@
   </div>
 
   <div class="bf-nav__actions">
-    <button
-      class="bf-nav__toggle bf-nav__toggle--always"
-      aria-label="切换主题"
-      title={theme === 'dark' ? '切换到亮色' : '切换到暗色'}
-      onclick={onToggleTheme}
-    >{theme === 'dark' ? '☀' : '☾'}</button>
-
     <button class="bf-nav__toggle" aria-label="菜单" onclick={() => (menuOpen = !menuOpen)}>
       {menuOpen ? '✕' : '☰'}
     </button>

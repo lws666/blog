@@ -3,6 +3,7 @@
   import type { PostListItem } from '#lib/api'
   import Icon from './Icon.svelte'
   import type { IconName } from '#lib/icons'
+  import { t } from '#lib/i18n.svelte'
 
   /**
    * 右栏 —— 对齐线上 5 张卡：
@@ -29,6 +30,7 @@
   })
 
   const postCount = $derived(stats.post_count ?? recentPosts.length)
+  const d = $derived(t())
 </script>
 
 <aside class="bf-aside">
@@ -40,9 +42,9 @@
       <p class="bf-author__desc">{site.description}</p>
 
       <div class="bf-author__stats">
-        <a href="/archives/"><strong>{postCount}</strong><span>归档</span></a>
-        <a href="/categories/"><strong>{stats.category_count ?? categories.length}</strong><span>分类</span></a>
-        <a href="/tags/"><strong>{stats.tag_count ?? tags.length}</strong><span>标签</span></a>
+        <a href="/archives/"><strong>{postCount}</strong><span>{d.archives}</span></a>
+        <a href="/categories/"><strong>{stats.category_count ?? categories.length}</strong><span>{d.categories}</span></a>
+        <a href="/tags/"><strong>{stats.tag_count ?? tags.length}</strong><span>{d.tags}</span></a>
       </div>
 
       <div class="bf-author__social">
@@ -57,7 +59,7 @@
     <!-- 公告 -->
     {#if site.notice}
       <section class="bf-card bf-widget">
-        <h3 class="bf-widget__title"><Icon name="bell" size={15} /> 公告</h3>
+        <h3 class="bf-widget__title"><Icon name="bell" size={15} /> {d.notice}</h3>
         <p class="bf-widget__text">{site.notice}</p>
       </section>
     {/if}
@@ -65,7 +67,7 @@
     <!-- 最新文章 -->
     {#if recentPosts.length}
       <section class="bf-card bf-widget">
-        <h3 class="bf-widget__title"><Icon name="file" size={15} /> 最新文章</h3>
+        <h3 class="bf-widget__title"><Icon name="file" size={15} /> {d.recent}</h3>
         <ul class="bf-widget__list">
           {#each recentPosts.slice(0, 6) as post (post.slug)}
             <li class="bf-widget__item">
@@ -82,7 +84,7 @@
 
     <!-- 音乐 -->
     <section class="bf-card bf-widget">
-      <h3 class="bf-widget__title"><Icon name="music" size={15} /> 音乐</h3>
+      <h3 class="bf-widget__title"><Icon name="music" size={15} /> {d.music}</h3>
       <iframe
         class="bf-music"
         title="网易云音乐播放器"
@@ -98,11 +100,11 @@
 
     <!-- 网站资讯 -->
     <section class="bf-card bf-widget">
-      <h3 class="bf-widget__title"><Icon name="chart" size={15} /> 网站资讯</h3>
+      <h3 class="bf-widget__title"><Icon name="chart" size={15} /> {d.webinfo}</h3>
       <dl class="bf-webinfo">
-        <div><dt>运行天数</dt><dd>{runningDays ?? '—'} 天</dd></div>
-        <div><dt>文章数目</dt><dd>{postCount} 篇</dd></div>
-        <div><dt>创建于</dt><dd>{site.since.replace(/-/g, '/')}</dd></div>
+        <div><dt>{d.runningDays}</dt><dd>{runningDays ?? '—'} {d.day}</dd></div>
+        <div><dt>{d.postCount}</dt><dd>{postCount} {d.post}</dd></div>
+        <div><dt>{d.createdAt}</dt><dd>{site.since.replace(/-/g, '/')}</dd></div>
       </dl>
     </section>
   </div>

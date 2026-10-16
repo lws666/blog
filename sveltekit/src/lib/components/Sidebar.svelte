@@ -82,21 +82,6 @@
       </section>
     {/if}
 
-    <!-- 音乐 -->
-    <section class="bf-card bf-widget">
-      <h3 class="bf-widget__title"><Icon name="music" size={15} /> {d.music}</h3>
-      <iframe
-        class="bf-music"
-        title="网易云音乐播放器"
-        frameborder="no"
-        marginwidth="0"
-        marginheight="0"
-        width="100%"
-        height="86"
-        src={`//music.163.com/outchain/player?type=playlist&id=${site.music.id}&auto=0&height=66`}
-        loading="lazy"
-      ></iframe>
-    </section>
 
     <!-- 网站资讯 -->
     <section class="bf-card bf-widget">

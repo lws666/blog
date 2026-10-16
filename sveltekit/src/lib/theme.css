@@ -662,18 +662,10 @@ img {
 }
 
 /* ── 目录 TOC ─────────────────────────────────────────────── */
+/* 目录：随页面滚动（不吸顶，按用户要求） */
 .bf-toc {
-  position: sticky;
-  top: var(--sidebar-top);
-  max-height: calc(100vh - 40px);
-  overflow-y: auto;
+  position: static;
   padding: 20px 22px;
-}
-
-/* 导航固定后 TOC 下移，避免重叠 */
-.bf-toc--fixed {
-  top: 70px;
-  max-height: calc(100vh - 90px);
 }
 
 .bf-toc__list {
@@ -1499,226 +1491,7 @@ img {
 }
 
 /* 音乐面板：浮在按钮左侧 */
-.bf-music-panel {
-  position: fixed;
-  right: 74px;
-  bottom: 150px;
-  background: var(--card-bg);
-  border-radius: var(--radius-card);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
-  overflow: hidden;
-  line-height: 0;
-}
 
-.bf-music-panel iframe { border: 0; display: block; }
-
-/* ── 回到顶部：与其它按钮同一列风格，带百分比环 ─────────── */
-.bf-gotop {
-  position: relative;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 0;
-  cursor: pointer;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--card-bg);
-  color: var(--btn-bg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  transition: background 0.2s, color 0.2s, transform 0.2s, opacity 0.3s;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.bf-gotop.show {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.bf-gotop:hover {
-  background: var(--btn-bg);
-  color: #fff;
-  transform: translateY(-2px);
-}
-
-.bf-gotop-ring {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  transform: rotate(-90deg);
-}
-
-.bf-gotop-text {
-  position: relative;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1;
-  font-family: var(--font);
-}
-
-/* ── 文章卡片：统一为「封面在左」一种风格 ───────────────── */
-.bf-post-card--cover,
-.bf-post-card--cover:nth-child(even) {
-  flex-direction: row;
-}
-
-.bf-post-card__cover {
-  flex: 0 0 45%;
-  min-height: 16.8em;
-}
-
-.bf-post-card__body {
-  padding: 20px 24px;
-  text-align: left;
-  align-items: flex-start;
-}
-
-.bf-post-card__meta {
-  justify-content: flex-start;
-}
-
-@media (max-width: 900px) {
-  .bf-post-card--cover { flex-direction: column; }
-  .bf-post-card__cover { flex: 0 0 auto; min-height: 0; aspect-ratio: 5 / 2; }
-}
-
-/* 移动端悬浮按钮缩小 */
-@media (max-width: 900px) {
-  .bf-actions { right: 12px; bottom: 20px; gap: 8px; }
-  .bf-action, .bf-gotop { width: 36px; height: 36px; }
-  .bf-music-panel { right: 60px; bottom: 20px; }
-  .bf-music-panel iframe { width: 260px; }
-}
-
-/* ============================================================
- * 音乐播放器（自建 API）+ 手机端文章卡片修复
- * ============================================================ */
-
-.bf-music-panel {
-  position: fixed;
-  right: 74px;
-  bottom: 40px;
-  width: 300px;
-  max-height: min(70vh, 460px);
-  display: flex;
-  flex-direction: column;
-  background: var(--card-bg);
-  border-radius: var(--radius-card);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
-  overflow: hidden;
-  z-index: 130;
-}
-
-.bf-music-msg {
-  margin: 0;
-  padding: 18px 16px;
-  font-size: 0.86rem;
-  color: var(--card-meta);
-  text-align: center;
-}
-
-.bf-music-now {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px;
-  border-bottom: 1px solid var(--light-grey);
-}
-
-.bf-music-pic {
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius);
-  object-fit: cover;
-  flex: 0 0 auto;
-}
-
-.bf-music-meta {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.bf-music-meta strong {
-  font-size: 0.92rem;
-  color: var(--text-highlight-color);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.bf-music-meta span {
-  font-size: 0.78rem;
-  color: var(--card-meta);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.bf-music-ctrl {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-  padding: 10px;
-  border-bottom: 1px solid var(--light-grey);
-}
-
-.bf-music-ctrl button {
-  border: 0;
-  background: none;
-  color: var(--font-color);
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  transition: color 0.2s, transform 0.2s;
-}
-
-.bf-music-ctrl button:hover { color: var(--btn-bg); transform: scale(1.1); }
-
-.bf-music-play {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--btn-bg) !important;
-  color: #fff !important;
-  justify-content: center;
-}
-
-.bf-music-list {
-  list-style: none;
-  margin: 0;
-  padding: 6px 0;
-  overflow-y: auto;
-  flex: 1 1 auto;
-}
-
-.bf-music-list button {
-  display: block;
-  width: 100%;
-  text-align: left;
-  border: 0;
-  background: none;
-  padding: 7px 14px;
-  font-size: 0.82rem;
-  color: var(--font-color);
-  cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: background 0.2s, color 0.2s;
-}
-
-.bf-music-list button span { color: var(--card-meta); }
-
-.bf-music-list button:hover { background: var(--text-bg-hover); color: #fff; }
-.bf-music-list button:hover span { color: rgba(255, 255, 255, 0.85); }
-.bf-music-list button.active { color: var(--btn-bg); font-weight: 600; }
 
 /* ── 手机端文章卡片：竖排、封面固定比例、文字不被压 ─────── */
 @media (max-width: 900px) {
@@ -1763,5 +1536,264 @@ img {
     bottom: 68px;
     width: auto;
     max-height: 60vh;
+  }
+}
+
+/* ============================================================
+ * 音乐播放器 UI（重做）
+ * ============================================================ */
+
+/* 移动端遮罩：点空白关闭 */
+.bf-music-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 125;
+  border: 0;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+.bf-music-panel {
+  position: fixed;
+  right: 74px;
+  bottom: 40px;
+  z-index: 130;
+  width: 320px;
+  max-height: min(72vh, 520px);
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border-radius: var(--radius-card);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  animation: bf-music-in 0.22s ease;
+}
+
+@keyframes bf-music-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* 头部：标题 + 关闭按钮（手机端可关闭的关键） */
+.bf-music-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 10px 10px 14px;
+  background: linear-gradient(135deg, var(--btn-bg), var(--accent-active));
+  color: #fff;
+}
+
+.bf-music-head__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.bf-music-close {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.bf-music-close:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: rotate(90deg);
+}
+
+.bf-music-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.bf-music-msg {
+  margin: 0;
+  padding: 26px 16px;
+  font-size: 0.86rem;
+  color: var(--card-meta);
+  text-align: center;
+}
+
+/* 当前曲目 */
+.bf-music-now {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+}
+
+.bf-music-pic {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 auto;
+  border: 2px solid var(--light-grey);
+}
+
+/* 播放中封面缓慢旋转（黑胶感） */
+.bf-music-pic.spinning {
+  animation: bf-disc 12s linear infinite;
+}
+
+@keyframes bf-disc {
+  to { transform: rotate(360deg); }
+}
+
+.bf-music-meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bf-music-meta strong {
+  font-size: 0.95rem;
+  color: var(--text-highlight-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bf-music-meta span {
+  font-size: 0.8rem;
+  color: var(--card-meta);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 播放控制 */
+.bf-music-ctrl {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  padding: 4px 16px 16px;
+}
+
+.bf-music-ctrl button {
+  border: 0;
+  background: none;
+  color: var(--font-color);
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: color 0.2s, background 0.2s, transform 0.2s;
+}
+
+.bf-music-ctrl button:hover {
+  color: var(--btn-bg);
+  background: var(--primary-dim, rgba(73, 177, 245, 0.12));
+  transform: scale(1.08);
+}
+
+.bf-music-play {
+  width: 44px;
+  height: 44px;
+  background: var(--btn-bg) !important;
+  color: #fff !important;
+  box-shadow: 0 3px 10px rgba(73, 177, 245, 0.45);
+}
+
+.bf-music-play:hover {
+  background: var(--btn-hover-color) !important;
+  box-shadow: 0 3px 12px rgba(255, 114, 66, 0.45);
+}
+
+/* 歌单列表 */
+.bf-music-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0 8px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  border-top: 1px solid var(--light-grey);
+}
+
+.bf-music-list button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: none;
+  padding: 8px 14px;
+  font-size: 0.84rem;
+  color: var(--font-color);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.bf-music-index {
+  flex: 0 0 18px;
+  font-size: 0.72rem;
+  color: var(--card-meta);
+  text-align: right;
+}
+
+.bf-music-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bf-music-author {
+  flex: 0 1 auto;
+  max-width: 42%;
+  font-size: 0.75rem;
+  color: var(--card-meta);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bf-music-list button:hover {
+  background: var(--text-bg-hover);
+  color: #fff;
+}
+
+.bf-music-list button:hover .bf-music-index,
+.bf-music-list button:hover .bf-music-author {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.bf-music-list button.active {
+  color: var(--btn-bg);
+  font-weight: 700;
+  background: var(--primary-dim, rgba(73, 177, 245, 0.12));
+}
+
+.bf-music-list button.active .bf-music-index { color: var(--btn-bg); }
+
+/* 手机端：面板占满宽度，关闭按钮一定可见 */
+@media (max-width: 900px) {
+  .bf-music-panel {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+    max-height: 72vh;
   }
 }

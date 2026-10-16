@@ -37,6 +37,14 @@ export interface Env {
   /** HMAC secret used to verify the GitHub webhook signature */
   TG_WEBHOOK_SECRET?: string
   /**
+   * 文章发布后触发 SvelteKit 静态站重建（adapter-static 全站预渲染，
+   * 新文章必须重建才会出现在静态产物里）。
+   * 需要一个有 repo 权限的 GitHub token（fine-grained: Contents=write）。
+   */
+  GITHUB_DISPATCH_TOKEN?: string
+  /** 仓库，默认 lws666/blog */
+  GITHUB_REPO?: string
+  /**
    * Agnes AI image API key (free tier) — powers article cover generation.
    * Set via `wrangler secret put AGNES_API_KEY`.
    */
@@ -723,6 +731,39 @@ export async function notifyIndexNow(env: Env, slug: string): Promise<void> {
     })
   } catch {
     // Fire-and-forget: silently ignore errors
+  }
+}
+
+/**
+ * 触发 GitHub Actions 重建 SvelteKit 静态站。
+ *
+ * 站点用 adapter-static 全站预渲染，因此「发布文章」必须伴随一次重建，
+ * 否则新文章不会出现在静态 HTML 里。这里通过 repository_dispatch 事件
+ * 触发 .github/workflows/deploy-sveltekit.yml 的 post-published 类型。
+ *
+ * 失败不影响发布本身（fire-and-forget）：重建也可由 push 或手动触发。
+ */
+export async function notifyRebuild(env: Env, slug: string): Promise<void> {
+  const token = env.GITHUB_DISPATCH_TOKEN
+  if (!token) return
+  const repo = env.GITHUB_REPO || 'lws666/blog'
+
+  try {
+    await fetch(`https://api.github.com/repos/${repo}/dispatches`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
+        'User-Agent': 'blog-worker',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        event_type: 'post-published',
+        client_payload: { slug },
+      }),
+    })
+  } catch {
+    // Fire-and-forget
   }
 }
 

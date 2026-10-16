@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "og": "node scripts/render-og.mjs"
   },
   "devDependencies": {
     "@sveltejs/adapter-cloudflare": "8.0.1",

@@ -24,6 +24,7 @@
   let errorMsg = $state('')
   let container = $state<HTMLElement | null>(null)
   let loaded = false
+  let srcError = $state(false)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let player: any = null
 
@@ -54,6 +55,10 @@
       await new Promise(r => requestAnimationFrame(r))
       if (!container) throw new Error('容器未就绪')
 
+      // 探测音源可用性：网易云外链近年常被 302 到 404 页，
+      // 此时提示用户而不是静默无声
+      await probeSources(data)
+
       player = new APlayerCtor({
         container,
         audio: toAudio(data),
@@ -72,6 +77,24 @@
       errorMsg = (e as Error).message || '加载失败'
     } finally {
       loading = false
+    }
+  }
+
+  /**
+   * 探测每首歌的直链是否真的返回音频。
+   * Meting 的 type=url 是 302 到网易云外链，若上游封锁会落到 /404（HTML）。
+   */
+  async function probeSources(list: Song[]) {
+    try {
+      const s0 = list[0]
+      if (!s0?.url) return
+      const r = await fetch(s0.url, { method: 'GET', redirect: 'follow' })
+      const ct = r.headers.get('content-type') || ''
+      // 不是音频即视为音源失效
+      if (!/audio|octet-stream|mpeg/i.test(ct)) srcError = true
+    } catch {
+      // CORS / 网络失败也提示（浏览器无法直接取音频流）
+      srcError = true
     }
   }
 
@@ -116,6 +139,10 @@
       <p class="yun-music-hint">加载中…</p>
     {:else if errorMsg}
       <p class="yun-music-hint yun-music-err">{errorMsg}</p>
+    {:else if srcError}
+      <p class="yun-music-hint yun-music-err">
+        ⚠ 音源暂不可用（音乐 API 上游返回的不是音频流），播放可能无声
+      </p>
     {/if}
 
     <!-- APlayer 挂载点 -->

@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from './Icon.svelte'
+  import MusicPlayer from './MusicPlayer.svelte'
   import { i18n, t, toggleLang } from '#lib/i18n.svelte'
 
   let {
@@ -19,6 +20,7 @@
   let visible = $state(false)
   let pct = $state(0)
   let tocOpen = $state(false)
+  let musicOpen = $state(false)
 
   const d = $derived(t())
 
@@ -47,8 +49,18 @@
 </script>
 
 <!-- 目录抽屉 -->
-{#if tocOpen && tocItems.length}
-  <div class="bf-toc-drawer bf-action--mobile-only">
+{#if tocItems.length}
+  <!-- 遮罩（点空白关闭） -->
+  {#if tocOpen}
+    <button class="bf-toc-overlay bf-action--mobile-only" aria-label="关闭目录" onclick={() => (tocOpen = false)}></button>
+  {/if}
+
+  <aside
+    class="bf-toc-drawer bf-action--mobile-only"
+    class:bf-toc-drawer--open={tocOpen}
+    aria-label={d.toc}
+    aria-hidden={!tocOpen}
+  >
     <div class="bf-toc-drawer__head">
       <span>{d.toc}</span>
       <button aria-label="关闭" title="关闭" onclick={() => (tocOpen = false)}>
@@ -67,11 +79,17 @@
         </li>
       {/each}
     </ul>
-  </div>
+  </aside>
 {/if}
 
+<!-- 音乐面板（浮层，不占列位置） -->
+<MusicPlayer bind:open={musicOpen} />
+
 <div class="bf-actions">
-  <!-- 目录：悬浮按钮，点击展开/收起（与老版一致） -->
+  <!-- 顺序（自下而上）：回到顶部 → 主题 → 语言 → 目录
+       与老版右下角排列一致（老版：gotop 在最下） -->
+
+  <!-- 目录：仅移动端（桌面走右栏目录卡） -->
   {#if hasToc}
     <button
       class="bf-action bf-action--mobile-only"
@@ -83,6 +101,16 @@
     </button>
   {/if}
 
+  <!-- 音乐播放器（球在列内，面板浮在列左侧） -->
+  <button
+    class="yun-music-btn"
+    aria-label={d.toggleMusic}
+    title={d.toggleMusic}
+    aria-expanded={musicOpen}
+    onclick={() => (musicOpen = !musicOpen)}
+  >
+    <Icon name={musicOpen ? 'close' : 'music2'} size={17} />
+  </button>
 
   <!-- 语言切换 -->
   <button
@@ -104,7 +132,7 @@
     <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={17} />
   </button>
 
-  <!-- 回到顶部（带百分比环） -->
+  <!-- 回到顶部（带百分比环，最下） -->
   <button
     class="bf-gotop"
     class:show={visible}

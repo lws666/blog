@@ -1473,6 +1473,7 @@ img {
 }
 
 /* ── 悬浮按钮组：竖排 4 个（音乐/语言/主题/顶部） ───────── */
+/* 右下角悬浮球列：唯一负责定位的容器（音乐球也并入此列） */
 .bf-actions {
   position: fixed;
   right: 24px;
@@ -1698,55 +1699,44 @@ img {
  *   --va-c-bg -> --card-bg        --va-c-text-2 -> --font-color
  *   --va-c-primary -> --btn-bg    --va-c-divider -> --light-grey
  * ============================================================ */
+/* 音乐球：并入 .bf-actions 列（不再自行 fixed 定位，避免与按钮重叠） */
 .yun-music {
-  position: fixed;
-  /* 与悬浮按钮列同一右边缘（right:24px），并整列置于按钮列之上：
-     按钮列 .bf-actions 从 bottom:40 起、共 4 项 ≈ 190px 高，
-     因此音乐球起点放到 250px，避免与按钮/面板重叠 */
-  right: 24px;
-  bottom: 250px;
-  z-index: 130;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 0.5rem;
 }
 
-/* 圆形切换按钮：与老版的悬浮球统一皮肤一致
-   （老版把 .yun-music-btn / .toc-btn / .bf-gotop 归为同一组：
-     2.5rem 圆、无边框、半透明底 + blur(8px)、统一阴影与 hover） */
+/* 音乐球：与 .bf-action 完全同款（尺寸/圆角/底色/图标色/悬停） */
 .yun-music-btn {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: none;
+  border: 0;
   border-radius: 50%;
-  color: var(--font-color);
-  background: var(--bf-float-bg, rgba(255, 255, 255, 0.82));
-  box-shadow: var(--bf-float-shadow, 0 1px 8px rgba(0, 0, 0, 0.12));
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   cursor: pointer;
-  font-size: 1.1rem;
-  line-height: 1;
-  transition: color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+  background: var(--card-bg);
+  color: var(--btn-bg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: background 0.2s, color 0.2s, transform 0.2s;
 }
 
 .yun-music-btn:hover {
-  color: var(--btn-bg);
-  transform: scale(1.06);
-}
-
-[data-theme='dark'] .yun-music-btn {
-  background: var(--bf-float-bg, rgba(37, 37, 40, 0.82));
+  background: var(--btn-bg);
+  color: #fff;
+  transform: translateY(-2px);
 }
 
 .yun-music-x { font-size: 1.35rem; }
 
-/* 面板：宽 min(20rem, 100vw-2rem)，圆角 0.75rem，内边距 0.75rem */
+/* 面板：浮在悬浮球列左侧（老版是按钮上方，本项目列较高故放左侧避免遮挡） */
 .yun-music-panel {
+  position: fixed;
+  right: 74px;
+  bottom: 40px;
+  z-index: 128;
   width: min(20rem, calc(100vw - 2rem));
   padding: 0.75rem;
   border-radius: 0.75rem;
@@ -1828,12 +1818,7 @@ img {
   to   { opacity: 1; transform: none; }
 }
 
-@media (max-width: 900px) {
-  .yun-music {
-    right: 12px;
-    bottom: 200px;
-  }
-}
+
 
 /* ============================================================
  * 文章页布局 —— 对齐老版 layouts/post.vue
@@ -1968,4 +1953,98 @@ img {
   }
 
   .bf-post-banner__title { font-size: 1.2rem; }
+}
+
+/* ============================================================
+ * 目录抽屉 —— 套用老版 .yun-aside 的动画
+ *
+ * 老版实测 CSS：
+ *   .yun-aside { width:0; position:fixed; top:0; bottom:0; right:0;
+ *                transform: translate(100%);
+ *                transition: all var(--va-transition-duration-fast)
+ *                            cubic-bezier(.77,0,.17,1.02) }
+ *   .yun-aside.open { width:320px; transform: translate(0) }
+ * 即：从右侧滑入 + 宽度展开，带回弹缓动（0.15s）。
+ * ============================================================ */
+.bf-toc-drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 135;
+  width: 0;
+  max-width: 86vw;
+  overflow: hidden auto;
+  padding: 0;
+  background: var(--card-bg);
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.16);
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  /* 与老版一致：all + 快时长 + 回弹缓动 */
+  transition: all 0.15s cubic-bezier(0.77, 0, 0.17, 1.02);
+  transform: translateX(100%);
+}
+
+/* 展开态：宽度 320px + 归位（老版 .open） */
+.bf-toc-drawer--open {
+  width: 320px;
+  transform: translateX(0);
+}
+
+/* 头部：与其它面板保持一致的渐变条 */
+.bf-toc-drawer__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 10px 12px 16px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--btn-bg), var(--accent-active));
+  flex: 0 0 auto;
+}
+
+.bf-toc-drawer__head button {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.bf-toc-drawer__head button:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: rotate(90deg);
+}
+
+.bf-toc-drawer .bf-toc__list {
+  padding: 10px 8px;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+/* 遮罩：老版用 YunOverlay */
+.bf-toc-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 134;
+  border: 0;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  animation: bf-fade-in 0.15s ease;
+}
+
+@keyframes bf-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

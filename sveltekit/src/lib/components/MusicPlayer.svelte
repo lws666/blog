@@ -2,18 +2,14 @@
   import { t } from '#lib/i18n.svelte'
 
   /**
-   * 音乐播放器 —— 与老版 Valaxy 站（components/MusicPlayer.vue）1:1 对齐。
+   * 音乐播放器面板 —— 与老版 components/MusicPlayer.vue 的「面板部分」一致。
    *
-   * 结构（老版）：
-   *   .yun-music（fixed，右下，纵向 flex）
-   *     └ section.yun-music-panel   ← 面板在按钮「上方」，点按钮展开/收起
-   *          header.yun-music-head（标题 + × 收起）
-   *          p.yun-music-hint（加载中 / 错误）
-   *          div.yun-music-body ← APlayer 挂载点
-   *     └ button.yun-music-btn      ← 圆形音乐按钮（打开时变 ×）
+   * 与老版的结构差异（有意）：老版把「面板 + 圆形按钮」包在 .yun-music 里
+   * 自行 fixed 定位；本项目右下角是多项悬浮球列，音乐球已并入该列
+   * （由 Actions.svelte 渲染），因此这里只输出面板，不再自带按钮，
+   * 否则两个球会在同一位置重叠、盖住相邻按钮。
    *
-   * 老版没有遮罩层，关闭靠：再点按钮 / 面板里的 × / Esc。
-   * 数据源：自建 Meting API（同老版）。
+   * 数据源与老版相同：自建 Meting API。
    */
   const API = 'https://music.lwsnb.eu.cc'
   const SERVER = 'netease'
@@ -33,15 +29,8 @@
 
   const d = $derived(t())
 
-  /** Meting -> APlayer 音频结构（无 per-track theme，避免覆盖主题色） */
   const toAudio = (list: Song[]) =>
-    list.map(s => ({
-      name: s.title,
-      artist: s.author,
-      url: s.url,
-      cover: s.pic,
-      lrc: s.lrc,
-    }))
+    list.map(s => ({ name: s.title, artist: s.author, url: s.url, cover: s.pic, lrc: s.lrc }))
 
   async function initPlayer() {
     if (loaded || loading) return
@@ -86,61 +75,50 @@
     }
   }
 
-  function toggle() {
-    open = !open
+  $effect(() => {
     if (open) queueMicrotask(initPlayer)
-    else { try { player?.pause?.() } catch { /* ignore */ } }
-  }
-
-  function onKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape' && open) open = false
-  }
+  })
 
   $effect(() => {
-    window.addEventListener('keydown', onKeydown)
-    return () => window.removeEventListener('keydown', onKeydown)
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        open = false
+        try { player?.pause?.() } catch { /* ignore */ }
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
   })
 
   $effect(() => () => {
-    // 卸载时销毁播放器，避免离开页面后仍在播放
     try { player?.destroy?.() } catch { /* ignore */ }
     player = null
   })
 </script>
 
-<div class="yun-music" class:is-open={open}>
-  {#if open}
-    <section class="yun-music-panel" aria-label="音乐播放器">
-      <header class="yun-music-head">
-        <span class="yun-music-title">{d.music}</span>
-        <button class="yun-music-close" title="收起" aria-label="收起" onclick={() => (open = false)}>
-          ×
-        </button>
-      </header>
+{#if open}
+  <section class="yun-music-panel" aria-label={d.music}>
+    <header class="yun-music-head">
+      <span class="yun-music-title">{d.music}</span>
+      <button
+        class="yun-music-close"
+        title="收起"
+        aria-label="收起"
+        onclick={() => {
+          open = false
+          try { player?.pause?.() } catch { /* ignore */ }
+        }}>×</button
+      >
+    </header>
 
-      {#if loading}
-        <p class="yun-music-hint">加载中…</p>
-      {:else if errorMsg}
-        <p class="yun-music-hint yun-music-err">{errorMsg}</p>
-      {/if}
-
-      <!-- APlayer 挂载点 -->
-      <div class="yun-music-body" bind:this={container}></div>
-    </section>
-  {/if}
-
-  <!-- 圆形音乐按钮（打开时显示 ×） -->
-  <button
-    class="yun-music-btn"
-    title={open ? '收起音乐' : '打开音乐'}
-    aria-label={open ? '收起音乐' : '打开音乐'}
-    aria-expanded={open}
-    onclick={toggle}
-  >
-    {#if open}
-      <span class="yun-music-x" aria-hidden="true">×</span>
-    {:else}
-      <span class="yun-music-note" aria-hidden="true">♪</span>
+    {#if loading}
+      <p class="yun-music-hint">加载中…</p>
+    {:else if errorMsg}
+      <p class="yun-music-hint yun-music-err">{errorMsg}</p>
     {/if}
-  </button>
-</div>
+
+    <!-- APlayer 挂载点 -->
+    <div class="yun-music-body" bind:this={container}></div>
+  </section>
+{/if}

@@ -2,67 +2,83 @@
   import { site } from '#lib/site'
 
   /**
-   * Hero —— 对齐线上：
-   * - 全屏背景图（themeConfig.banner.url）+ 遮罩
-   * - 大标题（Noto Serif SC 900 / 60px）
-   * - 副标题为「每日一言」打字机（含出处）
-   * - 底部波浪 + 下滑箭头
+   * Hero —— 全屏背景图 + 站点大标题 + 每日一言打字机 + 双层波浪。
+   *
+   * 打字机实现要点（曾经的 bug）：
+   * 早前用 $effect 驱动，effect 内既读又写 typed/char，Svelte 会在每次
+   * 写入后重跑 effect 并清掉定时器 → 只显示第一个字就停。这里改为
+   * 普通变量做游标 + 单个 setInterval 驱动，effect 只在挂载时启动一次。
    */
   let { background = site.banner }: { background?: string } = $props()
 
   interface Quote { text: string; from: string }
-  let items: Quote[] = $state([])
+
+  let items = $state<Quote[]>([])
   let typed = $state('')
   let from = $state('')
-  let idx = $state(0)
-  let char = $state(0)
-  let deleting = $state(false)
+
+  // 游标用普通变量：不是 $state，写入不会触发 effect 重跑
+  let idx = 0
+  let char = 0
+  let deleting = false
+  let hold = 0
+
+  const TYPE_MS = 90      // 打字间隔
+  const HOLD_TICKS = 22   // 打完停留（≈2s，按 TYPE_MS 计）
 
   /** 每日一言（Hitokoto）；失败时退回站点标语 */
   async function loadQuotes() {
-    const fallback: Quote[] = site.taglines.map(t => ({ text: t, from: '' }))
-    try {
-      const out: Quote[] = []
-      for (const c of ['d', 'i', 'k']) {
-        try {
-          const r = await fetch(`https://v1.hitokoto.cn/?encode=json&charset=utf-8&c=${c}`)
-          const d = await r.json()
-          if (d?.hitokoto) out.push({ text: d.hitokoto, from: d.from_who || d.from || '' })
-        } catch { /* 单条失败忽略 */ }
-      }
-      items = out.length ? out : fallback
-    } catch {
-      items = fallback
+    const fallback: Quote[] = site.taglines.map(x => ({ text: x, from: '' }))
+    const out: Quote[] = []
+    for (const c of ['d', 'i', 'k']) {
+      try {
+        const r = await fetch(`https://v1.hitokoto.cn/?encode=json&charset=utf-8&c=${c}`)
+        const j = await r.json()
+        if (j?.hitokoto) out.push({ text: j.hitokoto, from: j.from_who || j.from || '' })
+      } catch { /* 单条失败忽略 */ }
     }
+    items = out.length ? out : fallback
   }
 
-  $effect(() => {
-    const cur = items[idx % (items.length || 1)]
-    if (!cur) return
-    const speed = deleting ? 45 : 130
-    const t = setTimeout(() => {
+  /** 启动打字机循环：打字 → 停留 → 逐字删除 → 下一句 */
+  function startTyping(): () => void {
+    const tick = setInterval(() => {
+      if (!items.length) return
+      const cur = items[idx % items.length]
+      if (!cur) return
+
       if (!deleting) {
         char += 1
         typed = cur.text.slice(0, char)
-        if (char >= cur.text.length) {
-          deleting = true
-          from = cur.from
-        }
-      } else {
-        char -= 1
-        typed = cur.text.slice(0, Math.max(0, char))
-        if (char <= 0) {
-          deleting = false
-          idx += 1
-          char = 0
-          from = ''
-        }
+        if (char >= cur.text.length) deleting = true
+        return
       }
-    }, speed)
-    return () => clearTimeout(t)
-  })
 
-  $effect(() => { loadQuotes() })
+      // 删除前先停留
+      if (char >= cur.text.length && hold < HOLD_TICKS) {
+        hold += 1
+        from = cur.from
+        return
+      }
+      hold = 0
+
+      char -= 1
+      typed = cur.text.slice(0, Math.max(0, char))
+      if (char <= 0) {
+        deleting = false
+        idx += 1
+        char = 0
+        from = ''
+      }
+    }, TYPE_MS)
+    return () => clearInterval(tick)
+  }
+
+  // 挂载时加载一言并启动打字机（interval 只创建一次）
+  $effect(() => {
+    loadQuotes()
+    return startTyping()
+  })
 
   const scrollDown = () => window.scrollTo({ top: window.innerHeight * 0.94, behavior: 'smooth' })
 </script>

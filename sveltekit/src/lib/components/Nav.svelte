@@ -5,17 +5,20 @@
   import type { IconName } from '#lib/icons'
 
   // 主题/语言/音乐按钮统一放在右下角悬浮按钮组（Actions.svelte）
-  let { onToggleTheme, theme }: { onToggleTheme: () => void; theme: 'light' | 'dark' } = $props()
+  let { onToggleTheme, theme, hasBanner = false }: { onToggleTheme: () => void; theme: 'light' | 'dark'; hasBanner?: boolean } = $props()
 
-  let fixed = $state(false)
+  let scrolled = $state(false)
   let menuOpen = $state(false)
 
   $effect(() => {
-    const onScroll = () => (fixed = window.scrollY > 56)
+    const onScroll = () => (scrolled = window.scrollY > 56)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   })
+
+  // 无 banner 的页面始终使用实底导航（否则白字不可见）
+  const solid = $derived(!hasBanner || scrolled)
 
   const isActive = (href: string) => {
     const p = page.url.pathname
@@ -23,7 +26,7 @@
   }
 </script>
 
-<nav class="bf-nav" class:bf-nav--fixed={fixed}>
+<nav class="bf-nav" class:bf-nav--fixed={solid}>
   <!-- 品牌：头像 + 站点完整标题（与线上一致） -->
   <a href="/" class="bf-nav__brand">
     <img src={site.author.avatar} alt="" width="32" height="32" class="bf-nav__avatar" />

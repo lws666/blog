@@ -27,11 +27,11 @@
     }
   }
 
-  // 是否首页（首页用全屏 banner，隐藏常规导航的文字配色差异）
-  const isHome = $derived(page.url.pathname === '/')
+  // 只有首页有全屏 banner；其余页面导航必须实底，否则白字压白底看不见
+  const hasBanner = $derived(page.url.pathname === '/')
 </script>
 
-<Nav onToggleTheme={toggleTheme} theme={theme} />
+<Nav onToggleTheme={toggleTheme} theme={theme} {hasBanner} />
 <main>
   {@render children?.()}
 </main>

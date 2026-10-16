@@ -1592,3 +1592,176 @@ img {
   .bf-music-panel { right: 60px; bottom: 20px; }
   .bf-music-panel iframe { width: 260px; }
 }
+
+/* ============================================================
+ * 音乐播放器（自建 API）+ 手机端文章卡片修复
+ * ============================================================ */
+
+.bf-music-panel {
+  position: fixed;
+  right: 74px;
+  bottom: 40px;
+  width: 300px;
+  max-height: min(70vh, 460px);
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border-radius: var(--radius-card);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  z-index: 130;
+}
+
+.bf-music-msg {
+  margin: 0;
+  padding: 18px 16px;
+  font-size: 0.86rem;
+  color: var(--card-meta);
+  text-align: center;
+}
+
+.bf-music-now {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-bottom: 1px solid var(--light-grey);
+}
+
+.bf-music-pic {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius);
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+
+.bf-music-meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.bf-music-meta strong {
+  font-size: 0.92rem;
+  color: var(--text-highlight-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bf-music-meta span {
+  font-size: 0.78rem;
+  color: var(--card-meta);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bf-music-ctrl {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 10px;
+  border-bottom: 1px solid var(--light-grey);
+}
+
+.bf-music-ctrl button {
+  border: 0;
+  background: none;
+  color: var(--font-color);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.bf-music-ctrl button:hover { color: var(--btn-bg); transform: scale(1.1); }
+
+.bf-music-play {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--btn-bg) !important;
+  color: #fff !important;
+  justify-content: center;
+}
+
+.bf-music-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+
+.bf-music-list button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: none;
+  padding: 7px 14px;
+  font-size: 0.82rem;
+  color: var(--font-color);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.2s, color 0.2s;
+}
+
+.bf-music-list button span { color: var(--card-meta); }
+
+.bf-music-list button:hover { background: var(--text-bg-hover); color: #fff; }
+.bf-music-list button:hover span { color: rgba(255, 255, 255, 0.85); }
+.bf-music-list button.active { color: var(--btn-bg); font-weight: 600; }
+
+/* ── 手机端文章卡片：竖排、封面固定比例、文字不被压 ─────── */
+@media (max-width: 900px) {
+  .bf-post-card--cover,
+  .bf-post-card--cover:nth-child(even) {
+    flex-direction: column !important;
+  }
+
+  .bf-post-card__cover {
+    flex: 0 0 auto !important;
+    width: 100%;
+    min-height: 0 !important;
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+
+  .bf-post-card__cover img {
+    position: static;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .bf-post-card__body {
+    padding: 16px 18px !important;
+    text-align: left;
+    align-items: flex-start;
+  }
+
+  .bf-post-card__title { font-size: 1.08rem; line-height: 1.5; }
+
+  .bf-post-card__excerpt { -webkit-line-clamp: 2; font-size: 0.88rem; }
+
+  .bf-post-card__meta { font-size: 11px; gap: 10px; }
+
+  .bf-post-card__tags { margin-left: 0; }
+
+  /* 音乐面板在手机上占满可用宽度并避开按钮列 */
+  .bf-music-panel {
+    right: 12px;
+    left: 12px;
+    bottom: 68px;
+    width: auto;
+    max-height: 60vh;
+  }
+}

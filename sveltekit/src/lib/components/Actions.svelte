@@ -1,6 +1,7 @@
 <script lang="ts">
   import Icon from './Icon.svelte'
   import { i18n, t, toggleLang } from '#lib/i18n.svelte'
+  import MusicPlayer from './MusicPlayer.svelte'
 
   let {
     theme,
@@ -48,19 +49,7 @@
     <Icon name={musicOpen ? 'close' : 'music2'} size={17} />
   </button>
 
-  {#if musicOpen}
-    <div class="bf-music-panel">
-      <iframe
-        title="music"
-        frameborder="no"
-        marginwidth="0"
-        marginheight="0"
-        width="300"
-        height="110"
-        src="//music.163.com/outchain/player?type=playlist&id=18318692237&auto=0&height=90"
-      ></iframe>
-    </div>
-  {/if}
+  <MusicPlayer bind:open={musicOpen} />
 
   <!-- 语言切换 -->
   <button

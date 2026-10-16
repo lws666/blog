@@ -50,7 +50,7 @@
 
 <!-- 目录抽屉 -->
 {#if tocOpen && tocItems.length}
-  <div class="bf-toc-drawer">
+  <div class="bf-toc-drawer bf-action--mobile-only">
     <div class="bf-toc-drawer__head">
       <span>{d.toc}</span>
       <button aria-label="关闭" title="关闭" onclick={() => (tocOpen = false)}>
@@ -76,7 +76,7 @@
   <!-- 目录：悬浮按钮，点击展开/收起（与老版一致） -->
   {#if hasToc}
     <button
-      class="bf-action"
+      class="bf-action bf-action--mobile-only"
       aria-label={d.toc}
       title={d.toc}
       onclick={() => (tocOpen = !tocOpen)}

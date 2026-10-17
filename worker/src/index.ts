@@ -10,6 +10,8 @@ import { createTokensRouter } from './routes/tokens'
 import { createAlbumRouter } from './routes/album'
 import { createAuthRouter, createUserAuthRoutes } from './routes/auth'
 import { createUsersRouter } from './routes/users'
+// @ts-expect-error Twikoo 打包产物为 JS（UMD→ESM），无类型声明
+import twikooWorker from './twikoo-backend/index.js'
 import { createTelegramRouter } from './routes/telegram'
 import { createCoverRouter } from './routes/cover'
 import { success, error as errRes } from './utils/response'
@@ -152,6 +154,23 @@ app.get('/api/indexnow-key.txt', (c) => {
   const key = c.env.INDEXNOW_KEY
   if (!key) return errRes('IndexNow not configured', 404)
   return c.newResponse(key, { headers: { 'Content-Type': 'text/plain' } })
+})
+
+// ── Twikoo 评论后端（同域挂载）────────────────────────────────
+// 挂在 /twikoo/* 下：与博客同域（api.lwsnb.eu.cc），彻底消除跨域，
+// 也避开 workers.dev 在部分网络的干扰。D1 绑定名同为 DB（blog 库），
+// Twikoo 的表（comment/counter/config）与博客表命名不冲突。
+app.all('/twikoo', (c) => {
+  const url = new URL(c.req.url)
+  url.pathname = '/'
+  const req = new Request(url.toString(), c.req.raw)
+  return twikooWorker.fetch(req, c.env, c.executionCtx)
+})
+app.all('/twikoo/*', (c) => {
+  const url = new URL(c.req.url)
+  url.pathname = c.req.path.replace(/^\/twikoo/, '') || '/'
+  const req = new Request(url.toString(), c.req.raw)
+  return twikooWorker.fetch(req, c.env, c.executionCtx)
 })
 
 // ── Route groups ──────────────────────────────────────────────

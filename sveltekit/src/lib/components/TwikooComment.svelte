@@ -14,9 +14,10 @@
   let twikooJs: any = null
   let loaded = false
 
-  // 后端地址。曾尝试绑定自定义域 twikoo.lwsnb.eu.cc 以消除 workers.dev
-  // 在部分网络的干扰，但部署 token 无 DNS 写权限未能建成，先回退。
-  const ENV_ID = 'https://twikoo.13318678430.workers.dev/'
+  // 后端：挂在博客 API 同域下（api.lwsnb.eu.cc/twikoo）。
+  // 同域 = 无跨域问题，也避开 workers.dev 在部分网络的干扰。
+  // 后端由主 Worker 的 /twikoo 路径委托给 Twikoo 的 fetch handler。
+  const ENV_ID = 'https://api.lwsnb.eu.cc/twikoo/'
   const VERSION = '2.0.15'
 
   async function ensureScript(): Promise<any> {

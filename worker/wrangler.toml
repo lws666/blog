@@ -1,6 +1,10 @@
 name = "blog-worker"
 main = "src/index.ts"
-compatibility_date = "2025-03-01"
+compatibility_date = "2026-09-01"
+# Twikoo 后端依赖：nodejs_compat（jsdom/DOMPurify）与较新 compatibility_date
+# （其代码使用 FinalizationRegistry，2025-03 日期下未启用 → code 1000）
+# 实测提升到 2026-09-01 后博客现有功能无回归
+compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 
 # Custom domains (must be declared here: `wrangler deploy` syncs custom

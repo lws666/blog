@@ -62,6 +62,7 @@ const TECH_ICONS: Array<[string[], string, string]> = [
   [['r2'], 'r2', 'R2'],
   [['sqlite'], 'sqlite', 'SQLite'],
   [['b2', 'backblaze'], 'backblaze', 'Backblaze'],
+  [['sveltekit', 'svelte'], 'svelte', 'Svelte'],
   [['vue'], 'vuedotjs', 'Vue'],
   [['vite'], 'vite', 'Vite'],
   [['markdown', 'md'], 'markdown', 'Markdown'],

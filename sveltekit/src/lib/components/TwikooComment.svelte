@@ -14,6 +14,8 @@
   let twikooJs: any = null
   let loaded = false
 
+  // 后端地址。曾尝试绑定自定义域 twikoo.lwsnb.eu.cc 以消除 workers.dev
+  // 在部分网络的干扰，但部署 token 无 DNS 写权限未能建成，先回退。
   const ENV_ID = 'https://twikoo.13318678430.workers.dev/'
   const VERSION = '2.0.15'
 
@@ -31,7 +33,7 @@
     return twikooJs
   }
 
-  async function render() {
+  async function render(retried = false) {
     if (!container) return
     container.innerHTML = ''
     try {
@@ -40,13 +42,18 @@
         envId: ENV_ID,
         el: '#tcomment',
         path,
-        // 亮暗跟随站点主题
         lang: 'zh-CN',
       })
     } catch (e) {
+      // Twikoo 把所有网络层异常都归为「CORS/网络不可达」，其中相当一部分
+      // 是偶发抖动（首次冷启动 + D1 建表等），重试一次通常即可恢复。
+      if (!retried) {
+        await new Promise(r => setTimeout(r, 1200))
+        return render(true)
+      }
       if (container) {
         container.innerHTML =
-          `<p style="color:var(--card-meta,#858585);font-size:0.88rem">评论加载失败：${(e as Error).message}</p>`
+          `<p style="color:var(--card-meta,#858585);font-size:0.88rem">评论加载失败：${(e as Error).message}　<a href="javascript:location.reload()" style="color:var(--btn-bg,#49b1f5)">重试</a></p>`
       }
     }
   }

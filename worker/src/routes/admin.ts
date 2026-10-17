@@ -140,11 +140,14 @@ export function createAdminRouter() {
         frontmatter: '{}',
       })
 
-      // Notify IndexNow for published (non-draft) posts
+      // 发布后通知搜索引擎 + 触发静态站重建。
+      // 注意：Workers 中「不 await 的 fetch」会在响应返回后被取消，
+      // 导致 dispatch 偶发不生效，因此这里显式 await（失败不影响发布结果）。
       if (!isDraft) {
-        notifyIndexNow(c.env, slug)
-        // 静态站需重建才能收录新文章（fire-and-forget）
-        notifyRebuild(c.env, slug)
+        await Promise.allSettled([
+          notifyIndexNow(c.env, slug),
+          notifyRebuild(c.env, slug),
+        ])
       }
 
       return success({ slug, url: `/posts/${slug}` }, 201)

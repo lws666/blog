@@ -743,13 +743,16 @@ export async function notifyIndexNow(env: Env, slug: string): Promise<void> {
  *
  * 失败不影响发布本身（fire-and-forget）：重建也可由 push 或手动触发。
  */
-export async function notifyRebuild(env: Env, slug: string): Promise<void> {
+export async function notifyRebuild(env: Env, slug: string): Promise<boolean> {
   const token = env.GITHUB_DISPATCH_TOKEN
-  if (!token) return
+  if (!token) {
+    console.warn('[rebuild] GITHUB_DISPATCH_TOKEN 未配置，跳过触发')
+    return false
+  }
   const repo = env.GITHUB_REPO || 'lws666/blog'
 
   try {
-    await fetch(`https://api.github.com/repos/${repo}/dispatches`, {
+    const res = await fetch(`https://api.github.com/repos/${repo}/dispatches`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -762,8 +765,15 @@ export async function notifyRebuild(env: Env, slug: string): Promise<void> {
         client_payload: { slug },
       }),
     })
-  } catch {
-    // Fire-and-forget
+    if (!res.ok) {
+      // 失败原因要能看到，否则「发布后站点没更新」无从排查
+      console.error(`[rebuild] dispatch 失败 ${res.status}: ${(await res.text()).slice(0, 200)}`)
+      return false
+    }
+    return true
+  } catch (e) {
+    console.error('[rebuild] dispatch 异常:', (e as Error).message)
+    return false
   }
 }
 

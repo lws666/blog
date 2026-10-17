@@ -2,7 +2,9 @@
 
 一个基于 **SvelteKit** 的静态博客 + **Cloudflare Worker** 动态后端的博客系统：前端全量预渲染成 HTML（SEO 内建），后台发布文章后自动触发重建上线。
 
-> 在线访问：[www.lwsnb.eu.cc](https://www.lwsnb.eu.cc)（Valaxy 旧版仍在运行）｜ SvelteKit 版预览：[lwsnb-sveltekit.pages.dev](https://lwsnb-sveltekit.pages.dev)
+> 在线访问：**[www.lwsnb.eu.cc](https://www.lwsnb.eu.cc)**（SvelteKit 版，Cloudflare Pages）
+> 镜像站点：[vercel.lwsnb.eu.cc](https://vercel.lwsnb.eu.cc)（Vercel，自动同步）｜ [lwsnb-sveltekit.pages.dev](https://lwsnb-sveltekit.pages.dev)
+> 旧版 Valaxy 站保留在 [cf.lwsnb.eu.cc](https://cf.lwsnb.eu.cc)（备用回滚线）
 
 ## ✨ 特性
 
@@ -30,7 +32,7 @@
 | 对象存储 | Backblaze B2 |
 | 评论 | Twikoo 2.0（Workers 版，同域挂载） |
 | 音乐 | APlayer + Meting API |
-| 部署 | Cloudflare Pages（前端）+ Cloudflare Workers（后端/评论） |
+| 部署 | Cloudflare Pages（主站）+ Vercel（镜像）+ Cloudflare Workers（后端/评论） |
 | CI | GitHub Actions（push / repository_dispatch 触发重建） |
 
 ## 🏗️ 架构
@@ -105,8 +107,10 @@ npx wrangler pages deploy build --project-name lwsnb-sveltekit --branch main
 cd worker && npx wrangler deploy
 ```
 
-推送 `master` 会触发 `.github/workflows/deploy-sveltekit.yml` 自动构建部署；
-发布文章时 Worker 也会通过 `repository_dispatch` 触发同一流程。
+推送 `sveltekit-rebuild`（默认分支）或 `master` 会触发
+`.github/workflows/deploy-sveltekit.yml` 自动构建部署；发布文章时 Worker
+也会通过 `repository_dispatch` 触发同一流程。Vercel 项目已连接同一仓库，
+push 后自动构建镜像站（构建脚本见 `scripts/vercel-build.sh`）。
 
 ## 🔐 blog-worker 环境变量
 

@@ -14,9 +14,8 @@ export default defineConfig({
       adapter: adapter({
         pages: 'build',
         assets: 'build',
-        // 管理后台是纯客户端应用（依赖 localStorage 会话令牌），不参与预渲染。
-        // fallback 生成一个 SPA 入口，供未预渲染的 /admin/* 使用。
-        fallback: 'admin.html',
+        // 管理后台已改为预渲染静态外壳（admin/+layout.ts prerender=true），
+        // 每个 /admin/* 路径都有真实 index.html，不再需要 SPA fallback。
         strict: false
       }),
       prerender: {

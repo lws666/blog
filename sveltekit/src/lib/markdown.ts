@@ -9,11 +9,17 @@ import { marked } from 'marked'
 
 marked.setOptions({ gfm: true, breaks: false })
 
-/** 去掉 YAML frontmatter（--- 包裹的头部） */
+/** 去掉 YAML frontmatter（仅当文件**开头**就是 --- ... --- 时） */
 export function stripFrontmatter(md: string): string {
   if (!md) return ''
-  const m = md.match(/^\uFEFF?---\r?\n([\s\S]*?)\r?\n---\r?\n?/)
-  return m ? md.slice(m[0].length) : md
+  // 必须用「行级解析」而不是正则 [\s\S]*?：正文里常见 --- 水平线，
+  // 非贪婪正则会匹配到正文第一个 --- 就提前结束，剥离不完整。
+  const lines = md.replace(/^\uFEFF/, '').split(/\r?\n/)
+  if (lines[0]?.trim() !== '---') return md
+  for (let i = 1; i < lines.length; i++) {
+    if (lines[i].trim() === '---') return lines.slice(i + 1).join('\n')
+  }
+  return md
 }
 
 /** 渲染为 HTML */

@@ -112,7 +112,13 @@ export function createAdminRouter() {
       if (body.top) fmParts.push(`top: ${body.top}`)
       if (body.hide) fmParts.push(`hide: "${body.hide}"`)
 
-      const fullMarkdown = `---\n${fmParts.join('\n')}\n---\n\n${body.content || ''}`
+      // content 若已含 frontmatter（客户端原样回传），先剥离再重拼，
+      // 否则会出现双重 frontmatter，渲染时泄漏到正文
+      const cleanContent = (body.content || '').replace(
+        /^\uFEFF?---\r?\n[\s\S]*?\r?\n---\r?\n?/,
+        '',
+      )
+      const fullMarkdown = `---\n${fmParts.join('\n')}\n---\n\n${cleanContent}`
 
       // Upload to B2
       const b2Key = `posts/${slug}/index.md`

@@ -7,8 +7,9 @@ main = "src/index.js"
 # 不在清单里的旧域名一并删除(www.lwsnb.eu.cc 曾因此被顶掉)。
 routes = [
   { pattern = "www.lwsnb.dpdns.org/*", zone_id = "7b56790c6ed08c291850e8ea182b2341" },
-  # 规范域名(主线路,canonical/sitemap/RSS 基准)
-  { pattern = "www.lwsnb.eu.cc", custom_domain = true },
+  # 主站 www 已切换到 SvelteKit Pages 版（Cloudflare Pages custom domain）。
+  # 本 Worker（Valaxy 版）不再占用 www；如需回滚，把下面这行加回：
+  # { pattern = "www.lwsnb.eu.cc", custom_domain = true },
   # 备用线路域名:301 到 www(在 src/index.js 的 REDIRECT_HOSTS 中)
   { pattern = "cf.lwsnb.eu.cc", custom_domain = true },
 ]

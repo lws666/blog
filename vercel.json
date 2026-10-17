@@ -1,4 +1,7 @@
 {
   "buildCommand": "bash scripts/vercel-build.sh",
-  "installCommand": "npm install"
+  "installCommand": "npm install",
+  "github": {
+    "silent": true
+  }
 }

@@ -7,7 +7,7 @@ name: Deploy SvelteKit to Cloudflare Pages
 #  3) 手动 workflow_dispatch
 on:
   push:
-    branches: [sveltekit-rebuild, main]
+    branches: [sveltekit-rebuild, master, main]
     paths:
       - 'sveltekit/**'
       - '.github/workflows/deploy-sveltekit.yml'

@@ -88,21 +88,9 @@
   <!-- 右栏：与首页一致的 300px 吸顶列（对齐老版 BfSidebar） -->
   <aside class="bf-aside">
     <div class="bf-aside__inner">
+      <!-- 目录：使用 Toc 组件（含跟随阅读位置的滑块动画） -->
       {#if data.toc.length}
-        <section class="bf-card bf-widget bf-toc-card">
-          <h3 class="bf-widget__title"><Icon name="list" size={15} /> 目录</h3>
-          <ul class="bf-toc__list">
-            {#each data.toc as it (it.id)}
-              <li>
-                <a
-                  class="bf-toc__item"
-                  class:bf-toc__item--h3={it.level === 3}
-                  href={`#${it.id}`}
-                >{it.text}</a>
-              </li>
-            {/each}
-          </ul>
-        </section>
+        <Toc items={data.toc} />
       {/if}
 
       <section class="bf-card bf-widget">

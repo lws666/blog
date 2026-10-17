@@ -1991,3 +1991,69 @@ img {
 .yun-music-panel--hidden {
   display: none !important;
 }
+
+/* ============================================================
+ * 目录：跟随阅读位置的滑块（对齐老版 .outline-marker）
+ *   4px 宽 / 18px 高 / left:-2px / 圆角 0 2px 2px 0
+ *   transition: top .25s cubic-bezier(0,1,.5,1), background-color .4s, opacity .25s
+ * ============================================================ */
+.bf-toc-wrap {
+  position: relative;
+  padding-left: 14px;
+}
+
+.bf-toc-marker {
+  position: absolute;
+  left: 0;
+  width: 4px;
+  height: 18px;
+  border-radius: 0 2px 2px 0;
+  background: var(--btn-bg);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    top 0.25s cubic-bezier(0, 1, 0.5, 1),
+    background-color 0.4s,
+    opacity 0.25s;
+}
+
+.bf-toc-marker--visible {
+  opacity: 1;
+}
+
+/* 列表项：配合滑块留出左侧空间 */
+.bf-toc-wrap .bf-toc__list {
+  padding: 0;
+  margin: 0;
+}
+
+.bf-toc-wrap .bf-toc__item {
+  margin: 2px 0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: var(--toc-link-color);
+  transition: color 0.25s ease, background-color 0.25s ease;
+  display: block;
+}
+
+.bf-toc-wrap .bf-toc__item:hover {
+  color: var(--btn-bg);
+  background: transparent;
+  padding-left: 8px;
+}
+
+/* 当前阅读项：文字高亮（滑块已表达位置，这里不再加底色） */
+.bf-toc-wrap .bf-toc__item--active {
+  color: var(--btn-bg);
+  font-weight: 600;
+  background: transparent;
+}
+
+.bf-toc-wrap .bf-toc__item--h3 {
+  margin-left: 12px;
+  font-size: 0.82rem;
+}
+
+[data-theme='dark'] .bf-toc-marker {
+  background: var(--btn-bg);
+}

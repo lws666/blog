@@ -497,3 +497,136 @@
   display: inline-block;
 }
 @keyframes adm-spin { to { transform: rotate(360deg); } }
+
+/* ============================================================
+ * 手机端布局优化
+ *
+ * 之前：侧栏固定 220px，手机上内容区只剩 170px（完全不可用）。
+ * 现在：≤820px 时侧栏变成顶部横向导航栏，内容区占满宽度。
+ * ============================================================ */
+@media (max-width: 820px) {
+  .adm-shell {
+    flex-direction: column;
+  }
+
+  /* 侧栏 → 顶部导航条 */
+  .adm-side {
+    width: 100%;
+    flex: 0 0 auto;
+    height: auto;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    padding: 0 10px;
+    border-right: 0;
+    border-bottom: 1px solid var(--adm-border);
+    box-shadow: 0 1px 4px rgba(16, 24, 40, 0.05);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .adm-side::-webkit-scrollbar { display: none; }
+
+  /* 品牌：只留圆点 + 短名，节省横向空间 */
+  .adm-brand {
+    padding: 12px 10px 12px 4px;
+    border-bottom: 0;
+    flex: 0 0 auto;
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+
+  /* 导航项横向排列 */
+  .adm-nav {
+    flex-direction: row;
+    padding: 0;
+    gap: 2px;
+    flex: 1 1 auto;
+    overflow: visible;
+  }
+
+  .adm-nav__item {
+    padding: 8px 12px;
+    white-space: nowrap;
+    font-size: 0.85rem;
+  }
+
+  /* 底部用户区 → 右侧内联，只留退出按钮 */
+  .adm-side__foot {
+    border-top: 0;
+    padding: 0 0 0 6px;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+  }
+  .adm-user { display: none; }
+  .adm-side__links { gap: 10px; }
+  .adm-side__links a { display: none; }
+
+  /* 内容区占满 */
+  .adm-main {
+    padding: 16px 14px 50px;
+    max-width: none;
+  }
+
+  /* 页头：标题与操作按钮换行排布 */
+  .adm-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .adm-head > div:last-child {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .adm-head .adm-input { width: 100% !important; flex: 1 1 140px; }
+  .adm-title { font-size: 1.15rem; }
+
+  /* 文章条目：操作按钮换到下一行，避免挤压标题 */
+  .adm-item {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+  .adm-item__thumb {
+    width: 56px;
+    height: 40px;
+  }
+  .adm-item__main { flex: 1 1 140px; }
+  .adm-item__actions {
+    width: 100%;
+    justify-content: flex-end;
+    padding-top: 4px;
+    border-top: 1px dashed var(--adm-border);
+  }
+
+  /* 编辑器：单列，元信息在下方 */
+  .adm-editor-wrap {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .adm-md { min-height: 320px; }
+
+  .adm-toolbar { padding: 8px 12px; gap: 4px; }
+  .adm-toolbar .adm-btn { padding: 4px 8px; font-size: 0.76rem; }
+
+  /* 相册：手机上两列，图片更大 */
+  .adm-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .adm-card__body { padding: 14px; }
+  .adm-card__head { padding: 12px 14px; }
+}
+
+/* 超窄屏（≤380px）：相册保持两列但缩小间距 */
+@media (max-width: 380px) {
+  .adm-grid { gap: 8px; padding: 10px; }
+  .adm-nav__item { padding: 8px 9px; font-size: 0.8rem; }
+}

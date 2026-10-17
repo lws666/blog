@@ -183,7 +183,14 @@ export interface AlbumImage {
 }
 
 export async function listAlbum(): Promise<{ images: AlbumImage[], pagination: Pagination }> {
-  return request('/album?limit=100')
+  const r = await request<{ images: AlbumImage[], pagination: Pagination }>('/album?limit=100')
+  // 后端返回的是相对路径（/api/album/file/...），在 Pages 域名下会 404，
+  // 这里补全成 Worker 的绝对地址。
+  r.images = r.images.map(img => ({
+    ...img,
+    url: img.url?.startsWith('/') ? `${site.apiBase}${img.url}` : img.url,
+  }))
+  return r
 }
 
 export async function uploadAlbum(file: File): Promise<AlbumImage> {
@@ -199,7 +206,9 @@ export async function uploadAlbum(file: File): Promise<AlbumImage> {
   })
   const body = (await res.json()) as Envelope<AlbumImage>
   if (!res.ok || !body.success) throw new AdminError(body.error || '上传失败', res.status)
-  return body.data as AlbumImage
+  const img = body.data as AlbumImage
+  if (img?.url?.startsWith('/')) img.url = `${site.apiBase}${img.url}`
+  return img
 }
 
 export async function deleteAlbum(id: number): Promise<void> {

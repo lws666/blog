@@ -1886,18 +1886,16 @@ img {
   .bf-post-banner {
     height: 36vh;
     min-height: 260px;
-    /* 手机端：自动生成的封面是「文字图」，中部大字与标题叠加必然花。
-       放大到 250% 只露顶部图形区（图标行的橙色系），文字全部裁出画面；
-       深遮罩兜底保证任何封面下标题都可读 */
-    background-size: 250% auto;
-    background-position: center top;
+    /* 背景按常规 cover 展示（用户要求不放大）；可读性交给遮罩层 */
+    background-size: cover;
+    background-position: center;
   }
 
   .bf-post-banner::after {
-    /* 主色渐变打底（Butterfly 移动端风格），封面图退为纹理 */
+    /* 主色渐变加深：保证标题压在封面（含文字型封面）上仍可读 */
     background:
-      linear-gradient(135deg, rgba(73, 177, 245, 0.82), rgba(0, 196, 182, 0.72)),
-      linear-gradient(to bottom, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.35));
+      linear-gradient(135deg, rgba(73, 177, 245, 0.88), rgba(0, 196, 182, 0.82)),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.5));
   }
 
   .bf-post-banner__title { font-size: 1.2rem; }

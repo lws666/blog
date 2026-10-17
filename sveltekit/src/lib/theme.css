@@ -1952,7 +1952,8 @@ img {
   font-size: 0.9rem;
   font-weight: 700;
   color: #fff;
-  background: linear-gradient(135deg, var(--btn-bg), var(--accent-active));
+  /* 纯主色（不用渐变），与其他悬浮元素配色统一 */
+  background: var(--btn-bg);
   flex: 0 0 auto;
 }
 

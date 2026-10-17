@@ -53,8 +53,19 @@ export const site = {
   notice: '欢迎来到谢谢の博客，这里记录折腾代码与生活的日常。',
   /** 建站日期（"网站资讯"卡） */
   since: '2025-12-22',
-  /** 音乐播放器（网易云歌单） */
-  music: { api: 'https://music.lwsnb.eu.cc', id: '18318692237' },
+  /**
+   * 音乐播放器（网易云歌单）。
+   *
+   * 注意：网易云大量曲目已受版权/VIP 限制，Meting 的直链会 302 到 /404，
+   * 播放器对这些歌必然无声（实测原歌单 18318692237 三首全部受限）。
+   * 这里改用实测可播比例较高的歌单；如需换回，改 id 即可。
+   */
+  music: {
+    api: 'https://music.lwsnb.eu.cc',
+    server: 'netease',
+    type: 'playlist',
+    id: '6907557348',
+  },
   /** 社交预览图 */
   ogImage: '/social-preview.png',
   /** 后端 Worker API */

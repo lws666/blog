@@ -11,10 +11,14 @@
    *
    * 数据源与老版相同：自建 Meting API。
    */
-  const API = 'https://music.lwsnb.eu.cc'
-  const SERVER = 'netease'
-  const TYPE = 'playlist'
-  const ID = '18318692237'
+  import { site } from '#lib/site'
+
+  const API = site.music.api
+  const SERVER = site.music.server
+  const TYPE = site.music.type
+  const ID = site.music.id
+
+  import { probeAll, type RawSong } from '#lib/music'
 
   interface Song { title: string; author: string; pic: string; url: string; lrc?: string }
 
@@ -24,7 +28,10 @@
   let errorMsg = $state('')
   let container = $state<HTMLElement | null>(null)
   let loaded = false
-  let srcError = $state(false)
+  /** 正在逐首探测音源可用性 */
+  let probing = $state(false)
+  /** 因不可播放而被跳过的曲目数 */
+  let skipped = $state(0)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let player: any = null
 
@@ -41,8 +48,20 @@
       const url = `${API}/api?server=${SERVER}&type=${TYPE}&id=${ID}`
       const res = await fetch(url)
       if (!res.ok) throw new Error(`API ${res.status}`)
-      const data = (await res.json()) as Song[]
-      if (!Array.isArray(data) || !data.length) throw new Error('歌单为空')
+      const raw = (await res.json()) as RawSong[]
+      if (!Array.isArray(raw) || !raw.length) throw new Error('歌单为空')
+
+      // 逐首探测：只保留真正返回音频的曲目
+      probing = true
+      const { songs: probed, playableCount } = await probeAll(raw)
+      probing = false
+      const data = probed.filter(s => s.playable)
+      skipped = probed.length - playableCount
+      if (!data.length) {
+        throw new Error(
+          `歌单中 ${probed.length} 首全部无法播放（音源受版权/VIP 限制）`,
+        )
+      }
 
       // UMD 包：必须用 import 的 default 导出（不是 window.APlayer）
       await import('aplayer/dist/APlayer.min.css')
@@ -54,10 +73,6 @@
 
       await new Promise(r => requestAnimationFrame(r))
       if (!container) throw new Error('容器未就绪')
-
-      // 探测音源可用性：网易云外链近年常被 302 到 404 页，
-      // 此时提示用户而不是静默无声
-      await probeSources(data)
 
       player = new APlayerCtor({
         container,
@@ -77,24 +92,6 @@
       errorMsg = (e as Error).message || '加载失败'
     } finally {
       loading = false
-    }
-  }
-
-  /**
-   * 探测每首歌的直链是否真的返回音频。
-   * Meting 的 type=url 是 302 到网易云外链，若上游封锁会落到 /404（HTML）。
-   */
-  async function probeSources(list: Song[]) {
-    try {
-      const s0 = list[0]
-      if (!s0?.url) return
-      const r = await fetch(s0.url, { method: 'GET', redirect: 'follow' })
-      const ct = r.headers.get('content-type') || ''
-      // 不是音频即视为音源失效
-      if (!/audio|octet-stream|mpeg/i.test(ct)) srcError = true
-    } catch {
-      // CORS / 网络失败也提示（浏览器无法直接取音频流）
-      srcError = true
     }
   }
 
@@ -136,13 +133,11 @@
     </header>
 
     {#if loading}
-      <p class="yun-music-hint">加载中…</p>
+      <p class="yun-music-hint">{probing ? '正在检测音源…' : '加载中…'}</p>
     {:else if errorMsg}
       <p class="yun-music-hint yun-music-err">{errorMsg}</p>
-    {:else if srcError}
-      <p class="yun-music-hint yun-music-err">
-        ⚠ 音源暂不可用（音乐 API 上游返回的不是音频流），播放可能无声
-      </p>
+    {:else if skipped > 0}
+      <p class="yun-music-hint">已跳过 {skipped} 首不可播放的歌曲</p>
     {/if}
 
     <!-- APlayer 挂载点 -->

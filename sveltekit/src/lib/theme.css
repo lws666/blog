@@ -1903,37 +1903,31 @@ img {
  * 即：从右侧滑入 + 宽度展开，带回弹缓动（0.15s）。
  * ============================================================ */
 .bf-toc-drawer {
+  /* 安知鱼主题 #card-toc 的移动端动画：
+     position:fixed; right:55px; bottom:30px;
+     transform: scale(0); transform-origin: right bottom;
+     transition: transform .3s;  &.open { transform: scale(1) }
+     即从右下角「缩放弹出」，而不是从屏幕侧边滑入 */
   position: fixed;
-  top: 0;
-  bottom: 0;
-  right: 0;
+  right: 55px;
+  bottom: 30px;
   z-index: 135;
-  width: 0;
-  max-width: 86vw;
-  overflow: hidden auto;
-  padding: 0;
-  background: var(--card-bg);
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.16);
-  border-radius: 0;
+  width: min(320px, calc(100vw - 24px));
+  max-height: calc(100% - 60px);
   display: flex;
   flex-direction: column;
-  /* 滑入：位移 + 宽度 + 透明度一起过渡。
-     老版是 0.15s，但实际观感太快（几乎看不到过程），这里放慢到
-     0.28s 并叠加透明度，保留老版的回弹缓动曲线。 */
-  opacity: 0;
-  transition:
-    width 0.28s cubic-bezier(0.77, 0, 0.17, 1.02),
-    transform 0.28s cubic-bezier(0.77, 0, 0.17, 1.02),
-    opacity 0.2s ease;
-  transform: translateX(100%);
-  will-change: transform, width, opacity;
+  background: var(--card-bg);
+  border-radius: var(--radius-card);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  transform: scale(0);
+  transform-origin: right bottom;
+  transition: transform 0.3s ease;
+  will-change: transform;
 }
 
-/* 展开态：宽度 320px + 归位 + 不透明（老版 .open） */
 .bf-toc-drawer--open {
-  width: 320px;
-  transform: translateX(0);
-  opacity: 1;
+  transform: scale(1);
 }
 
 /* 头部：与其它面板保持一致的渐变条 */

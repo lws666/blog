@@ -56,15 +56,16 @@ export const site = {
   /**
    * 音乐播放器（网易云歌单）。
    *
-   * 注意：网易云大量曲目已受版权/VIP 限制，Meting 的直链会 302 到 /404，
-   * 播放器对这些歌必然无声（实测原歌单 18318692237 三首全部受限）。
-   * 这里改用实测可播比例较高的歌单；如需换回，改 id 即可。
+   * 音源可播性取决于**服务器出口 IP 的版权/登录态**，不是前端能判断的：
+   * 用 fetch 探测会因 CORS 误杀可播曲目（音乐服务器不发 CORS 头），
+   * 而 <audio>/APlayer 的媒体加载不受 CORS 限制。
+   * 因此这里直接用原歌单，能否播放交给 APlayer 实测。
    */
   music: {
     api: 'https://music.lwsnb.eu.cc',
     server: 'netease',
     type: 'playlist',
-    id: '6907557348',
+    id: '18318692237',
   },
   /** 社交预览图 */
   ogImage: '/social-preview.png',

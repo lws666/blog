@@ -18,7 +18,7 @@
   const TYPE = site.music.type
   const ID = site.music.id
 
-  import { probeAll, type RawSong } from '#lib/music'
+  import { sanitizeSongs, type RawSong } from '#lib/music'
 
   interface Song { title: string; author: string; pic: string; url: string; lrc?: string }
 
@@ -28,10 +28,6 @@
   let errorMsg = $state('')
   let container = $state<HTMLElement | null>(null)
   let loaded = false
-  /** 正在逐首探测音源可用性 */
-  let probing = $state(false)
-  /** 因不可播放而被跳过的曲目数 */
-  let skipped = $state(0)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let player: any = null
 
@@ -51,17 +47,10 @@
       const raw = (await res.json()) as RawSong[]
       if (!Array.isArray(raw) || !raw.length) throw new Error('歌单为空')
 
-      // 逐首探测：只保留真正返回音频的曲目
-      probing = true
-      const { songs: probed, playableCount } = await probeAll(raw)
-      probing = false
-      const data = probed.filter(s => s.playable)
-      skipped = probed.length - playableCount
-      if (!data.length) {
-        throw new Error(
-          `歌单中 ${probed.length} 首全部无法播放（音源受版权/VIP 限制）`,
-        )
-      }
+      // 不做 fetch 探测（受 CORS 限制会误杀可播曲目），
+      // 只过滤空 url / 未解析占位符，其余全部交给 APlayer
+      const data = sanitizeSongs(raw)
+      if (!data.length) throw new Error('歌单为空或地址无效')
 
       // UMD 包：必须用 import 的 default 导出（不是 window.APlayer）
       await import('aplayer/dist/APlayer.min.css')
@@ -135,11 +124,9 @@
     </header>
 
     {#if loading}
-      <p class="yun-music-hint">{probing ? '正在检测音源…' : '加载中…'}</p>
+      <p class="yun-music-hint">加载中…</p>
     {:else if errorMsg}
       <p class="yun-music-hint yun-music-err">{errorMsg}</p>
-    {:else if skipped > 0}
-      <p class="yun-music-hint">已跳过 {skipped} 首不可播放的歌曲</p>
     {/if}
 
   <!-- APlayer 挂载点 -->

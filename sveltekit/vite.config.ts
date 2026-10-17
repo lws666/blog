@@ -14,7 +14,10 @@ export default defineConfig({
       adapter: adapter({
         pages: 'build',
         assets: 'build',
-        strict: true
+        // 管理后台是纯客户端应用（依赖 localStorage 会话令牌），不参与预渲染。
+        // fallback 生成一个 SPA 入口，供未预渲染的 /admin/* 使用。
+        fallback: 'admin.html',
+        strict: false
       }),
       prerender: {
         // 分页路由 /blog/page/[page] 只在总页数 > 1 时才有实例；

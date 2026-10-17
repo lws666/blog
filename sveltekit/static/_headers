@@ -1,0 +1,4 @@
+# 管理后台：禁止被搜索引擎索引
+/admin/*
+  X-Robots-Tag: noindex, nofollow
+  X-Frame-Options: DENY

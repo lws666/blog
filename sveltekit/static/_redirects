@@ -1,0 +1,2 @@
+# 管理后台是纯客户端应用，所有 /admin/* 交给 admin.html（SPA）
+/admin/*    /admin.html   200

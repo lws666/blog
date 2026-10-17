@@ -28,6 +28,8 @@
   }
 
   // 只有首页有全屏 banner；其余页面导航必须实底，否则白字压白底看不见
+  // 管理后台使用独立布局，不套前台外壳
+  const isAdmin = $derived(page.url.pathname.startsWith('/admin'))
   const hasBanner = $derived(page.url.pathname === '/')
 
   // 文章页会把 toc 放进 page.data；有目录时显示悬浮目录按钮
@@ -36,11 +38,14 @@
   )
 </script>
 
-<Nav onToggleTheme={toggleTheme} theme={theme} {hasBanner} />
 <main>
   {@render children?.()}
 </main>
-<div style="max-width:var(--content-width);margin:0 auto">
-  <Footer />
-</div>
-<Actions {theme} onToggleTheme={toggleTheme} hasToc={tocItems.length > 0} {tocItems} />
+
+{#if !isAdmin}
+  <Nav onToggleTheme={toggleTheme} theme={theme} {hasBanner} />
+  <div style="max-width:var(--content-width);margin:0 auto">
+    <Footer />
+  </div>
+  <Actions {theme} onToggleTheme={toggleTheme} hasToc={tocItems.length > 0} {tocItems} />
+{/if}

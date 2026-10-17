@@ -61,3 +61,7 @@ sveltekit/node_modules/
 sveltekit/build/
 sveltekit/.wrangler/
 sveltekit/.vercel/
+
+# twikoo 构建目录（临时）
+twikoo-build/
+twikoo-build/

@@ -2197,3 +2197,38 @@ img {
   .ai-tag { margin-left: 0; }
   .ai-explanation { font-size: 14px; padding: 8px 10px; }
 }
+
+/* ============================================================
+ * 评论区（Twikoo）
+ * ============================================================ */
+.bf-comments {
+  margin-top: 20px;
+  padding: 20px 24px 24px;
+}
+
+.bf-comments__title {
+  margin: 0 0 18px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-highlight-color);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Twikoo 内部样式微调，跟随主题 */
+#tcomment .tk-meta-input .el-input__inner,
+#tcomment .tk-input .el-textarea__inner {
+  background: var(--card-bg);
+  color: var(--font-color);
+  border-radius: var(--radius);
+}
+
+#tcomment .tk-comments-title,
+#tcomment .tk-meta { font-size: 0.9rem; }
+
+#tcomment .tk-avatar img { border-radius: 50%; }
+
+@media (max-width: 900px) {
+  .bf-comments { padding: 16px 16px 18px; }
+}

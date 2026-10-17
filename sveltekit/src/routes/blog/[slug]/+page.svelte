@@ -2,6 +2,7 @@
   import Seo from '#lib/components/Seo.svelte'
   import Toc from '#lib/components/Toc.svelte'
   import AiSummary from '#lib/components/AiSummary.svelte'
+  import TwikooComment from '#lib/components/TwikooComment.svelte'
   import Icon from '#lib/components/Icon.svelte'
   import type { PageData } from './$types'
 
@@ -46,7 +47,7 @@
         </div>
       {/if}
 
-      <!-- AI 摘要（仿安知鱼 .post-ai-description） -->
+          <!-- AI 摘要（仿安知鱼 .post-ai-description） -->
       {#if data.post.summary}
         <AiSummary summary={data.post.summary} />
       {/if}
@@ -63,6 +64,9 @@
         </div>
       {/if}
     </article>
+
+    <!-- 评论（Twikoo） -->
+    <TwikooComment path={data.post.slug} dark={false} />
 
     <!-- 上下篇 -->
     {#if data.prev || data.next}

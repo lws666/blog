@@ -2344,3 +2344,19 @@ img {
 .bf-post-main {
   max-width: 100%;
 }
+
+/* ── 正文前提示条（AI 生成声明）────────────────────────────── */
+.bf-content__notice {
+  margin: 0 0 12px;
+  padding: 7px 12px;
+  border-left: 3px solid var(--btn-bg);
+  border-radius: 0 6px 6px 0;
+  background: rgba(73, 177, 245, 0.08);
+  color: var(--card-meta);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+[data-theme='dark'] .bf-content__notice {
+  background: rgba(73, 177, 245, 0.14);
+}

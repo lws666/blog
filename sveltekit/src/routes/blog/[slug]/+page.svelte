@@ -53,6 +53,7 @@
       {/if}
 
       <!-- 正文（SSR 直出，爬虫无需 JS） -->
+      <p class="bf-content__notice">本文由 glm-5.3flash 生成</p>
       <div class="bf-content">{@html data.html}</div>
 
       {#if data.post.tags?.length}

@@ -1917,15 +1917,23 @@ img {
   border-radius: 0;
   display: flex;
   flex-direction: column;
-  /* 与老版一致：all + 快时长 + 回弹缓动 */
-  transition: all 0.15s cubic-bezier(0.77, 0, 0.17, 1.02);
+  /* 滑入：位移 + 宽度 + 透明度一起过渡。
+     老版是 0.15s，但实际观感太快（几乎看不到过程），这里放慢到
+     0.28s 并叠加透明度，保留老版的回弹缓动曲线。 */
+  opacity: 0;
+  transition:
+    width 0.28s cubic-bezier(0.77, 0, 0.17, 1.02),
+    transform 0.28s cubic-bezier(0.77, 0, 0.17, 1.02),
+    opacity 0.2s ease;
   transform: translateX(100%);
+  will-change: transform, width, opacity;
 }
 
-/* 展开态：宽度 320px + 归位（老版 .open） */
+/* 展开态：宽度 320px + 归位 + 不透明（老版 .open） */
 .bf-toc-drawer--open {
   width: 320px;
   transform: translateX(0);
+  opacity: 1;
 }
 
 /* 头部：与其它面板保持一致的渐变条 */
@@ -1983,4 +1991,9 @@ img {
 @keyframes bf-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* 音乐面板：关闭时隐藏但保留 DOM（维持 APlayer 播放状态） */
+.yun-music-panel--hidden {
+  display: none !important;
 }

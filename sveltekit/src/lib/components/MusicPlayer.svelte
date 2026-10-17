@@ -102,33 +102,35 @@
   $effect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        open = false
-        try { player?.pause?.() } catch { /* ignore */ }
-      }
+      if (e.key === 'Escape') open = false
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   })
 
+  // 仅在组件真正卸载（离开页面）时销毁；关闭面板不销毁，
+  // 否则重新打开时 loaded=true 会让 initPlayer 直接 return，
+  // 结果就是「关了再开没有播放器/没有声音」
   $effect(() => () => {
     try { player?.destroy?.() } catch { /* ignore */ }
     player = null
+    loaded = false
   })
 </script>
 
-{#if open}
-  <section class="yun-music-panel" aria-label={d.music}>
+<section
+  class="yun-music-panel"
+  class:yun-music-panel--hidden={!open}
+  aria-label={d.music}
+  aria-hidden={!open}
+>
     <header class="yun-music-head">
       <span class="yun-music-title">{d.music}</span>
       <button
         class="yun-music-close"
         title="收起"
         aria-label="收起"
-        onclick={() => {
-          open = false
-          try { player?.pause?.() } catch { /* ignore */ }
-        }}>×</button
+        onclick={() => (open = false)}>×</button
       >
     </header>
 
@@ -140,7 +142,6 @@
       <p class="yun-music-hint">已跳过 {skipped} 首不可播放的歌曲</p>
     {/if}
 
-    <!-- APlayer 挂载点 -->
-    <div class="yun-music-body" bind:this={container}></div>
-  </section>
-{/if}
+  <!-- APlayer 挂载点 -->
+  <div class="yun-music-body" bind:this={container}></div>
+</section>

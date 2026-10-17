@@ -29,7 +29,7 @@
 <nav class="bf-nav" class:bf-nav--fixed={solid}>
   <!-- 品牌：头像 + 站点完整标题（与线上一致） -->
   <a href="/" class="bf-nav__brand">
-    <img src={site.author.avatar} alt="" width="32" height="32" class="bf-nav__avatar" />
+    <img src={site.author.avatar} alt={site.title} width="32" height="32" class="bf-nav__avatar" />
     <span>{site.titleFull}</span>
   </a>
 

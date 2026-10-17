@@ -72,7 +72,7 @@
           {#each recentPosts.slice(0, 6) as post (post.slug)}
             <li class="bf-widget__item">
               {#if post.cover}
-                <img class="bf-widget__thumb" src={post.cover} alt="" loading="lazy" />
+                <img class="bf-widget__thumb" src={post.cover} alt={post.title} loading="lazy" />
               {/if}
               <a class="bf-widget__item-title" href={`/blog/${post.slug}/`}>{post.title}</a>
               <time class="bf-widget__item-date">{(post.date || '').slice(0, 10)}</time>

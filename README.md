@@ -1,118 +1,112 @@
 # lwsnb の blog
 
-一个基于 **Valaxy** 构建的**动态博客**系统。发布文章无需重新构建，新文章即刻上线。
+一个基于 **SvelteKit** 的静态博客 + **Cloudflare Worker** 动态后端的博客系统：前端全量预渲染成 HTML（SEO 内建），后台发布文章后自动触发重建上线。
 
-> 在线访问：[www.lwsnb.eu.cc](https://www.lwsnb.eu.cc)
+> 在线访问：[www.lwsnb.eu.cc](https://www.lwsnb.eu.cc)（Valaxy 旧版仍在运行）｜ SvelteKit 版预览：[lwsnb-sveltekit.pages.dev](https://lwsnb-sveltekit.pages.dev)
 
 ## ✨ 特性
 
-- **动态发布**：文章写入 Cloudflare D1 + Backblaze B2 后立即生效，无需重新 `build`
-- **Valaxy 原生 UI**：基于 `valaxy-theme-yun`，保持默认组件与 Markdown 渲染效果
-- **爬虫预渲染（SEO）**：入口 Worker 识别搜索引擎爬虫，将首页与文章页代理到服务端预渲染，保证 SEO 可用
-- **后台管理**：内置 `/admin` 页面，可在线发布、编辑、删除文章
-- **评论与阅读量**：集成 Waline 评论系统，支持页面浏览量统计
-- **图片存储**：图片统一托管于 Backblaze B2
-- **多端部署**：主入口托管于 Cloudflare，同时保留 GitHub Pages / Vercel 静态部署能力
+- **SEO 内建**：`adapter-static` 全站预渲染，每页真实 HTML（不再是 SPA 空壳 + 爬虫注入补丁）
+- **结构化数据**：每页一个 h1、canonical 尾斜杠统一、JSON-LD `@graph`（Person / WebSite / WebPage / BlogPosting / BreadcrumbList）、`og:type=article`
+- **Butterfly 主题**：按 hexo-theme-butterfly 编译后的 CSS 逐值逆向（卡片、悬浮球、banner、波浪），非截图模仿
+- **目录滑块**：右侧目录 4px 竖条跟随阅读位置滑动（IntersectionObserver）
+- **AI 摘要卡**：仿安知鱼 `.post-ai-description`，打字机效果 + 朗读（Web Speech API）
+- **Twikoo 评论**：Cloudflare Workers + D1 同域挂载（`/twikoo`），无需 GitHub 登录
+- **管理后台**：`/admin`（SvelteKit 重写）——Markdown 编辑器 + 实时预览、AI 摘要生成、SVG 封面生成、相册管理
+- **发布即上线**：后台发布 → Worker 触发 GitHub `repository_dispatch` → Actions 重建 → Pages 部署，约 1 分钟
+- **音乐播放器**：APlayer + 自建 Meting API，悬浮球并入右下按钮列
+- **SEO 文件**：`sitemap.xml` / `rss.xml` / `robots.txt` / `llms.txt` 构建期生成
+- **真实 404**：未知路径返回独立 404 页（不再是 200 + 首页）
 
 ## 🧱 技术栈
 
 | 层 | 技术 |
 | --- | --- |
-| 前端 | Valaxy · Vue 3 · Vite · TypeScript |
-| 主题 | valaxy-theme-yun |
+| 前端 | SvelteKit 3.1 · Svelte 5 (runes) · Vite · TypeScript |
+| 预渲染 | @sveltejs/adapter-static（fallback SPA 给 /admin） |
+| 主题 | 自研 Butterfly 风格（theme.css 设计令牌） |
 | API 后端 | Cloudflare Worker（Hono） |
 | 数据库 | Cloudflare D1 (SQLite) |
 | 对象存储 | Backblaze B2 |
-| 评论 | Waline |
-| 评论容器 | Docker（可选） |
+| 评论 | Twikoo 2.0（Workers 版，同域挂载） |
+| 音乐 | APlayer + Meting API |
+| 部署 | Cloudflare Pages（前端）+ Cloudflare Workers（后端/评论） |
+| CI | GitHub Actions（push / repository_dispatch 触发重建） |
 
 ## 🏗️ 架构
 
 ```
-Markdown / 图片
-    │
-    ▼
-Backblaze B2 ────► blog-worker (API + SSR)
-    │                   │
-    │                   ▼
-    │               Cloudflare D1（文章元数据 / 索引）
-    │                   │
-    └──► 前端 Valaxy ◄──┘
-             ▲
-             │ (爬虫)
-入口 Worker（静态资源 + 代理 + 预渲染转发）
+后台 /admin ──发布──► blog-worker (Hono API)
+                        │
+                        ├─► D1（文章/评论/用户/相册元数据）
+                        ├─► B2（Markdown 原文 + 图片）
+                        │
+                        └─ repository_dispatch
+                              │
+                              ▼
+                    GitHub Actions 构建 SvelteKit
+                    （API 拉取文章 → 预渲染 HTML）
+                              │
+                              ▼
+                    Cloudflare Pages（静态站点）
+                              ▲
+                    浏览器 /api/* ──► blog-worker
+                    浏览器 /twikoo ──► blog-worker（Twikoo 同域挂载）
 ```
 
-- **入口 Worker**（`src/index.js`）：托管 `dist` 静态资源；将 `/api/*`、SEO 文件（`sitemap.xml`、`robots.txt`、`rss.xml`、`llms.txt`）代理给 `blog-worker`；对爬虫请求首页/文章页时转发做服务端预渲染。
-- **blog-worker**（`worker/`）：Hono 应用，负责文章 CRUD、上传、SSR 渲染与 SEO 输出。
+- **前端**（`sveltekit/`）：SvelteKit 应用，构建时从 API 拉取全部文章预渲染为静态 HTML
+- **blog-worker**（`worker/`）：Hono 应用——文章 CRUD、B2 上传、AI 摘要、SVG 封面、相册、用户/令牌，并同域挂载 Twikoo 评论后端（`/twikoo`）
 
 ## 📁 目录结构
 
 ```text
-├── pages/            # 页面与文章
-│   ├── posts/[slug].vue  # 文章详情页（动态获取）
-│   └── admin/index.vue   # 后台管理页
-├── src/index.js      # 入口 Worker（静态资源 + 代理）
-├── worker/           # blog-worker（API 后端）
-│   ├── src/          # Hono 路由、B2/D1 封装
-│   ├── schema.sql    # D1 数据库结构
-│   └── wrangler.toml # Worker 配置（D1、B2 变量）
-├── components/       # 自定义 Vue 组件（自动加载）
-├── layouts/          # 自定义布局
-├── styles/           # 主题样式覆盖
-├── locales/          # 国际化
-├── valaxy.config.ts  # Valaxy 站点配置
-└── site.config.ts    # 站点信息（标题、作者、社交）
+├── sveltekit/            # SvelteKit 前端（主站）
+│   ├── src/routes/       # 页面（blog/about/archives/categories/tags/admin…）
+│   ├── src/lib/          # 组件（Nav/Actions/MusicPlayer/Toc/AiSummary/TwikooComment）
+│   │   ├── theme.css     # Butterfly 风格样式（设计令牌 + 组件样式）
+│   │   ├── admin/        # 管理后台（API 客户端/编辑器/相册）
+│   │   └── site.ts       # 站点配置（标题/作者/音乐/导航）
+│   ├── static/_redirects # /admin/* → admin.html（SPA fallback）
+│   └── vite.config.ts    # adapter-static 配置
+├── worker/               # blog-worker（API 后端）
+│   ├── src/routes/       # Hono 路由（admin/posts/album/cover/auth/telegram）
+│   ├── src/index.ts      # 应用入口（CORS、路由、Twikoo 挂载、SEO）
+│   ├── src/twikoo-backend/ # Twikoo 官方 Cloudflare 适配器构建产物
+│   └── wrangler.toml     # D1 / B2 绑定、nodejs_compat
+├── docs/                 # API.md（接口文档）· DEPLOY.md（部署教程）
+├── scripts/              # import-comments.mjs（历史评论导入）
+└── .github/workflows/    # deploy-sveltekit.yml（CI/CD）
 ```
 
 ## 🚀 本地开发
 
 ```bash
-# 安装依赖
+# 前端（sveltekit/）
+cd sveltekit
 npm install
-# 或 pnpm install
+npm run dev        # vite dev，/api 代理到 api.lwsnb.eu.cc
 
-# 启动开发服务器（默认端口 4859）
-npm run dev
+# 后端（worker/）
+cd worker
+npm install
+npx wrangler dev   # 本地模拟 Workers 环境
 ```
-
-开发模式下，`/api` 请求已通过 `valaxy.config.ts` 中的 Vite 代理转发到后端的 API 域名（部署教程见 `docs/DEPLOY.md`）。
-
-访问 http://localhost:4859/ 开始使用。
 
 ## 📦 构建与部署
 
-### Cloudflare（推荐，动态博客主入口）
-
 ```bash
-# 构建前端产物（dist/）
-npm run build
+# 前端构建 + 预渲染（产物 build/）
+cd sveltekit && npm run build
 
-# 预览 Worker（本地模拟）
-npm run preview
+# 部署到 Cloudflare Pages
+npx wrangler pages deploy build --project-name lwsnb-sveltekit --branch main
 
-# 部署入口 Worker（托管 dist + 代理/预渲染）
-npm run deploy
+# 后端部署
+cd worker && npx wrangler deploy
 ```
 
-> `blog-worker` 在 `worker/` 目录下单独管理，使用各自的 `wrangler.toml` 与 `wrangler deploy` 部署。完整的从零部署步骤（D1 / B2 / Secrets）见 [后端部署教程](docs/DEPLOY.md)。
-
-### 静态部署（可选，仅博客快照）
-
-`valaxy` 生成的是可独立运行的静态站点，也可部署到 GitHub Pages / Netlify / Vercel：
-
-```bash
-# 纯静态构建
-npm run build:ssg
-```
-
-仓库已附带 `.github/workflows/gh-pages.yml`、`vercel.json` 配置文件。
-
-### Docker（可选）
-
-```bash
-docker build . -t lwsnb-blog:latest
-```
+推送 `master` 会触发 `.github/workflows/deploy-sveltekit.yml` 自动构建部署；
+发布文章时 Worker 也会通过 `repository_dispatch` 触发同一流程。
 
 ## 🔐 blog-worker 环境变量
 
@@ -123,41 +117,49 @@ docker build . -t lwsnb-blog:latest
 | `B2_ACCESS_KEY_ID` | Backblaze B2 Application Key ID |
 | `B2_SECRET_ACCESS_KEY` | Backblaze B2 Application Key Secret |
 | `UPLOAD_TOKEN` | 上传接口的 Bearer Token |
+| `GITHUB_DISPATCH_TOKEN` | 触发 GitHub Actions 重建的 PAT |
+| `GITHUB_REPO` | 仓库名（默认 lws666/blog） |
+| `INDEXNOW_KEY` | IndexNow 提交密钥 |
+| `AI_ACCOUNT_ID` / `AI_API_TOKEN` | Workers AI（摘要生成） |
 
-在 `worker/.env.example` 中有模板，D1 与 B2 的绑定在 `worker/wrangler.toml` 中配置。
+D1 与 B2 的绑定在 `worker/wrangler.toml` 中配置。
 
 ### 初始化数据库
 
 ```bash
 cd worker
-npx wrangler d1 execute blog --file=schema.sql
+npx wrangler d1 execute blog --remote --file=schema.sql
+# Twikoo 表（comment/counter/config）与博客表同库不冲突：
+npx wrangler d1 execute blog --remote --file=../twikoo-build/packages/server-cloudflare/schema.sql
 ```
 
 ## 📡 API 接口
 
-基础路径：`https://api.<你的域名>`（部署教程见 `docs/DEPLOY.md`）
+基础路径：`https://api.lwsnb.eu.cc`（完整文档见 [docs/API.md](docs/API.md)）
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
 | GET | `/api/health` | 健康检查 |
 | GET | `/api/stats` | 站点统计 |
-| GET | `/api/posts` | 文章列表 |
+| GET | `/api/posts` | 公开文章列表（分页） |
 | GET | `/api/posts/:slug` | 文章详情 |
-| POST | `/api/upload` | 上传 Markdown（需 Bearer Token） |
-| POST | `/api/admin/posts` | 创建文章 |
-| GET | `/api/admin/posts` | 后台文章列表 |
-| GET | `/api/admin/posts/:slug` | 后台文章详情 |
+| GET | `/api/admin/posts` | 后台列表（含草稿，需登录） |
+| POST | `/api/admin/posts` | 创建/更新文章 |
 | DELETE | `/api/admin/posts/:slug` | 删除文章 |
-| GET | `/sitemap.xml` | 站点地图 |
-| GET | `/robots.txt` | 爬虫规则 |
-| GET | `/rss.xml` | RSS 订阅 |
-| GET | `/llms.txt` | LLM 可读索引 |
-| GET | `/render/homepage` | 首页服务端预渲染（供爬虫） |
-| GET | `/posts/:slug` | 文章服务端预渲染（供爬虫） |
+| POST | `/api/admin/posts/:slug/summary` | AI 生成摘要 |
+| POST | `/api/cover` | 生成 SVG 封面 |
+| GET/POST/DELETE | `/api/album` | 相册管理 |
+| POST | `/api/auth/login` | 用户名密码登录（sess_ 令牌） |
+| GET/POST/DELETE | `/api/admin/users` | 子用户管理 |
+| ALL | `/twikoo` | Twikoo 评论后端（同域挂载） |
+| GET | `/sitemap.xml` `/robots.txt` `/rss.xml` `/llms.txt` | SEO 文件（构建期生成） |
 
 ## 🗄️ 数据库
 
-Cloudflare D1，核心表 `posts`（slug 唯一、支持 i18n 标题、置顶、草稿、密码、隐藏、评论开关等字段），以及 `uploads`（已上传的 B2 资源记录）。
+Cloudflare D1 单库复用：
+
+- 博客表：`posts`（slug 唯一、置顶、草稿、密码、隐藏等）、`uploads`、`users`、`sessions`、`api_tokens`
+- Twikoo 表：`comment`、`counter`、`config`（与博客表命名不冲突）
 
 ## 📄 License
 

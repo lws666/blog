@@ -2057,3 +2057,143 @@ img {
 [data-theme='dark'] .bf-toc-marker {
   background: var(--btn-bg);
 }
+
+/* ============================================================
+ * AI 摘要卡片 —— 仿安知鱼 .post-ai-description
+ * 数值取自 hexo.anheyu.com 实测
+ * ============================================================ */
+.post-ai-description {
+  margin: 0 0 10px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid #e3e8f7;
+  background: #f7f7f9;
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+[data-theme='dark'] .post-ai-description {
+  background: #1e1e20;
+  border-color: #2c2c30;
+}
+
+/* 标题行 */
+.ai-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 5px;
+  font-size: 16px;
+  color: var(--font-color);
+  flex-wrap: wrap;
+}
+
+.ai-title__icon {
+  color: #235eb3;
+  font-size: 15px;
+  line-height: 1;
+}
+
+[data-theme='dark'] .ai-title__icon { color: #6aa9ff; }
+
+.ai-title-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-highlight-color);
+  margin-right: 2px;
+}
+
+/* 「切换」小药丸 */
+.ai-pill {
+  padding: 2px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: #235eb3;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: opacity 0.2s, background 0.2s;
+}
+.ai-pill:hover { background: #1b4a8f; }
+
+/* 图标按钮（刷新 / 朗读） */
+.ai-icon {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--card-meta);
+  font-size: 14px;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s, transform 0.3s;
+}
+.ai-icon:hover { color: #235eb3; background: rgba(35, 94, 179, 0.1); }
+.ai-icon--active { color: #235eb3; animation: ai-pulse 1.2s ease-in-out infinite; }
+
+@keyframes ai-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+/* 模型标签 */
+.ai-tag {
+  margin-left: auto;
+  padding: 4px 5px;
+  border-radius: 4px;
+  background: #235eb3;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* 摘要正文：白底卡片 */
+.ai-explanation {
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--font-color);
+  font-size: 15px;
+  line-height: 1.4;
+  animation: ai-fade 0.3s ease;
+}
+
+[data-theme='dark'] .ai-explanation {
+  background: #26262a;
+}
+
+@keyframes ai-fade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* 打字机光标 */
+.ai-caret {
+  display: inline-block;
+  margin-left: 1px;
+  color: #235eb3;
+  animation: ai-blink 0.9s steps(1) infinite;
+}
+
+@keyframes ai-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-caret, .ai-icon--active { animation: none; }
+  .ai-explanation { animation: none; }
+}
+
+/* 手机端：标签换行时不挤 */
+@media (max-width: 600px) {
+  .post-ai-description { padding: 10px 12px; }
+  .ai-title { font-size: 15px; gap: 6px; }
+  .ai-title-text { font-size: 15px; }
+  .ai-tag { margin-left: 0; }
+  .ai-explanation { font-size: 14px; padding: 8px 10px; }
+}

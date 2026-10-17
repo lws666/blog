@@ -1,6 +1,7 @@
 <script lang="ts">
   import Seo from '#lib/components/Seo.svelte'
   import Toc from '#lib/components/Toc.svelte'
+  import AiSummary from '#lib/components/AiSummary.svelte'
   import Icon from '#lib/components/Icon.svelte'
   import type { PageData } from './$types'
 
@@ -45,8 +46,9 @@
         </div>
       {/if}
 
+      <!-- AI 摘要（仿安知鱼 .post-ai-description） -->
       {#if data.post.summary}
-        <blockquote class="bf-post__summary">{data.post.summary}</blockquote>
+        <AiSummary summary={data.post.summary} />
       {/if}
 
       <!-- 正文（SSR 直出，爬虫无需 JS） -->

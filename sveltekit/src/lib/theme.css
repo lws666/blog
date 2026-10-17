@@ -2232,3 +2232,30 @@ img {
 @media (max-width: 900px) {
   .bf-comments { padding: 16px 16px 18px; }
 }
+
+/* ── 手机端播放器缩小（覆盖 .yun-music-panel 的桌面尺寸）── */
+@media (max-width: 900px) {
+  .yun-music-panel {
+    width: min(280px, calc(100vw - 86px)) !important;
+    right: 12px !important;
+    bottom: 12px !important;
+    padding: 0.5rem !important;
+    max-height: 70vh !important;
+  }
+
+  .yun-music-head { padding: 6px 6px 6px 10px !important; }
+  .yun-music-title { font-size: 0.78rem !important; }
+  .yun-music-close { width: 24px !important; height: 24px !important; font-size: 1rem !important; }
+  .yun-music-hint { padding: 12px 8px !important; font-size: 0.72rem !important; }
+
+  .yun-music-body .aplayer { margin: 0 !important; }
+  .yun-music-body .aplayer .aplayer-info { padding: 8px 10px 6px !important; }
+  .yun-music-body .aplayer .aplayer-music { margin: 0 0 4px 8px !important; }
+  .yun-music-body .aplayer .aplayer-title { font-size: 0.84rem !important; }
+  .yun-music-body .aplayer .aplayer-author { font-size: 0.72rem !important; }
+  .yun-music-body .aplayer .aplayer-bar-wrap { margin: 0 8px 8px !important; }
+  .yun-music-body .aplayer .aplayer-time { font-size: 0.7rem !important; }
+  .yun-music-body .aplayer .aplayer-list ol li { padding: 4px 12px !important; font-size: 0.78rem !important; height: auto !important; }
+  .yun-music-body .aplayer .aplayer-list ol li .aplayer-list-index { margin-right: 8px !important; }
+  .yun-music-body .aplayer .aplayer-list ol li .aplayer-list-author { max-width: 36% !important; }
+}

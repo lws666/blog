@@ -13,9 +13,10 @@ routes = [
   # 必须由 Worker 在边缘对这一个 URL 直接返回 200。
   # ⚠ 不要用 www.lwsnb.eu.cc/* —— 那会把 HTTPS 流量也劫持到 Worker，
   #   导致 Pages 被绕过、静态文件取不到（曾因此返回首页 HTML）。
+  # ⚠ 只保留验证文件的精确路由。**不要**加 www.lwsnb.eu.cc/ 或 /*：
+  #   那会把 HTTPS 主页也劫持到本 Worker（assets 是旧的 dist 副本），
+  #   导致 www 返回过期内容、Pages 被绕过。
   { pattern = "www.lwsnb.eu.cc/baidu_verify_codeva-mQlXESBIa4.html", zone_id = "a6c4a9d9355e33800ed27c13e522f75b" },
-  # 百度 HTML 标签验证需要首页的 HTTP 也返回 200（含验证 meta）
-  { pattern = "www.lwsnb.eu.cc/", zone_id = "a6c4a9d9355e33800ed27c13e522f75b" },
   # 备用线路域名:301 到 www(在 src/index.js 的 REDIRECT_HOSTS 中)
   { pattern = "cf.lwsnb.eu.cc", custom_domain = true },
 ]

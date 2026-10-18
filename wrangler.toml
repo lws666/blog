@@ -16,6 +16,11 @@ routes = [
   # ⚠ 只保留验证文件的精确路由。**不要**加 www.lwsnb.eu.cc/ 或 /*：
   #   那会把 HTTPS 主页也劫持到本 Worker（assets 是旧的 dist 副本），
   #   导致 www 返回过期内容、Pages 被绕过。
+  # 百度验证文件必须由 Worker 在 HTTP(80) 直接返回 200：
+  # 实测纯静态（不经 Worker）时 http:// 会 301 到 https://，
+  # 而百度验证器只请求 http:// 且不跟随跳转 → 必然失败。
+  # 因此这条路由是必需的，不是冗余。仅精确匹配这一个路径，
+  # 不影响任何其他请求（含全部 HTTPS）。
   { pattern = "www.lwsnb.eu.cc/baidu_verify_codeva-mQlXESBIa4.html", zone_id = "a6c4a9d9355e33800ed27c13e522f75b" },
   # 备用线路域名:301 到 www(在 src/index.js 的 REDIRECT_HOSTS 中)
   { pattern = "cf.lwsnb.eu.cc", custom_domain = true },

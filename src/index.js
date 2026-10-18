@@ -336,22 +336,26 @@ export default {
     const path = url.pathname
     const origin = request.headers.get('Origin')
 
-    // ── 百度站点验证：HTTP(80) 直返 200 ─────────────────────────
-    // 百度验证器只请求 http://，且**不跟随 301/308 跳转**，只接受
-    // HTTP → 200。Cloudflare Pages 会强制 HTTP→HTTPS 301，导致验证
-    // 始终报「无法连接到您网站的服务器」。
-    // 这里在边缘拦截 HTTP 请求：验证文件/首页直接返回 200，
-    // 其余 HTTP 请求仍按原逻辑 301 到 HTTPS。
-    if (url.protocol === 'http:') {
-      const isVerifyFile = path.includes('baidu_verify_')
-      const isHome = path === '/' || path === ''
+    // ── 百度站点验证文件：HTTP 与 HTTPS 均返回 32 字节验证码 ──────
+    // 必须放在协议判断**之外**：该 Worker route 不区分协议，HTTPS 也会
+    // 命中本 Worker。若只处理 HTTP，HTTPS 会继续走 ASSETS（dist/ 中无此
+    // 文件）→ 404 → SPA fallback → 返回首页 HTML，百度拿到 200 但正文
+    // 是一整个首页，验证失败。
+    // 精确匹配单个路径（不用 includes，避免误伤其他路径）。
+    if (path === '/baidu_verify_codeva-mQlXESBIa4.html') {
+      const body = 'ce1a6c0181a858c560306e7e34edbd0d'
+      return new Response(body, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Content-Length': String(body.length),
+        },
+      })
+    }
 
-      if (isVerifyFile) {
-        return new Response('ce1a6c0181a858c560306e7e34edbd0d', {
-          status: 200,
-          headers: { 'Content-Type': 'text/html; charset=utf-8' },
-        })
-      }
+    // ── HTTP(80) 其他路径：首页直返 200，其余 301 到 HTTPS ────────
+    if (url.protocol === 'http:') {
+      const isHome = path === '/' || path === ''
 
       if (isHome) {
         // 首页返回含验证 meta 的最小 HTML（不含正文，避免与 HTTPS 版重复）

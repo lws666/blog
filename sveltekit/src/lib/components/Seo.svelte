@@ -14,6 +14,8 @@
   <meta name="description" content={seo.description} />
   <meta name="robots" content={seo.robots} />
   <link rel="canonical" href={seo.canonical} />
+  <!-- 百度站点验证（验证通过后请勿删除，否则验证状态失效） -->
+  <meta name="baidu-site-verification" content="codeva-mQlXESBIa4" />
 
   <!-- Open Graph -->
   <meta property="og:site_name" content={seo.ogSiteName} />

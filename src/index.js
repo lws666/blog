@@ -336,6 +336,37 @@ export default {
     const path = url.pathname
     const origin = request.headers.get('Origin')
 
+    // ── 百度站点验证：HTTP(80) 直返 200 ─────────────────────────
+    // 百度验证器只请求 http://，且**不跟随 301/308 跳转**，只接受
+    // HTTP → 200。Cloudflare Pages 会强制 HTTP→HTTPS 301，导致验证
+    // 始终报「无法连接到您网站的服务器」。
+    // 这里在边缘拦截 HTTP 请求：验证文件/首页直接返回 200，
+    // 其余 HTTP 请求仍按原逻辑 301 到 HTTPS。
+    if (url.protocol === 'http:') {
+      const isVerifyFile = path.includes('baidu_verify_')
+      const isHome = path === '/' || path === ''
+
+      if (isVerifyFile) {
+        return new Response('ce1a6c0181a858c560306e7e34edbd0d', {
+          status: 200,
+          headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        })
+      }
+
+      if (isHome) {
+        // 首页返回含验证 meta 的最小 HTML（不含正文，避免与 HTTPS 版重复）
+        return new Response(
+          '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">' +
+            '<meta name="baidu-site-verification" content="codeva-mQlXESBIa4">' +
+            '<title>谢谢の博客</title></head><body>ok</body></html>',
+          { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } },
+        )
+      }
+
+      // 其余 HTTP 请求：301 到 HTTPS（保持单一规范地址，避免重复内容）
+      return Response.redirect(`https://${url.hostname}${path}${url.search}`, 301)
+    }
+
     // ── Domain migration: legacy hosts → current host (301) ────
     if (REDIRECT_HOSTS.has(url.hostname)) {
       return Response.redirect(`https://${NEW_HOST}${path}${url.search}`, 301)

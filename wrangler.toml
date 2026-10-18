@@ -7,9 +7,11 @@ main = "src/index.js"
 # 不在清单里的旧域名一并删除(www.lwsnb.eu.cc 曾因此被顶掉)。
 routes = [
   { pattern = "www.lwsnb.dpdns.org/*", zone_id = "7b56790c6ed08c291850e8ea182b2341" },
-  # 主站 www 已切换到 SvelteKit Pages 版（Cloudflare Pages custom domain）。
-  # 本 Worker（Valaxy 版）不再占用 www；如需回滚，把下面这行加回：
-  # { pattern = "www.lwsnb.eu.cc", custom_domain = true },
+  # www 主站由 Cloudflare Pages 提供（custom domain 在 Pages 项目上）。
+  # 本 Worker 只接管 www 的 **HTTP(80)** 请求（src/index.js 里判断协议）：
+  # 百度站点验证只请求 http:// 且不跟随跳转，必须在此返回 200。
+  # HTTPS 请求不走这条路由（由 Pages 的 custom domain 直接服务）。
+  { pattern = "www.lwsnb.eu.cc/*", zone_id = "a6c4a9d9355e33800ed27c13e522f75b" },
   # 备用线路域名:301 到 www(在 src/index.js 的 REDIRECT_HOSTS 中)
   { pattern = "cf.lwsnb.eu.cc", custom_domain = true },
 ]

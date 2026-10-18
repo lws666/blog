@@ -12,6 +12,8 @@
 export const site = {
   /** 规范域名：canonical / og:url / sitemap 以此为准（与 Valaxy 版一致，带 www） */
   url: 'https://www.lwsnb.eu.cc',
+  /** 纯主机名（收录检测页的 site: 查询用） */
+  host: 'www.lwsnb.eu.cc',
   /** 站点标题（导航品牌与首页 title 用） */
   title: '谢谢の博客',
   /** 带副标题的完整站点名（首页 <title> 用） */

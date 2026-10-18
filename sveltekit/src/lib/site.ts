@@ -3,7 +3,7 @@
  *
  * 取值来源：站点 site.config.ts / valaxy.config.ts 与线上实测：
  *   title      谢谢の博客 - 一个普通人的技术博客
- *   author     权益 / 头像 img.lwsnb.eu.cc
+ *   author     洛神 / 头像 img.lwsnb.eu.cc
  *   primary    #49b1f5        页面底 #f7f9fe
  *   nav 项     首页 归档 分类 标签 友链 关于（带 ri 图标）
  *   Hero       全屏背景图 + 大标题 + 每日一言（打字机）
@@ -30,7 +30,7 @@ export const site = {
   banner: 'https://img.lwsnb.eu.cc/file/1770349301804_DefualtThumbnail.jpg.webp',
   /** 作者信息 */
   author: {
-    name: '权益',
+    name: '洛神',
     intro: '一个普通人的技术博客',
     avatar: 'https://img.lwsnb.eu.cc/file/1770349295364_IMG_20250823_144910_239.jpg',
     url: 'https://github.com/lws666',

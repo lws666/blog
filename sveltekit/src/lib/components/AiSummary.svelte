@@ -12,12 +12,20 @@
    *
    * 交互：折叠/展开、打字机式逐字显示、朗读（Web Speech API）。
    */
-  let { summary }: { summary: string } = $props()
+  let {
+    summary,
+    /** 摘要生成所用的模型名（显示在卡片右上角标签） */
+    model = 'llama-3.2-3b',
+    /** 模型提供方 */
+    modelProvider = 'Cloudflare Workers AI',
+  }: { summary: string, model?: string, modelProvider?: string } = $props()
 
   let expanded = $state(true)
   let typed = $state('')
   let typing = $state(false)
   let speaking = $state(false)
+  /** 是否展开模型信息 */
+  let showModel = $state(false)
   let timer: ReturnType<typeof setInterval> | undefined
 
   /** 打字机：逐字显示摘要（仿安知鱼的加载观感） */
@@ -85,19 +93,41 @@
     </button>
 
     <button
-      class="ai-icon"
-      class:ai-icon--active={speaking}
-      title={speaking ? '停止朗读' : '朗读摘要'}
-      onclick={speak}
-      aria-label="朗读摘要"
+      class="ai-icon ai-icon--dot"
+      class:ai-icon--active={showModel}
+      title="查看摘要生成模型"
+      onclick={() => (showModel = !showModel)}
+      aria-label="查看摘要生成模型"
+      aria-expanded={showModel}
     >◉</button>
 
-    <span class="ai-tag">Lwsnb GPT</span>
+    <span class="ai-tag">{model}</span>
   </div>
 
   {#if expanded}
     <div class="ai-explanation">
       {typed}{#if typing}<span class="ai-caret">▍</span>{/if}
+    </div>
+  {/if}
+
+  <!-- 模型信息（点击圆点按钮展开） -->
+  {#if showModel}
+    <div class="ai-model-info">
+      <div class="ai-model-info__row">
+        <span class="ai-model-info__label">模型</span>
+        <code class="ai-model-info__value">{model}</code>
+      </div>
+      <div class="ai-model-info__row">
+        <span class="ai-model-info__label">提供方</span>
+        <span class="ai-model-info__value">{modelProvider}</span>
+      </div>
+      <div class="ai-model-info__row">
+        <span class="ai-model-info__label">用途</span>
+        <span class="ai-model-info__value">生成文章摘要（AI-摘要卡片）</span>
+      </div>
+      <p class="ai-model-info__note">
+        摘要由 AI 自动生成，可能存在偏差，请以原文为准。
+      </p>
     </div>
   {/if}
 </div>

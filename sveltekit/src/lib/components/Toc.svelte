@@ -50,10 +50,34 @@
 
   // activeId 变化或列表尺寸变化时重新定位滑块
   $effect(() => {
-    // 依赖 activeId 与 items，变化即重算
     void activeId
     void items
     requestAnimationFrame(updateMarker)
+  })
+
+  /**
+   * 滚动时持续校正滑块。
+   *
+   * 根因：IntersectionObserver 只在标题进出观察区时触发回调。滚到文章末尾后，
+   * 最后一个标题已经稳定在观察区里，activeId 不再变化 → 滑块停在旧位置，
+   * 视觉上「滑到底了动画还没到底」。
+   * 这里用 scroll 事件按 rAF 节流，按当前 active 项重新计算 top，
+   * 保证滑块始终精确对齐。
+   */
+  $effect(() => {
+    let raf = 0
+    const onScroll = () => {
+      if (raf) return
+      raf = requestAnimationFrame(() => {
+        raf = 0
+        updateMarker()
+      })
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (raf) cancelAnimationFrame(raf)
+    }
   })
 
   // 窗口尺寸变化时重算

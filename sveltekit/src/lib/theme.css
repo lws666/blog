@@ -1921,10 +1921,13 @@ img {
      transition: transform .3s;  &.open { transform: scale(1) }
      即从右下角「缩放弹出」，而不是从屏幕侧边滑入 */
   position: fixed;
-  right: 55px;
+  /* 右边缘让出悬浮按钮列（按钮宽 40 + 右边距 14 + 间距 ≈ 70px），
+     这样抽屉打开时按钮仍露在外面、可以继续点 */
+  right: 70px;
   bottom: 30px;
+  /* 抽屉保持在按钮列之上（120），但因为不再与按钮水平重叠，不会挡点击 */
   z-index: 135;
-  width: min(320px, calc(100vw - 24px));
+  width: min(320px, calc(100vw - 90px));
   max-height: calc(100% - 60px);
   display: flex;
   flex-direction: column;
@@ -1987,7 +1990,9 @@ img {
 .bf-toc-overlay {
   position: fixed;
   inset: 0;
-  z-index: 134;
+  /* 低于悬浮按钮列（z-index:120），保证目录打开时按钮仍可点击；
+     抽屉自身右移让出按钮位置，视觉上不会被遮罩影响 */
+  z-index: 118;
   border: 0;
   padding: 0;
   background: rgba(0, 0, 0, 0.4);
@@ -2358,5 +2363,67 @@ img {
 }
 
 [data-theme='dark'] .bf-content__notice {
+  background: rgba(73, 177, 245, 0.14);
+}
+
+/* ── AI 摘要：模型信息面板（点击圆点按钮展开）────────────────── */
+.ai-model-info {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(73, 177, 245, 0.06);
+  border: 1px solid rgba(73, 177, 245, 0.18);
+  font-size: 0.8rem;
+  line-height: 1.7;
+  animation: ai-fade 0.2s ease;
+}
+
+[data-theme='dark'] .ai-model-info {
+  background: rgba(73, 177, 245, 0.1);
+  border-color: rgba(73, 177, 245, 0.24);
+}
+
+.ai-model-info__row {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.ai-model-info__label {
+  flex: 0 0 42px;
+  color: var(--card-meta);
+  font-size: 0.76rem;
+}
+
+.ai-model-info__value {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--font-color);
+  word-break: break-word;
+}
+
+/* code 默认是 block 级会撑满整行，这里改成行内块，只包住文字 */
+code.ai-model-info__value {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.76rem;
+  background: rgba(127, 127, 127, 0.12);
+  padding: 1px 6px;
+  border-radius: 4px;
+  flex: 0 0 auto;
+}
+
+.ai-model-info__note {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(127, 127, 127, 0.2);
+  font-size: 0.74rem;
+  color: var(--card-meta);
+  line-height: 1.6;
+}
+
+/* 圆点按钮激活态 */
+.ai-icon--dot.ai-icon--active {
+  color: var(--btn-bg);
   background: rgba(73, 177, 245, 0.14);
 }

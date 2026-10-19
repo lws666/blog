@@ -8,6 +8,11 @@
 
   let { data }: { data: PageData } = $props()
 
+  /** 生成声明：读取 frontmatter.generatedBy（如「dsv4.1f」「glm-5.3flash」） */
+  const genBy = $derived(
+    (data.post?.frontmatter as { generatedBy?: string } | undefined)?.generatedBy ?? ''
+  )
+
   const fmt = (d: string) => (d || '').slice(0, 10)
   const cleanTag = (t: unknown) => String(t).replace(/"/g, '')
   const hasBanner = $derived(!!data.post.cover)
@@ -53,7 +58,10 @@
       {/if}
 
       <!-- 正文（SSR 直出，爬虫无需 JS） -->
-      <p class="bf-content__notice">本文由 glm-5.3flash 生成</p>
+      <!-- 生成声明：取 frontmatter.generatedBy，未设置则不显示 -->
+      {#if genBy}
+        <p class="bf-content__notice">本文由 {genBy} 生成</p>
+      {/if}
       <div class="bf-content">{@html data.html}</div>
 
       {#if data.post.tags?.length}

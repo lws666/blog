@@ -80,6 +80,23 @@
       if (raf) return
       raf = requestAnimationFrame(() => {
         raf = 0
+
+        /**
+         * 接近页面底部时强制把最后一项设为 active。
+         *
+         * 根因：IntersectionObserver 用 rootMargin '-70%' 判定当前小节，
+         * 最后一个小节只有在滚到很靠下时才会命中。于是用户读到最后
+         * 却看到滑块停在倒数第二项上（差 32px 没到底）。
+         * 这里在距底 ≤ 40% 视口时直接激活最后一项。
+         */
+        const links = listEl?.querySelectorAll<HTMLAnchorElement>('a.bf-toc__item')
+        const lastLink = links && links.length ? links[links.length - 1] : null
+        const nearBottom =
+          window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - window.innerHeight * 0.4
+        if (nearBottom && lastLink) {
+          const lastId = (lastLink.getAttribute('href') || '').replace(/^#/, '')
+          if (lastId && activeId !== lastId) activeId = lastId
+        }
         updateMarker()
       })
     }

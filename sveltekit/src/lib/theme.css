@@ -1785,7 +1785,9 @@ img {
 
 .bf-post-banner__inner {
   position: relative;
-  z-index: 2;
+  /* 降到 1：容器用 -3.5rem 上移压住 banner，卡片内容（含目录/摘要按钮）
+     必须能盖住 banner 内部，否则按钮被 banner__inner 挡住点不到 */
+  z-index: 1;
   width: 100%;
   max-width: var(--content-width);
   margin: 0 auto;
@@ -2426,4 +2428,42 @@ code.ai-model-info__value {
 .ai-icon--dot.ai-icon--active {
   color: var(--btn-bg);
   background: rgba(73, 177, 245, 0.14);
+}
+
+/* ── 文章卡片抬升到 banner 之上（负 margin 重叠区域可点击）────────
+ * .bf-container--overlap 用 -3.5rem 让卡片压住 banner。
+ * banner 内部有 z-index（.bf-post-banner::after 与 __inner），
+ * 若卡片没有自己的层叠上下文，重叠区域内的按钮/链接会被 banner 盖住。
+ */
+.bf-container--overlap {
+  position: relative;
+  z-index: 3;
+}
+
+/* ── 手机端：AI 摘要的图标按钮放大到易点尺寸 ───────────────────
+ * 桌面 24px 在触屏上远低于可用标准（建议 ≥40px），实测点不中。
+ */
+@media (max-width: 900px) {
+  .post-ai-description .ai-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+  }
+
+  .post-ai-description .ai-pill {
+    min-height: 30px;
+    padding: 4px 12px;
+    font-size: 13px;
+  }
+
+  /* 增大热区：用伪元素扩展可点击范围（视觉尺寸不变） */
+  .post-ai-description .ai-icon::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+  }
+
+  .post-ai-description .ai-icon {
+    position: relative;
+  }
 }

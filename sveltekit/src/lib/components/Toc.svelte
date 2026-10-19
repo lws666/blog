@@ -20,7 +20,17 @@
     if (!listEl || !activeId) return
     const el = listEl.querySelector<HTMLElement>(`a[href="#${CSS.escape(activeId)}"]`)
     if (!el) return
-    markerTop = el.offsetTop + el.offsetHeight / 2 - 9 // 9 = 滑块半高
+    /**
+     * 滑块 top = 当前项中线 - 滑块半高（9px）。
+     * 但对**最后一项**要用底边对齐：否则最后一项的行高（27px）比滑块
+     * （18px）高，中线定位会让滑块底部比列表底部少 3~4px，
+     * 滚到页面最底时视觉上「动画还没到底」。
+     */
+    const links = listEl.querySelectorAll<HTMLAnchorElement>('a.bf-toc__item')
+    const isLast = links.length > 0 && links[links.length - 1] === el
+    markerTop = isLast
+      ? el.offsetTop + el.offsetHeight - 18   // 底边对齐，保证滚到底时滑块贴底
+      : el.offsetTop + el.offsetHeight / 2 - 9
     markerVisible = true
   }
 

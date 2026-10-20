@@ -53,6 +53,14 @@
   {/if}
   <meta property="og:locale" content="zh_CN" />
 
+  <!-- 微信兜底（Microdata 三件套）
+       老版本微信/企业微信会优先读 itemprop="image"，og:image 读不到时
+       才回退到这里。两套并存成本极低，是「有标题描述但没缩略图」的
+       常见解法。同时是 Schema.org 标准字段，Google 也识别。 -->
+  <meta itemprop="name" content={seo.ogTitle} />
+  <meta itemprop="description" content={seo.ogDescription} />
+  <meta itemprop="image" content={seo.ogImage} />
+
   {#if seo.publishedTime}
     <meta property="article:published_time" content={seo.publishedTime} />
   {/if}

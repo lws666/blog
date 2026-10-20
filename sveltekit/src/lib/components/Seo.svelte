@@ -2,6 +2,25 @@
   import type { HeadMeta } from '#lib/seo'
 
   let { seo }: { seo: HeadMeta } = $props()
+
+  /**
+   * 推断 og:image 的类型与尺寸。
+   *
+   * 本站封面两种来源：
+   *   - 站点默认 social-preview.png：1200×630
+   *   - 文章封面：可能是 PNG（1200×630），也可能是自动生成的 SVG（矢量，无固定尺寸）
+   * 对 SVG 输出 image/svg+xml 且不输出 width/height —— 硬编码 PNG/固定尺寸
+   * 会让微信等平台读到错误信息而放弃缩略图。
+   */
+  const ogImageMeta = $derived.by(() => {
+    const url = (seo.ogImage || '').toLowerCase()
+    if (url.endsWith('.svg')) return { type: 'image/svg+xml', width: '', height: '' }
+    if (url.endsWith('.webp')) return { type: 'image/webp', width: '1200', height: '630' }
+    if (url.endsWith('.jpg') || url.endsWith('.jpeg')) {
+      return { type: 'image/jpeg', width: '1200', height: '630' }
+    }
+    return { type: 'image/png', width: '1200', height: '630' }
+  })
 </script>
 
 <!--
@@ -24,6 +43,14 @@
   <meta property="og:url" content={seo.ogUrl} />
   <meta property="og:type" content={seo.ogType} />
   <meta property="og:image" content={seo.ogImage} />
+  <!-- 图片类型/尺寸：微信等平台靠这些值预判卡片布局。
+       必须按实际图片推断——本站封面既有 PNG 也有 SVG，
+       对 SVG 硬编码 image/png 或固定尺寸会是错误信息。 -->
+  <meta property="og:image:type" content={ogImageMeta.type} />
+  {#if ogImageMeta.width}
+    <meta property="og:image:width" content={ogImageMeta.width} />
+    <meta property="og:image:height" content={ogImageMeta.height} />
+  {/if}
   <meta property="og:locale" content="zh_CN" />
 
   {#if seo.publishedTime}

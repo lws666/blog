@@ -7,7 +7,7 @@
    * 推断 og:image 的类型与尺寸。
    *
    * 本站封面两种来源：
-   *   - 站点默认 social-preview.png：1200×630
+   *   - 站点默认 social-preview.jpg：1200×630（hero 大图裁切）
    *   - 文章封面：可能是 PNG（1200×630），也可能是自动生成的 SVG（矢量，无固定尺寸）
    * 对 SVG 输出 image/svg+xml 且不输出 width/height —— 硬编码 PNG/固定尺寸
    * 会让微信等平台读到错误信息而放弃缩略图。

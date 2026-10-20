@@ -70,7 +70,13 @@ export const site = {
     id: '18318692237',
   },
   /** 社交预览图 */
-  ogImage: '/social-preview.png',
+  /**
+   * 社交分享默认图（og:image）。
+   * 用首页 hero 大图（星空屋顶）裁成 1200×630 的 JPEG：
+   * - 原 social-preview.png 是纯文字卡片，缩略图尺寸下太糊
+   * - WebP（原 hero 格式）在部分老版本微信不支持，故转 JPEG
+   */
+  ogImage: '/social-preview.jpg',
   /** 后端 Worker API */
   apiBase: 'https://api.lwsnb.eu.cc',
   /** 图片 CDN */

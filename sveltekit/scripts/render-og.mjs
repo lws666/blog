@@ -6,7 +6,7 @@
  *
  * 用法：
  *   npm i -D playwright && npx playwright install chromium
- *   node scripts/render-og.mjs            # 输出 static/social-preview.png
+ *   node scripts/render-og.mjs            # 输出 static/social-preview.jpg
  */
 import { chromium } from 'playwright'
 import { fileURLToPath } from 'node:url'
@@ -14,7 +14,7 @@ import { dirname, resolve } from 'node:path'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const cardPath = resolve(here, 'og-card.html')
-const out = resolve(here, '../static/social-preview.png')
+const out = resolve(here, '../static/social-preview.jpg')
 
 const browser = await chromium.launch()
 const page = await browser.newPage({

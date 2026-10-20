@@ -60,7 +60,19 @@ export function buildSeo(input: SeoInput): HeadMeta {
   const pageDescription = description || site.description
   const metaTitle = pageTitle(title)
   const canonical = absUrl(canonicalPath(path))
-  const ogImage = image ? (image.startsWith('http') ? image : absUrl(image)) : absUrl(site.ogImage)
+  /**
+   * 社交分享缩略图统一使用 hero 大图（site.ogImage）。
+   *
+   * 不采用文章封面作为 og:image 的原因：
+   *   1. 自动生成的封面是 SVG（矢量），微信等平台不支持作为缩略图
+   *   2. 纯文字封面在缩略图尺寸下太糊，识别度差
+   *   3. 统一图观感一致，品牌识别更强
+   * 文章封面本身不受影响——页面上照常显示（banner / 列表缩略图），
+   * JSON-LD 里的 image 也仍指向文章封面（便于搜索引擎区分文章）。
+   */
+  const ogImage = absUrl(site.ogImage)
+  /** JSON-LD 用的图：优先文章封面，回退统一图 */
+  const articleImage = image ? (image.startsWith('http') ? image : absUrl(image)) : ogImage
 
   const graph: Record<string, unknown>[] = [
     {
@@ -97,7 +109,8 @@ export function buildSeo(input: SeoInput): HeadMeta {
       mainEntityOfPage: canonical,
       ...(article.publishedTime ? { datePublished: article.publishedTime } : {}),
       ...(article.modifiedTime ? { dateModified: article.modifiedTime } : {}),
-      image: ogImage,
+      // JSON-LD 保留文章封面（搜索引擎据此区分文章），无封面时回退统一图
+      image: articleImage,
       isPartOf: { '@id': `${site.url}/#website` },
     })
   }

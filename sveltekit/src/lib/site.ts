@@ -27,12 +27,14 @@ export const site = {
     '一个普通人的技术博客，分享 Cloudflare、Valaxy、Vue、前端开发、AI 等领域的实践与思考。',
   lang: 'zh-CN',
   /** Hero 全屏背景图 */
-  banner: 'https://img.lwsnb.eu.cc/file/1770349301804_DefualtThumbnail.jpg.webp',
+  /** hero 大图（同域静态资源，不走 Worker→B2，消除跨域握手与回源延迟） */
+  banner: '/hero.webp',
   /** 作者信息 */
   author: {
     name: '洛神',
     intro: '一个普通人的技术博客',
-    avatar: 'https://img.lwsnb.eu.cc/file/1770349295364_IMG_20250823_144910_239.jpg',
+    /** 作者头像（同域静态资源） */
+    avatar: '/avatar.jpg',
     url: 'https://github.com/lws666',
     sameAs: ['https://github.com/lws666', 'https://m.bilibili.com/space/3493115176422328'],
   },
